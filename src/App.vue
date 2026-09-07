@@ -1,7 +1,9 @@
 <script setup>
-import HelloWorld from './components/HelloWorld.vue'
 </script>
 
 <template>
-  <HelloWorld />
+  <div id="app">
+    <h1>Planes y Costos</h1>
+    <p>Proyecto configurado correctamente con Vue 3.</p>
+  </div>
 </template>
