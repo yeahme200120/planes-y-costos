@@ -1,15 +1,104 @@
 <script setup>
-defineProps({
+import { computed } from 'vue'
+
+const props = defineProps({
   contenido: {
     type: Object,
     default: () => ({}),
   },
+
+  configuracion: {
+    type: Object,
+    default: () => ({}),
+  },
+})
+
+const telefono = computed(() => {
+  return (
+    props.configuracion?.telefono ||
+    props.contenido?.telefono ||
+    ''
+  )
+})
+
+const email = computed(() => {
+  return (
+    props.configuracion?.email ||
+    props.contenido?.email ||
+    ''
+  )
+})
+
+const whatsapp = computed(() => {
+  return (
+    props.configuracion?.whatsapp ||
+    props.contenido?.whatsapp ||
+    ''
+  )
+})
+
+const direccion = computed(() => {
+  return (
+    props.configuracion?.direccion ||
+    props.contenido?.direccion ||
+    ''
+  )
+})
+
+const whatsappUrl = computed(() => {
+  const valor = String(
+    whatsapp.value || ''
+  ).trim()
+
+  if (!valor) {
+    return ''
+  }
+
+  if (/^https?:\/\//i.test(valor)) {
+    return valor
+  }
+
+  const numero = valor.replace(/\D/g, '')
+
+  return numero
+    ? `https://wa.me/${numero}`
+    : ''
+})
+
+const botonTexto = computed(() => {
+  return (
+    props.contenido?.botonTexto ||
+    'Contactar'
+  )
+})
+
+const botonUrl = computed(() => {
+  if (props.contenido?.botonUrl) {
+    return props.contenido.botonUrl
+  }
+
+  if (whatsappUrl.value) {
+    return whatsappUrl.value
+  }
+
+  if (email.value) {
+    return `mailto:${email.value}`
+  }
+
+  if (telefono.value) {
+    return `tel:${telefono.value}`
+  }
+
+  return '#'
 })
 </script>
 
 <template>
   <section
-    v-if="contenido && contenido.activo !== false"
+    v-if="
+      contenido &&
+      contenido.activo !== false
+    "
     id="contacto"
     class="section contact"
   >
@@ -40,17 +129,53 @@ defineProps({
             {{ contenido.descripcion }}
           </p>
 
+          <div class="contact__details">
+
+            <p v-if="telefono">
+              <strong>Teléfono:</strong>
+
+              <a :href="`tel:${telefono}`">
+                {{ telefono }}
+              </a>
+            </p>
+
+            <p v-if="email">
+              <strong>Correo:</strong>
+
+              <a :href="`mailto:${email}`">
+                {{ email }}
+              </a>
+            </p>
+
+            <p v-if="direccion">
+              <strong>Dirección:</strong>
+
+              {{ direccion }}
+            </p>
+
+          </div>
+
         </div>
 
         <div
-          v-if="contenido.botonTexto"
+          v-if="botonTexto"
           class="contact__action"
         >
           <a
-            :href="contenido.botonUrl || '#'"
+            :href="botonUrl"
             class="contact__button"
+            :target="
+              botonUrl.startsWith('https://wa.me/')
+                ? '_blank'
+                : undefined
+            "
+            :rel="
+              botonUrl.startsWith('https://wa.me/')
+                ? 'noopener noreferrer'
+                : undefined
+            "
           >
-            {{ contenido.botonTexto }}
+            {{ botonTexto }}
           </a>
         </div>
 

@@ -11,12 +11,6 @@ import {
 } from './contentService'
 
 export function useLandingContent() {
-  /*
-   * =========================================================
-   * CONTENIDO DE SECCIONES
-   * =========================================================
-   */
-
   const header = ref(null)
   const hero = ref(null)
   const soluciones = ref(null)
@@ -27,44 +21,22 @@ export function useLandingContent() {
   const contacto = ref(null)
   const footer = ref(null)
 
-  /*
-   * =========================================================
-   * CONFIGURACIÓN GENERAL
-   * =========================================================
-   */
-
   const configuracion = ref(null)
 
-  /*
-   * =========================================================
-   * PLANES
-   * =========================================================
-   */
-
   const planes = ref([])
-
-  /*
-   * =========================================================
-   * ESTADO
-   * =========================================================
-   */
+  const solucionesItems = ref([])
+  const caracteristicasItems = ref([])
+  const faqItems = ref([])
 
   const cargando = ref(true)
   const error = ref('')
 
-  /*
-   * =========================================================
-   * SUSCRIPCIONES FIREBASE
-   * =========================================================
-   */
-
   const unsubscribers = []
 
   /*
-   * =========================================================
-   * CONTROL DE CARGA INICIAL
+   * Cargas iniciales:
    *
-   * 9 secciones:
+   * 9 documentos de secciones:
    * header
    * hero
    * soluciones
@@ -75,36 +47,29 @@ export function useLandingContent() {
    * contacto
    * footer
    *
-   * + colección planes
+   * 4 colecciones:
+   * planes
+   * soluciones
+   * caracteristicas
+   * faq
    *
-   * = 10 cargas iniciales
+   * 1 configuración:
+   * configuracion/general
    *
-   * configuracion/general NO bloquea la carga.
-   * =========================================================
+   * TOTAL = 14
    */
-
   const cargasIniciales = ref(new Set())
 
-  const totalCargasIniciales = 10
+  const totalCargasIniciales = 14
 
   function registrarCargaInicial(id) {
     if (!id) {
       return
     }
 
-    /*
-     * Si este listener ya informó su primera respuesta,
-     * no volvemos a contarlo.
-     */
-
     if (cargasIniciales.value.has(id)) {
       return
     }
-
-    /*
-     * Creamos un nuevo Set para mantener la reactividad
-     * de Vue.
-     */
 
     const nuevasCargas = new Set(
       cargasIniciales.value
@@ -112,13 +77,8 @@ export function useLandingContent() {
 
     nuevasCargas.add(id)
 
-    cargasIniciales.value = nuevasCargas
-
-    /*
-     * Cuando las 10 fuentes principales respondieron
-     * por primera vez, dejamos de mostrar el estado
-     * de carga.
-     */
+    cargasIniciales.value =
+      nuevasCargas
 
     if (
       cargasIniciales.value.size >=
@@ -127,12 +87,6 @@ export function useLandingContent() {
       cargando.value = false
     }
   }
-
-  /*
-   * =========================================================
-   * ERROR FIREBASE
-   * =========================================================
-   */
 
   function manejarErrorFirebase(err) {
     console.error(
@@ -146,11 +100,23 @@ export function useLandingContent() {
     cargando.value = false
   }
 
-  /*
-   * =========================================================
-   * SUSCRIBIR SECCIONES
-   * =========================================================
-   */
+  function actualizarSeccionConItems(
+    seccionRef,
+    itemsRef
+  ) {
+    if (!seccionRef.value) {
+      return
+    }
+
+    seccionRef.value = {
+      ...seccionRef.value,
+      items: Array.isArray(
+        itemsRef.value
+      )
+        ? [...itemsRef.value]
+        : [],
+    }
+  }
 
   function suscribirSecciones() {
     const secciones = [
@@ -201,17 +167,37 @@ export function useLandingContent() {
           subscribeToSection(
             id,
             (data) => {
-              /*
-               * Actualizamos el contenido
-               * cada vez que Firebase cambia.
-               */
+              contenidoRef.value =
+                data
 
-              contenidoRef.value = data
+              if (
+                id ===
+                'soluciones'
+              ) {
+                actualizarSeccionConItems(
+                  soluciones,
+                  solucionesItems
+                )
+              }
 
-              /*
-               * Solo la primera respuesta
-               * cuenta como carga inicial.
-               */
+              if (
+                id ===
+                'caracteristicas'
+              ) {
+                actualizarSeccionConItems(
+                  caracteristicas,
+                  caracteristicasItems
+                )
+              }
+
+              if (
+                id === 'faq'
+              ) {
+                actualizarSeccionConItems(
+                  faq,
+                  faqItems
+                )
+              }
 
               registrarCargaInicial(
                 `seccion:${id}`
@@ -227,38 +213,28 @@ export function useLandingContent() {
     )
   }
 
-  /*
-   * =========================================================
-   * SUSCRIBIR PLANES
-   * =========================================================
-   */
-
   function suscribirPlanes() {
     const unsubscribe =
       subscribeToActiveCollection(
         'planes',
         (data) => {
-          /*
-           * Firebase puede devolver los
-           * documentos en cualquier orden.
-           *
-           * Los ordenamos mediante el campo
-           * "orden".
-           */
-
-          planes.value = [
-            ...data,
-          ].sort((a, b) => {
-            return (
-              Number(a.orden ?? 999) -
-              Number(b.orden ?? 999)
-            )
-          })
-
-          /*
-           * La colección cuenta solamente
-           * en su primera respuesta.
-           */
+          planes.value =
+            Array.isArray(data)
+              ? [...data].sort(
+                  (a, b) => {
+                    return (
+                      Number(
+                        a?.orden ??
+                          999
+                      ) -
+                      Number(
+                        b?.orden ??
+                          999
+                      )
+                    )
+                  }
+                )
+              : []
 
           registrarCargaInicial(
             'coleccion:planes'
@@ -272,26 +248,37 @@ export function useLandingContent() {
     )
   }
 
-  /*
-   * =========================================================
-   * SUSCRIBIR CONFIGURACIÓN
-   * =========================================================
-   */
-
-  function suscribirConfiguracion() {
+  function suscribirSoluciones() {
     const unsubscribe =
-      subscribeToConfiguration(
-        'general',
+      subscribeToActiveCollection(
+        'soluciones',
         (data) => {
-          /*
-           * La configuración es independiente
-           * del contador de carga inicial.
-           *
-           * Cualquier cambio en Firebase actualiza
-           * inmediatamente la interfaz.
-           */
+          solucionesItems.value =
+            Array.isArray(data)
+              ? [...data].sort(
+                  (a, b) => {
+                    return (
+                      Number(
+                        a?.orden ??
+                          999
+                      ) -
+                      Number(
+                        b?.orden ??
+                          999
+                      )
+                    )
+                  }
+                )
+              : []
 
-          configuracion.value = data
+          actualizarSeccionConItems(
+            soluciones,
+            solucionesItems
+          )
+
+          registrarCargaInicial(
+            'coleccion:soluciones'
+          )
         },
         manejarErrorFirebase
       )
@@ -301,23 +288,114 @@ export function useLandingContent() {
     )
   }
 
-  /*
-   * =========================================================
-   * INICIALIZACIÓN
-   * =========================================================
-   */
+  function suscribirCaracteristicas() {
+    const unsubscribe =
+      subscribeToActiveCollection(
+        'caracteristicas',
+        (data) => {
+          caracteristicasItems.value =
+            Array.isArray(data)
+              ? [...data].sort(
+                  (a, b) => {
+                    return (
+                      Number(
+                        a?.orden ??
+                          999
+                      ) -
+                      Number(
+                        b?.orden ??
+                          999
+                      )
+                    )
+                  }
+                )
+              : []
+
+          actualizarSeccionConItems(
+            caracteristicas,
+            caracteristicasItems
+          )
+
+          registrarCargaInicial(
+            'coleccion:caracteristicas'
+          )
+        },
+        manejarErrorFirebase
+      )
+
+    unsubscribers.push(
+      unsubscribe
+    )
+  }
+
+  function suscribirFaq() {
+    const unsubscribe =
+      subscribeToActiveCollection(
+        'faq',
+        (data) => {
+          faqItems.value =
+            Array.isArray(data)
+              ? [...data].sort(
+                  (a, b) => {
+                    return (
+                      Number(
+                        a?.orden ??
+                          999
+                      ) -
+                      Number(
+                        b?.orden ??
+                          999
+                      )
+                    )
+                  }
+                )
+              : []
+
+          actualizarSeccionConItems(
+            faq,
+            faqItems
+          )
+
+          registrarCargaInicial(
+            'coleccion:faq'
+          )
+        },
+        manejarErrorFirebase
+      )
+
+    unsubscribers.push(
+      unsubscribe
+    )
+  }
+
+  function suscribirConfiguracion() {
+    const unsubscribe =
+      subscribeToConfiguration(
+        'general',
+        (data) => {
+          configuracion.value =
+            data
+
+          registrarCargaInicial(
+            'configuracion:general'
+          )
+        },
+        manejarErrorFirebase
+      )
+
+    unsubscribers.push(
+      unsubscribe
+    )
+  }
 
   onMounted(() => {
     suscribirSecciones()
     suscribirPlanes()
+    suscribirSoluciones()
+    suscribirCaracteristicas()
+    suscribirFaq()
     suscribirConfiguracion()
   })
-
-  /*
-   * =========================================================
-   * LIMPIEZA
-   * =========================================================
-   */
 
   onUnmounted(() => {
     unsubscribers.forEach(
@@ -333,12 +411,6 @@ export function useLandingContent() {
 
     unsubscribers.length = 0
   })
-
-  /*
-   * =========================================================
-   * API DEL COMPOSABLE
-   * =========================================================
-   */
 
   return {
     header,

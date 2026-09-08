@@ -15,29 +15,31 @@ const props = defineProps({
 
 const menuAbierto = ref(false)
 
-const cerrarMenu = () => {
+function cerrarMenu() {
   menuAbierto.value = false
 }
 
 const navegacion = computed(() => {
-  const items =
-    props.contenido?.navegacion ?? []
+  const items = props.contenido?.navegacion
 
   if (!Array.isArray(items)) {
     return []
   }
 
-  return [...items]
-    .filter(
-      (item) =>
+  return items
+    .filter((item) => {
+      return (
         item &&
+        item.texto &&
         item.activo !== false
-    )
-    .sort(
-      (a, b) =>
+      )
+    })
+    .sort((a, b) => {
+      return (
         Number(a.orden ?? 999) -
         Number(b.orden ?? 999)
-    )
+      )
+    })
 })
 
 const nombreEmpresa = computed(() => {
@@ -59,6 +61,7 @@ const logoTexto = computed(() => {
 const logoUrl = computed(() => {
   return (
     props.configuracion?.logoUrl ||
+    props.contenido?.logoUrl ||
     ''
   )
 })
@@ -83,27 +86,26 @@ const ctaUrl = computed(() => {
     '#contacto'
   )
 })
+
+const headerActivo = computed(() => {
+  return props.contenido?.activo !== false
+})
 </script>
 
 <template>
   <header
-    v-if="
-      contenido &&
-      contenido.activo !== false
-    "
+    v-if="headerActivo"
     class="app-header"
   >
-    <div
-      class="container app-header__inner"
-    >
+    <div class="container app-header__inner">
+
+      <!-- LOGOTIPO -->
       <a
         href="#inicio"
         class="app-header__brand"
         @click="cerrarMenu"
       >
-        <span
-          class="app-header__logo"
-        >
+        <span class="app-header__logo">
           <img
             v-if="logoUrl"
             :src="logoUrl"
@@ -115,9 +117,7 @@ const ctaUrl = computed(() => {
           </span>
         </span>
 
-        <span
-          class="app-header__brand-text"
-        >
+        <span class="app-header__brand-text">
           <strong>
             {{ nombreEmpresa }}
           </strong>
@@ -128,15 +128,15 @@ const ctaUrl = computed(() => {
         </span>
       </a>
 
+      <!-- NAVEGACIÓN DESKTOP -->
       <nav
         v-if="navegacion.length"
         class="app-header__nav"
+        aria-label="Navegación principal"
       >
         <a
           v-for="item in navegacion"
-          :key="
-            `${item.orden}-${item.texto}`
-          "
+          :key="`${item.orden}-${item.texto}`"
           :href="item.url || '#'"
           @click="cerrarMenu"
         >
@@ -144,6 +144,7 @@ const ctaUrl = computed(() => {
         </a>
       </nav>
 
+      <!-- CTA -->
       <a
         v-if="ctaTexto"
         :href="ctaUrl"
@@ -153,14 +154,13 @@ const ctaUrl = computed(() => {
         {{ ctaTexto }}
       </a>
 
+      <!-- BOTÓN MENÚ MÓVIL -->
       <button
-        class="app-header__menu-button"
         type="button"
+        class="app-header__menu-button"
         aria-label="Abrir menú"
         :aria-expanded="menuAbierto"
-        @click="
-          menuAbierto = !menuAbierto
-        "
+        @click="menuAbierto = !menuAbierto"
       >
         <span></span>
         <span></span>
@@ -168,6 +168,7 @@ const ctaUrl = computed(() => {
       </button>
     </div>
 
+    <!-- MENÚ MÓVIL -->
     <div
       v-if="
         menuAbierto &&
@@ -175,12 +176,12 @@ const ctaUrl = computed(() => {
       "
       class="app-header__mobile-menu"
     >
-      <nav>
+      <nav
+        aria-label="Navegación móvil"
+      >
         <a
           v-for="item in navegacion"
-          :key="
-            `mobile-${item.orden}-${item.texto}`
-          "
+          :key="`mobile-${item.orden}-${item.texto}`"
           :href="item.url || '#'"
           @click="cerrarMenu"
         >

@@ -5,22 +5,21 @@ import {
   doc,
   getDoc,
   getDocs,
-  orderBy,
-  query,
-  updateDoc,
   setDoc,
+  updateDoc,
 } from 'firebase/firestore'
 
 import { db } from '../config/firebase'
 
 /*
- * =========================================================
- * SECCIONES
- * =========================================================
- */
+|--------------------------------------------------------------------------
+| SECCIONES
+|--------------------------------------------------------------------------
+*/
 
 export async function obtenerSeccionAdmin(sectionId) {
   const ref = doc(db, 'secciones', sectionId)
+
   const snapshot = await getDoc(ref)
 
   if (!snapshot.exists()) {
@@ -37,7 +36,11 @@ export async function actualizarSeccion(
   sectionId,
   datos
 ) {
-  const ref = doc(db, 'secciones', sectionId)
+  const ref = doc(
+    db,
+    'secciones',
+    sectionId
+  )
 
   await updateDoc(ref, {
     ...datos,
@@ -50,7 +53,11 @@ export async function guardarSeccion(
   sectionId,
   datos
 ) {
-  const ref = doc(db, 'secciones', sectionId)
+  const ref = doc(
+    db,
+    'secciones',
+    sectionId
+  )
 
   await setDoc(
     ref,
@@ -66,10 +73,10 @@ export async function guardarSeccion(
 }
 
 /*
- * =========================================================
- * CONFIGURACIÓN GENERAL
- * =========================================================
- */
+|--------------------------------------------------------------------------
+| CONFIGURACIÓN
+|--------------------------------------------------------------------------
+*/
 
 export async function obtenerConfiguracionAdmin(
   configId = 'general'
@@ -116,58 +123,102 @@ export async function actualizarConfiguracion(
 }
 
 /*
- * =========================================================
- * PLANES
- * =========================================================
- */
+|--------------------------------------------------------------------------
+| PLANES
+|--------------------------------------------------------------------------
+*/
+
+function normalizarCaracteristicas(
+  caracteristicas
+) {
+  if (Array.isArray(caracteristicas)) {
+    return caracteristicas
+  }
+
+  if (
+    typeof caracteristicas ===
+    'string'
+  ) {
+    try {
+      const parsed =
+        JSON.parse(caracteristicas)
+
+      if (Array.isArray(parsed)) {
+        return parsed
+      }
+
+      return [caracteristicas]
+    } catch {
+      return caracteristicas
+        .split('\n')
+        .map((item) => item.trim())
+        .filter(Boolean)
+    }
+  }
+
+  if (
+    caracteristicas !== null &&
+    typeof caracteristicas === 'object'
+  ) {
+    return Object.values(caracteristicas)
+  }
+
+  if (
+    caracteristicas !== undefined &&
+    caracteristicas !== null
+  ) {
+    return [String(caracteristicas)]
+  }
+
+  return []
+}
+
+function prepararPlan(datos) {
+  return {
+    ...datos,
+
+    caracteristicas:
+      normalizarCaracteristicas(
+        datos.caracteristicas
+      ),
+
+    precio: Number(
+      datos.precio ?? 0
+    ),
+
+    orden: Number(
+      datos.orden ?? 999
+    ),
+
+    activo: Boolean(
+      datos.activo
+    ),
+
+    destacado: Boolean(
+      datos.destacado
+    ),
+  }
+}
 
 export async function obtenerPlanesAdmin() {
-  const planesRef = collection(
+  const ref = collection(
     db,
     'planes'
   )
 
-  const consulta = query(
-    planesRef,
-    orderBy('orden', 'asc')
-  )
+  const snapshot =
+    await getDocs(ref)
 
-  const snapshot = await getDocs(consulta)
-
-  return snapshot.docs.map((documento) => {
-    const data = documento.data()
-
-    let caracteristicas =
-      data.caracteristicas ?? []
-
-    if (
-      typeof caracteristicas ===
-      'string'
-    ) {
-      try {
-        caracteristicas =
-          JSON.parse(caracteristicas)
-      } catch {
-        caracteristicas = [
-          caracteristicas,
-        ]
-      }
-    }
-
-    if (
-      !Array.isArray(caracteristicas)
-    ) {
-      caracteristicas = [
-        caracteristicas,
-      ]
-    }
-
-    return {
-      id: documento.id,
-      ...data,
-      caracteristicas,
-    }
-  })
+  return snapshot.docs
+    .map((document) => ({
+      id: document.id,
+      ...document.data(),
+    }))
+    .sort(
+      (a, b) =>
+        Number(a.orden ?? 999) -
+        Number(b.orden ?? 999)
+    )
 }
 
 export async function obtenerPlanAdmin(
@@ -179,68 +230,32 @@ export async function obtenerPlanAdmin(
     planId
   )
 
-  const snapshot = await getDoc(ref)
+  const snapshot =
+    await getDoc(ref)
 
   if (!snapshot.exists()) {
     return null
   }
 
-  const data = snapshot.data()
-
-  let caracteristicas =
-    data.caracteristicas ?? []
-
-  if (
-    typeof caracteristicas ===
-    'string'
-  ) {
-    try {
-      caracteristicas =
-        JSON.parse(caracteristicas)
-    } catch {
-      caracteristicas = [
-        caracteristicas,
-      ]
-    }
-  }
-
-  if (
-    !Array.isArray(caracteristicas)
-  ) {
-    caracteristicas = [
-      caracteristicas,
-    ]
-  }
-
   return {
     id: snapshot.id,
-    ...data,
-    caracteristicas,
+    ...snapshot.data(),
   }
 }
 
-export async function crearPlan(datos) {
-  const planesRef = collection(
+export async function crearPlan(
+  datos
+) {
+  const ref = collection(
     db,
     'planes'
   )
 
-  const datosNormalizados = {
-    ...datos,
-    caracteristicas:
-      normalizarCaracteristicas(
-        datos.caracteristicas
-      ),
-    activo:
-      datos.activo ?? true,
-    orden:
-      Number(datos.orden ?? 999),
-  }
-
-  const documento = await addDoc(
-    planesRef,
-    datosNormalizados
-  )
+  const documento =
+    await addDoc(
+      ref,
+      prepararPlan(datos)
+    )
 
   return obtenerPlanAdmin(
     documento.id
@@ -257,32 +272,14 @@ export async function actualizarPlan(
     planId
   )
 
-  const datosNormalizados = {
-    ...datos,
-  }
-
-  if (
-    'caracteristicas' in
-    datosNormalizados
-  ) {
-    datosNormalizados.caracteristicas =
-      normalizarCaracteristicas(
-        datosNormalizados.caracteristicas
-      )
-  }
-
-  if ('orden' in datosNormalizados) {
-    datosNormalizados.orden = Number(
-      datosNormalizados.orden
-    )
-  }
-
   await updateDoc(
     ref,
-    datosNormalizados
+    prepararPlan(datos)
   )
 
-  return obtenerPlanAdmin(planId)
+  return obtenerPlanAdmin(
+    planId
+  )
 }
 
 export async function eliminarPlan(
@@ -313,67 +310,162 @@ export async function cambiarEstadoPlan(
     activo: Boolean(activo),
   })
 
-  return obtenerPlanAdmin(planId)
+  return obtenerPlanAdmin(
+    planId
+  )
 }
 
 /*
- * =========================================================
- * UTILIDADES
- * =========================================================
- */
+|--------------------------------------------------------------------------
+| CONTENIDO
+|--------------------------------------------------------------------------
+*/
 
-function normalizarCaracteristicas(
-  caracteristicas
+export async function obtenerElementosAdmin(
+  coleccion
 ) {
-  if (
-    Array.isArray(caracteristicas)
-  ) {
-    return caracteristicas
-      .map((item) =>
-        String(item).trim()
-      )
-      .filter(Boolean)
+  const ref = collection(
+    db,
+    coleccion
+  )
+
+  const snapshot =
+    await getDocs(ref)
+
+  return snapshot.docs
+    .map((document) => ({
+      id: document.id,
+      ...document.data(),
+    }))
+    .sort(
+      (a, b) =>
+        Number(a.orden ?? 999) -
+        Number(b.orden ?? 999)
+    )
+}
+
+export async function obtenerElementoAdmin(
+  coleccion,
+  elementoId
+) {
+  const ref = doc(
+    db,
+    coleccion,
+    elementoId
+  )
+
+  const snapshot =
+    await getDoc(ref)
+
+  if (!snapshot.exists()) {
+    return null
+  }
+
+  return {
+    id: snapshot.id,
+    ...snapshot.data(),
+  }
+}
+
+function prepararElemento(datos) {
+  const resultado = {
+    ...datos,
   }
 
   if (
-    typeof caracteristicas ===
-    'string'
+    resultado.orden !== undefined
   ) {
-    try {
-      const parsed =
-        JSON.parse(caracteristicas)
-
-      if (Array.isArray(parsed)) {
-        return parsed
-          .map((item) =>
-            String(item).trim()
-          )
-          .filter(Boolean)
-      }
-    } catch {
-      return caracteristicas
-        .split('\n')
-        .map((item) =>
-          item.trim()
-        )
-        .filter(Boolean)
-    }
-
-    return caracteristicas
-      .split('\n')
-      .map((item) =>
-        item.trim()
-      )
-      .filter(Boolean)
+    resultado.orden = Number(
+      resultado.orden
+    )
   }
 
   if (
-    caracteristicas == null
+    resultado.activo !== undefined
   ) {
-    return []
+    resultado.activo = Boolean(
+      resultado.activo
+    )
   }
 
-  return [
-    String(caracteristicas),
-  ]
+  return resultado
+}
+
+export async function crearElementoAdmin(
+  coleccion,
+  datos
+) {
+  const ref = collection(
+    db,
+    coleccion
+  )
+
+  const documento =
+    await addDoc(
+      ref,
+      prepararElemento(datos)
+    )
+
+  return obtenerElementoAdmin(
+    coleccion,
+    documento.id
+  )
+}
+
+export async function actualizarElementoAdmin(
+  coleccion,
+  elementoId,
+  datos
+) {
+  const ref = doc(
+    db,
+    coleccion,
+    elementoId
+  )
+
+  await updateDoc(
+    ref,
+    prepararElemento(datos)
+  )
+
+  return obtenerElementoAdmin(
+    coleccion,
+    elementoId
+  )
+}
+
+export async function eliminarElementoAdmin(
+  coleccion,
+  elementoId
+) {
+  const ref = doc(
+    db,
+    coleccion,
+    elementoId
+  )
+
+  await deleteDoc(ref)
+
+  return true
+}
+
+export async function cambiarEstadoElementoAdmin(
+  coleccion,
+  elementoId,
+  activo
+) {
+  const ref = doc(
+    db,
+    coleccion,
+    elementoId
+  )
+
+  await updateDoc(ref, {
+    activo: Boolean(activo),
+  })
+
+  return obtenerElementoAdmin(
+    coleccion,
+    elementoId
+  )
 }
