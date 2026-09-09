@@ -4,11 +4,24 @@ import {
   ref,
 } from 'vue'
 
-import {
-  subscribeToSection,
-  subscribeToActiveCollection,
-  subscribeToConfiguration,
-} from './contentService'
+const SECCIONES = [
+  'header',
+  'hero',
+  'soluciones',
+  'caracteristicas',
+  'planes',
+  'nosotros',
+  'faq',
+  'contacto',
+  'footer',
+]
+
+const COLECCIONES = [
+  'planes',
+  'soluciones',
+  'caracteristicas',
+  'faq',
+]
 
 export function useLandingContent() {
   const header = ref(null)
@@ -31,385 +44,286 @@ export function useLandingContent() {
   const cargando = ref(true)
   const error = ref('')
 
+  const cargasIniciales = new Set()
   const unsubscribers = []
 
-  /*
-   * Cargas iniciales:
-   *
-   * 9 documentos de secciones:
-   * header
-   * hero
-   * soluciones
-   * caracteristicas
-   * planes
-   * nosotros
-   * faq
-   * contacto
-   * footer
-   *
-   * 4 colecciones:
-   * planes
-   * soluciones
-   * caracteristicas
-   * faq
-   *
-   * 1 configuración:
-   * configuracion/general
-   *
-   * TOTAL = 14
-   */
-  const cargasIniciales = ref(new Set())
+  const referenciasSecciones = {
+    header,
+    hero,
+    soluciones,
+    caracteristicas,
+    planes: planesContenido,
+    nosotros,
+    faq,
+    contacto,
+    footer,
+  }
 
-  const totalCargasIniciales = 14
+  const totalCargasIniciales =
+    SECCIONES.length +
+    COLECCIONES.length +
+    1
 
-  function registrarCargaInicial(id) {
-    if (!id) {
+  function registrarCarga(id) {
+    if (cargasIniciales.has(id)) {
       return
     }
 
-    if (cargasIniciales.value.has(id)) {
-      return
-    }
-
-    const nuevasCargas = new Set(
-      cargasIniciales.value
-    )
-
-    nuevasCargas.add(id)
-
-    cargasIniciales.value =
-      nuevasCargas
+    cargasIniciales.add(id)
 
     if (
-      cargasIniciales.value.size >=
+      cargasIniciales.size >=
       totalCargasIniciales
     ) {
       cargando.value = false
     }
   }
 
-  function manejarErrorFirebase(err) {
+  function manejarErrorFirebase(errorFirebase) {
     console.error(
-      'Error de sincronización con Firebase:',
-      err
+      'Error sincronizando Landing:',
+      errorFirebase
     )
 
     error.value =
-      'No fue posible sincronizar el contenido con Firebase.'
+      'No fue posible cargar correctamente el contenido de la página.'
 
     cargando.value = false
   }
 
-  function actualizarSeccionConItems(
+  function ordenarItems(items) {
+    if (!Array.isArray(items)) {
+      return []
+    }
+
+    return [...items].sort(
+      (a, b) =>
+        Number(a?.orden ?? 999) -
+        Number(b?.orden ?? 999)
+    )
+  }
+
+  function actualizarItemsEnSeccion(
     seccionRef,
-    itemsRef
+    items
   ) {
-    if (!seccionRef.value) {
+    if (!seccionRef?.value) {
       return
     }
 
     seccionRef.value = {
       ...seccionRef.value,
-      items: Array.isArray(
-        itemsRef.value
-      )
-        ? [...itemsRef.value]
-        : [],
+      items: ordenarItems(items),
     }
   }
 
-  function suscribirSecciones() {
-    const secciones = [
-      {
-        id: 'header',
-        ref: header,
-      },
-      {
-        id: 'hero',
-        ref: hero,
-      },
-      {
-        id: 'soluciones',
-        ref: soluciones,
-      },
-      {
-        id: 'caracteristicas',
-        ref: caracteristicas,
-      },
-      {
-        id: 'planes',
-        ref: planesContenido,
-      },
-      {
-        id: 'nosotros',
-        ref: nosotros,
-      },
-      {
-        id: 'faq',
-        ref: faq,
-      },
-      {
-        id: 'contacto',
-        ref: contacto,
-      },
-      {
-        id: 'footer',
-        ref: footer,
-      },
-    ]
+  function procesarColeccion(nombre, data) {
+    const items = ordenarItems(data)
 
-    secciones.forEach(
-      ({
-        id,
-        ref: contenidoRef,
-      }) => {
-        const unsubscribe =
-          subscribeToSection(
-            id,
-            (data) => {
-              contenidoRef.value =
-                data
+    switch (nombre) {
+      case 'planes':
+        planes.value = items
+        break
 
-              if (
-                id ===
-                'soluciones'
-              ) {
-                actualizarSeccionConItems(
-                  soluciones,
-                  solucionesItems
-                )
-              }
+      case 'soluciones':
+        solucionesItems.value = items
 
-              if (
-                id ===
-                'caracteristicas'
-              ) {
-                actualizarSeccionConItems(
-                  caracteristicas,
-                  caracteristicasItems
-                )
-              }
+        actualizarItemsEnSeccion(
+          soluciones,
+          items
+        )
+        break
 
-              if (
-                id === 'faq'
-              ) {
-                actualizarSeccionConItems(
-                  faq,
-                  faqItems
-                )
-              }
+      case 'caracteristicas':
+        caracteristicasItems.value = items
 
-              registrarCargaInicial(
-                `seccion:${id}`
+        actualizarItemsEnSeccion(
+          caracteristicas,
+          items
+        )
+        break
+
+      case 'faq':
+        faqItems.value = items
+
+        actualizarItemsEnSeccion(
+          faq,
+          items
+        )
+        break
+    }
+  }
+
+  function suscribirSecciones({
+    subscribeToSection,
+  }) {
+    SECCIONES.forEach((nombre) => {
+      const seccionRef =
+        referenciasSecciones[nombre]
+
+      if (!seccionRef) {
+        console.warn(
+          `Sección no registrada: ${nombre}`
+        )
+
+        registrarCarga(
+          `seccion:${nombre}`
+        )
+
+        return
+      }
+
+      const unsubscribe =
+        subscribeToSection(
+          nombre,
+          (data) => {
+            seccionRef.value = data
+
+            /*
+             * Las secciones que utilizan
+             * colecciones dinámicas reciben
+             * también sus elementos.
+             */
+            if (nombre === 'soluciones') {
+              actualizarItemsEnSeccion(
+                soluciones,
+                solucionesItems.value
               )
-            },
-            manejarErrorFirebase
-          )
+            }
 
+            if (
+              nombre ===
+              'caracteristicas'
+            ) {
+              actualizarItemsEnSeccion(
+                caracteristicas,
+                caracteristicasItems.value
+              )
+            }
+
+            if (nombre === 'faq') {
+              actualizarItemsEnSeccion(
+                faq,
+                faqItems.value
+              )
+            }
+
+            registrarCarga(
+              `seccion:${nombre}`
+            )
+          },
+          manejarErrorFirebase,
+        )
+
+      if (
+        typeof unsubscribe ===
+        'function'
+      ) {
         unsubscribers.push(
           unsubscribe
         )
       }
-    )
+    })
   }
 
-  function suscribirPlanes() {
-    const unsubscribe =
-      subscribeToActiveCollection(
-        'planes',
-        (data) => {
-          planes.value =
-            Array.isArray(data)
-              ? [...data].sort(
-                  (a, b) => {
-                    return (
-                      Number(
-                        a?.orden ??
-                          999
-                      ) -
-                      Number(
-                        b?.orden ??
-                          999
-                      )
-                    )
-                  }
-                )
-              : []
+  function suscribirColecciones({
+    subscribeToActiveCollection,
+  }) {
+    COLECCIONES.forEach((nombre) => {
+      const unsubscribe =
+        subscribeToActiveCollection(
+          nombre,
+          (data) => {
+            procesarColeccion(
+              nombre,
+              data
+            )
 
-          registrarCargaInicial(
-            'coleccion:planes'
-          )
-        },
-        manejarErrorFirebase
-      )
+            registrarCarga(
+              `coleccion:${nombre}`
+            )
+          },
+          manejarErrorFirebase,
+        )
 
-    unsubscribers.push(
-      unsubscribe
-    )
+      if (
+        typeof unsubscribe ===
+        'function'
+      ) {
+        unsubscribers.push(
+          unsubscribe
+        )
+      }
+    })
   }
 
-  function suscribirSoluciones() {
-    const unsubscribe =
-      subscribeToActiveCollection(
-        'soluciones',
-        (data) => {
-          solucionesItems.value =
-            Array.isArray(data)
-              ? [...data].sort(
-                  (a, b) => {
-                    return (
-                      Number(
-                        a?.orden ??
-                          999
-                      ) -
-                      Number(
-                        b?.orden ??
-                          999
-                      )
-                    )
-                  }
-                )
-              : []
-
-          actualizarSeccionConItems(
-            soluciones,
-            solucionesItems
-          )
-
-          registrarCargaInicial(
-            'coleccion:soluciones'
-          )
-        },
-        manejarErrorFirebase
-      )
-
-    unsubscribers.push(
-      unsubscribe
-    )
-  }
-
-  function suscribirCaracteristicas() {
-    const unsubscribe =
-      subscribeToActiveCollection(
-        'caracteristicas',
-        (data) => {
-          caracteristicasItems.value =
-            Array.isArray(data)
-              ? [...data].sort(
-                  (a, b) => {
-                    return (
-                      Number(
-                        a?.orden ??
-                          999
-                      ) -
-                      Number(
-                        b?.orden ??
-                          999
-                      )
-                    )
-                  }
-                )
-              : []
-
-          actualizarSeccionConItems(
-            caracteristicas,
-            caracteristicasItems
-          )
-
-          registrarCargaInicial(
-            'coleccion:caracteristicas'
-          )
-        },
-        manejarErrorFirebase
-      )
-
-    unsubscribers.push(
-      unsubscribe
-    )
-  }
-
-  function suscribirFaq() {
-    const unsubscribe =
-      subscribeToActiveCollection(
-        'faq',
-        (data) => {
-          faqItems.value =
-            Array.isArray(data)
-              ? [...data].sort(
-                  (a, b) => {
-                    return (
-                      Number(
-                        a?.orden ??
-                          999
-                      ) -
-                      Number(
-                        b?.orden ??
-                          999
-                      )
-                    )
-                  }
-                )
-              : []
-
-          actualizarSeccionConItems(
-            faq,
-            faqItems
-          )
-
-          registrarCargaInicial(
-            'coleccion:faq'
-          )
-        },
-        manejarErrorFirebase
-      )
-
-    unsubscribers.push(
-      unsubscribe
-    )
-  }
-
-  function suscribirConfiguracion() {
+  function suscribirConfiguracion({
+    subscribeToConfiguration,
+  }) {
     const unsubscribe =
       subscribeToConfiguration(
         'general',
         (data) => {
-          configuracion.value =
-            data
+          configuracion.value = data
 
-          registrarCargaInicial(
+          registrarCarga(
             'configuracion:general'
           )
         },
-        manejarErrorFirebase
+        manejarErrorFirebase,
       )
 
-    unsubscribers.push(
-      unsubscribe
-    )
+    if (
+      typeof unsubscribe ===
+      'function'
+    ) {
+      unsubscribers.push(
+        unsubscribe
+      )
+    }
   }
 
-  onMounted(() => {
-    suscribirSecciones()
-    suscribirPlanes()
-    suscribirSoluciones()
-    suscribirCaracteristicas()
-    suscribirFaq()
-    suscribirConfiguracion()
+  onMounted(async () => {
+    try {
+      const contentService =
+        await import(
+          '../services/contentService.js'
+        )
+
+      suscribirSecciones(
+        contentService
+      )
+
+      suscribirColecciones(
+        contentService
+      )
+
+      suscribirConfiguracion(
+        contentService
+      )
+    } catch (errorFirebase) {
+      manejarErrorFirebase(
+        errorFirebase
+      )
+    }
   })
 
   onUnmounted(() => {
     unsubscribers.forEach(
       (unsubscribe) => {
-        if (
-          typeof unsubscribe ===
-          'function'
-        ) {
+        try {
           unsubscribe()
+        } catch (errorUnsubscribe) {
+          console.error(
+            'Error cerrando suscripción de Landing:',
+            errorUnsubscribe
+          )
         }
       }
     )
 
     unsubscribers.length = 0
+    cargasIniciales.clear()
   })
 
   return {

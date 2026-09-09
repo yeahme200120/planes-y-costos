@@ -1,0 +1,16 @@
+/* ADMIN CSS ENTRYPOINT
+ * Source of truth: stylerespaldo.css
+ * Extracted without redesigning selectors or values.
+ */
+
+@import "./admin-layout.css";
+@import "./admin-login.css";
+@import "./admin-forms.css";
+@import "./admin-buttons.css";
+@import "./admin-pages.css";
+@import "./admin-dashboard.css";
+@import "./admin-plan.css";
+@import "./admin-contactos.css";
+@import "./admin-secciones.css";
+@import "./admin-configuracion.css";
+@import "./admin-usuarios.css";

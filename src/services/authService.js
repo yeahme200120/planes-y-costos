@@ -4,9 +4,12 @@ import {
   signOut,
 } from 'firebase/auth'
 
-import { auth } from '../config/firebase'
+import { auth } from '../config/firebaseAuth.js'
 
-export function iniciarSesion(email, password) {
+export function iniciarSesion(
+  email,
+  password
+) {
   return signInWithEmailAndPassword(
     auth,
     email,
@@ -18,8 +21,13 @@ export function cerrarSesion() {
   return signOut(auth)
 }
 
-export function observarSesion(callback) {
-  return onAuthStateChanged(auth, callback)
+export function observarSesion(
+  callback
+) {
+  return onAuthStateChanged(
+    auth,
+    callback
+  )
 }
 
 export function usuarioActual() {

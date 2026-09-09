@@ -25,71 +25,204 @@ const props = defineProps({
   },
 })
 
+const activo = computed(() => {
+  return props.contenido?.activo !== false
+})
+
+const eyebrow = computed(() => {
+  return String(
+    props.contenido?.eyebrow || ''
+  ).trim()
+})
+
+const titulo = computed(() => {
+  return String(
+    props.contenido?.titulo || ''
+  ).trim()
+})
+
+const descripcion = computed(() => {
+  return String(
+    props.contenido?.descripcion || ''
+  ).trim()
+})
+
 const planesOrdenados = computed(() => {
   if (!Array.isArray(props.planes)) {
     return []
   }
 
   return [...props.planes]
-    .filter((plan) => plan && plan.activo !== false)
-    .sort((a, b) => {
-      return Number(a.orden ?? 999) - Number(b.orden ?? 999)
+    .filter((plan) => {
+      return (
+        plan &&
+        plan.activo !== false
+      )
     })
+    .sort((a, b) => {
+      return (
+        Number(a.orden ?? 999) -
+        Number(b.orden ?? 999)
+      )
+    })
+})
+
+const cantidadPlanes = computed(() => {
+  return planesOrdenados.value.length
+})
+
+const tieneEncabezado = computed(() => {
+  return Boolean(
+    eyebrow.value ||
+    titulo.value ||
+    descripcion.value
+  )
+})
+
+const tienePlanes = computed(() => {
+  return cantidadPlanes.value > 0
+})
+
+const mensajeVacio = computed(() => {
+  return String(
+    props.contenido?.mensajeVacio ||
+      'No hay planes disponibles actualmente.'
+  ).trim()
+})
+
+const mensajeCarga = computed(() => {
+  return String(
+    props.contenido?.mensajeCarga ||
+      'Cargando nuestros planes...'
+  ).trim()
+})
+
+const mensajeError = computed(() => {
+  return (
+    props.error ||
+    'No fue posible cargar los planes.'
+  )
 })
 </script>
 
 <template>
   <section
-    v-if="contenido && contenido.activo !== false"
+    v-if="activo"
     id="planes"
     class="section plans"
+    aria-labelledby="plans-title"
   >
     <div class="container">
 
-      <div class="section-header">
-
+      <header
+        v-if="tieneEncabezado"
+        class="section-header plans__header"
+      >
         <span
-          v-if="contenido.eyebrow"
+          v-if="eyebrow"
           class="section-eyebrow"
         >
-          {{ contenido.eyebrow }}
+          {{ eyebrow }}
         </span>
 
         <h2
-          v-if="contenido.titulo"
+          v-if="titulo"
+          id="plans-title"
           class="section-title"
         >
-          {{ contenido.titulo }}
+          {{ titulo }}
         </h2>
 
         <p
-          v-if="contenido.descripcion"
+          v-if="descripcion"
           class="section-description"
         >
-          {{ contenido.descripcion }}
+          {{ descripcion }}
         </p>
+      </header>
 
+      <div
+        v-if="
+          !cargando &&
+          !error &&
+          tienePlanes
+        "
+        class="plans__intro"
+      >
+        <div
+          class="plans__intro-line"
+          aria-hidden="true"
+        ></div>
+
+        <span>
+          {{ cantidadPlanes }}
+          {{
+            cantidadPlanes === 1
+              ? 'plan disponible'
+              : 'planes disponibles'
+          }}
+        </span>
+
+        <div
+          class="plans__intro-line"
+          aria-hidden="true"
+        ></div>
       </div>
 
       <div
         v-if="cargando"
         class="plans__status"
+        aria-live="polite"
+        aria-busy="true"
       >
-        Cargando planes...
+        <span
+          class="plans__status-spinner"
+          aria-hidden="true"
+        ></span>
+
+        <span>
+          {{ mensajeCarga }}
+        </span>
       </div>
 
       <div
         v-else-if="error"
         class="plans__status plans__status--error"
+        role="alert"
       >
-        {{ error }}
+        <span
+          class="plans__status-icon"
+          aria-hidden="true"
+        >
+          !
+        </span>
+
+        <div>
+          <strong>
+            No fue posible cargar los planes.
+          </strong>
+
+          <span>
+            {{ mensajeError }}
+          </span>
+        </div>
       </div>
 
       <div
-        v-else-if="!planesOrdenados.length"
-        class="plans__status"
+        v-else-if="!tienePlanes"
+        class="plans__status plans__status--empty"
+        aria-live="polite"
       >
-        No hay planes disponibles actualmente.
+        <span
+          class="plans__status-icon"
+          aria-hidden="true"
+        >
+          ◌
+        </span>
+
+        <span>
+          {{ mensajeVacio }}
+        </span>
       </div>
 
       <div

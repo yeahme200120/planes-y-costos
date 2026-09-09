@@ -1,0 +1,120 @@
+/* =========================================================
+   STATES
+   ========================================================= */
+
+.state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  min-height: 180px;
+  padding: 30px;
+
+  text-align: center;
+
+  color:
+    color-mix(
+      in srgb,
+      var(--color-text) 62%,
+      var(--color-background)
+    );
+}
+
+.state p {
+  margin: 12px 0 0;
+
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+/* =========================================================
+   SPINNER
+   ========================================================= */
+
+.state__spinner {
+  width: 34px;
+  height: 34px;
+
+  border: 3px solid
+    color-mix(
+      in srgb,
+      var(--color-text) 16%,
+      transparent
+    );
+
+  border-top-color: var(--color-accent);
+
+  border-radius: 50%;
+
+  animation:
+    state-spin 0.8s linear infinite;
+}
+
+@keyframes state-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* =========================================================
+   ERROR
+   ========================================================= */
+
+.state--error {
+  color: var(--color-danger);
+}
+
+.state__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 36px;
+  height: 36px;
+
+  border:
+    1px solid
+    color-mix(
+      in srgb,
+      var(--color-danger) 22%,
+      transparent
+    );
+
+  border-radius: 50%;
+
+  background:
+    color-mix(
+      in srgb,
+      var(--color-danger) 10%,
+      var(--color-background)
+    );
+
+  color: var(--color-danger);
+
+  font-size: 18px;
+  font-weight: 800;
+}
+
+/* =========================================================
+   EMPTY
+   ========================================================= */
+
+.state--empty {
+  color:
+    color-mix(
+      in srgb,
+      var(--color-text) 62%,
+      var(--color-background)
+    );
+}
+
+/* =========================================================
+   REDUCED MOTION
+   ========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  .state__spinner {
+    animation: none;
+  }
+}

@@ -1,21 +1,33 @@
 <script setup>
 import {
   computed,
+  nextTick,
   onMounted,
   onUnmounted,
   ref,
   watch,
-  nextTick,
 } from 'vue'
-import { onAuthStateChanged } from 'firebase/auth'
-import { useRouter, useRoute } from 'vue-router'
+
+import {
+  onAuthStateChanged,
+} from 'firebase/auth'
+
+import {
+  useRouter,
+  useRoute,
+} from 'vue-router'
+
 import { auth } from '../../config/firebase'
 import { cerrarSesion } from '../../services/authService'
+import { useContactosNuevos } from '../../composables/useContactosNuevos.js'
 
 const router = useRouter()
 const route = useRoute()
 
-// Estado
+// =========================================================
+// ESTADO
+// =========================================================
+
 const usuario = ref(null)
 const cerrandoSesion = ref(false)
 const menuAbierto = ref(false)
@@ -23,39 +35,96 @@ const cargandoRuta = ref(false)
 const errorSesion = ref(null)
 
 let unsubscribeAuth = null
+let timeoutErrorSesion = null
 
-// === CICLO DE VIDA ===
+// =========================================================
+// CONTACTOS NUEVOS
+// =========================================================
+
+const {
+  cantidad: contactosNuevos,
+} = useContactosNuevos()
+
+// =========================================================
+// CICLO DE VIDA
+// =========================================================
+
 onMounted(() => {
-  unsubscribeAuth = onAuthStateChanged(auth, (usuarioActual) => {
-    usuario.value = usuarioActual
-    errorSesion.value = null
-  })
+  unsubscribeAuth = onAuthStateChanged(
+    auth,
+    (usuarioActual) => {
+      usuario.value = usuarioActual
+      errorSesion.value = null
+    }
+  )
 
-  document.addEventListener('keydown', manejarTecla)
-  document.addEventListener('click', manejarClickFuera)
+  document.addEventListener(
+    'keydown',
+    manejarTecla
+  )
+
+  document.addEventListener(
+    'click',
+    manejarClickFuera
+  )
 })
 
 onUnmounted(() => {
-  if (typeof unsubscribeAuth === 'function') unsubscribeAuth()
-  document.removeEventListener('keydown', manejarTecla)
-  document.removeEventListener('click', manejarClickFuera)
+  if (
+    typeof unsubscribeAuth ===
+    'function'
+  ) {
+    unsubscribeAuth()
+  }
+
+  document.removeEventListener(
+    'keydown',
+    manejarTecla
+  )
+
+  document.removeEventListener(
+    'click',
+    manejarClickFuera
+  )
+
+  if (timeoutErrorSesion) {
+    clearTimeout(timeoutErrorSesion)
+  }
 })
 
-// === NAVEGACIÓN Y MENÚ ===
+// =========================================================
+// NAVEGACIÓN Y MENÚ
+// =========================================================
+
 function manejarTecla(event) {
-  if (event.key === 'Escape' && menuAbierto.value) {
+  if (
+    event.key === 'Escape' &&
+    menuAbierto.value
+  ) {
     cerrarMenu()
+    return
   }
-  // Atajo: Alt + M para abrir/cerrar menú
-  if (event.key === 'm' && event.altKey) {
+
+  if (
+    event.key.toLowerCase() === 'm' &&
+    event.altKey
+  ) {
     event.preventDefault()
     alternarMenu()
   }
 }
 
 function manejarClickFuera(event) {
-  const sidebar = document.querySelector('.admin-layout__sidebar')
-  const menuBtn = document.querySelector('.admin-layout__menu-button')
+  const sidebar =
+    document.querySelector(
+      '.admin-layout__sidebar'
+    )
+
+  const menuBtn =
+    document.querySelector(
+      '.admin-layout__menu-button'
+    )
+
   if (
     menuAbierto.value &&
     sidebar &&
@@ -69,88 +138,162 @@ function manejarClickFuera(event) {
 
 function cerrarMenu() {
   menuAbierto.value = false
-  // Devolver foco al botón del menú cuando se cierra
-  nextTick(() => {
-    const btn = document.querySelector('.admin-layout__menu-button')
-    if (btn) btn.focus()
-  })
 }
 
 function alternarMenu() {
-  menuAbierto.value = !menuAbierto.value
+  menuAbierto.value =
+    !menuAbierto.value
+
   if (menuAbierto.value) {
-    // Enfocar el primer enlace del sidebar al abrir
     nextTick(() => {
-      const firstLink = document.querySelector('.admin-sidebar__link')
-      if (firstLink) firstLink.focus()
+      const firstLink =
+        document.querySelector(
+          '.admin-sidebar__link'
+        )
+
+      firstLink?.focus()
     })
   }
 }
 
-function navegar(ruta) {
-  if (route.path === ruta) return
+async function navegar(ruta) {
+  if (route.path === ruta) {
+    cerrarMenu()
+    return
+  }
+
   cargandoRuta.value = true
+
   cerrarMenu()
-  router.push(ruta).finally(() => {
+
+  try {
+    await router.push(ruta)
+  } catch (error) {
+    console.error(
+      'Error de navegación:',
+      error
+    )
+  } finally {
     cargandoRuta.value = false
-  })
+  }
 }
 
 function irALanding() {
   cerrarMenu()
-  window.open('/', '_blank') // Abre en nueva pestaña para no perder sesión
+
+  window.open(
+    '/',
+    '_blank',
+    'noopener,noreferrer'
+  )
 }
 
-// === CIERRE DE SESIÓN CON CONFIRMACIÓN ===
-async function salir() {
-  if (cerrandoSesion.value) return
+// =========================================================
+// CIERRE DE SESIÓN
+// =========================================================
 
-  // Confirmación amigable
-  const confirmar = window.confirm(
-    '¿Estás seguro de que deseas cerrar sesión?\n\nLos cambios no guardados se perderán.'
-  )
-  if (!confirmar) return
+async function salir() {
+  if (cerrandoSesion.value) {
+    return
+  }
+
+  const confirmar =
+    window.confirm(
+      '¿Estás seguro de que deseas cerrar sesión?\n\nLos cambios no guardados se perderán.'
+    )
+
+  if (!confirmar) {
+    return
+  }
 
   try {
     cerrandoSesion.value = true
     errorSesion.value = null
+
     cerrarMenu()
 
     await cerrarSesion()
-    router.replace('/admin/login')
+
+    await router.replace(
+      '/admin/login'
+    )
   } catch (err) {
-    console.error('Error al cerrar sesión:', err)
-    errorSesion.value = err.message || 'Ocurrió un error al cerrar sesión.'
-    // Mostrar error en la interfaz
-    setTimeout(() => { errorSesion.value = null }, 5000)
+    console.error(
+      'Error al cerrar sesión:',
+      err
+    )
+
+    errorSesion.value =
+      err?.message ||
+      'Ocurrió un error al cerrar sesión.'
+
+    if (timeoutErrorSesion) {
+      clearTimeout(timeoutErrorSesion)
+    }
+
+    timeoutErrorSesion =
+      setTimeout(() => {
+        errorSesion.value = null
+      }, 5000)
   } finally {
     cerrandoSesion.value = false
   }
 }
 
-// === COMPUTADAS ===
+// =========================================================
+// COMPUTADAS
+// =========================================================
+
 const nombreUsuario = computed(() => {
-  if (!usuario.value) return 'Administrador'
-  return usuario.value.displayName || usuario.value.email || 'Administrador'
+  if (!usuario.value) {
+    return 'Administrador'
+  }
+
+  return (
+    usuario.value.displayName ||
+    usuario.value.email ||
+    'Administrador'
+  )
 })
 
-const emailUsuario = computed(() => usuario.value?.email || '')
+const emailUsuario = computed(() => {
+  return usuario.value?.email || ''
+})
 
 const inicialUsuario = computed(() => {
-  const nombre = usuario.value?.displayName || usuario.value?.email || 'A'
-  return nombre.trim().charAt(0).toUpperCase()
+  const nombre =
+    usuario.value?.displayName ||
+    usuario.value?.email ||
+    'A'
+
+  return nombre
+    .trim()
+    .charAt(0)
+    .toUpperCase()
 })
 
-const usuarioEstaAutenticado = computed(() => !!usuario.value)
+// =========================================================
+// WATCH - AUTENTICACIÓN
+// =========================================================
 
-// === WATCH para detectar errores de autenticación ===
 watch(
   () => auth.currentUser,
   (user) => {
-    if (!user && usuario.value) {
-      // El usuario se desautenticó inesperadamente
-      errorSesion.value = 'Tu sesión ha expirado. Por favor, inicia sesión nuevamente.'
-      setTimeout(() => { errorSesion.value = null }, 6000)
+    if (
+      !user &&
+      usuario.value
+    ) {
+      errorSesion.value =
+        'Tu sesión ha expirado. Por favor, inicia sesión nuevamente.'
+
+      if (timeoutErrorSesion) {
+        clearTimeout(timeoutErrorSesion)
+      }
+
+      timeoutErrorSesion =
+        setTimeout(() => {
+          errorSesion.value = null
+        }, 6000)
     }
   }
 )
@@ -159,55 +302,112 @@ watch(
 <template>
   <div class="admin-layout">
 
-    <!-- HEADER -->
-    <header class="admin-layout__header" role="banner">
+    <!-- ===================================================
+         HEADER
+         =================================================== -->
+
+    <header
+      class="admin-layout__header"
+      role="banner"
+    >
 
       <div class="admin-layout__header-left">
 
         <button
           type="button"
           class="admin-layout__menu-button"
-          :aria-label="menuAbierto ? 'Cerrar menú' : 'Abrir menú'"
+          :aria-label="
+            menuAbierto
+              ? 'Cerrar menú'
+              : 'Abrir menú'
+          "
           :aria-expanded="menuAbierto"
-          :aria-controls="'admin-sidebar'"
+          aria-controls="admin-sidebar"
+          :class="{
+            'is-active': menuAbierto,
+          }"
           @click="alternarMenu"
-          :class="{ 'is-active': menuAbierto }"
         >
-          <span aria-hidden="true" v-if="!menuAbierto">☰</span>
-          <span aria-hidden="true" v-else>✕</span>
+          <span
+            v-if="!menuAbierto"
+            aria-hidden="true"
+          >
+            ☰
+          </span>
+
+          <span
+            v-else
+            aria-hidden="true"
+          >
+            ✕
+          </span>
         </button>
 
         <div>
-          <p class="admin-layout__eyebrow">Administración</p>
-          <h1 class="admin-layout__title">Panel administrativo</h1>
-          <p class="admin-layout__subtitle">Gestión de contenido de la landing page.</p>
+          <p class="admin-layout__eyebrow">
+            Administración
+          </p>
+
+          <h1 class="admin-layout__title">
+            Panel administrativo
+          </h1>
+
+          <p class="admin-layout__subtitle">
+            Gestión de contenido de la landing page.
+          </p>
         </div>
 
       </div>
 
       <!-- ACCIONES DEL HEADER -->
+
       <div class="admin-layout__header-actions">
 
-        <!-- Perfil del usuario (mejorado) -->
-        <div v-if="usuario" class="admin-layout__user" :title="emailUsuario">
-          <div class="admin-layout__avatar" aria-hidden="true">
+        <!-- Perfil -->
+
+        <div
+          v-if="usuario"
+          class="admin-layout__user"
+          :title="emailUsuario"
+        >
+
+          <div
+            class="admin-layout__avatar"
+            aria-hidden="true"
+          >
             {{ inicialUsuario }}
           </div>
+
           <div class="admin-layout__user-info">
-            <span class="admin-layout__user-label">Sesión activa</span>
-            <strong class="admin-layout__user-name">{{ nombreUsuario }}</strong>
+
+            <span class="admin-layout__user-label">
+              Sesión activa
+            </span>
+
+            <strong class="admin-layout__user-name">
+              {{ nombreUsuario }}
+            </strong>
+
           </div>
+
         </div>
 
-        <!-- Botones -->
+        <!-- Landing -->
+
         <button
           type="button"
           class="admin-button admin-button--secondary"
-          @click="irALanding"
           title="Abrir la landing page en una nueva pestaña"
+          @click="irALanding"
         >
-          <span aria-hidden="true">🌐</span> Ver landing
+          <span aria-hidden="true">
+            🌐
+          </span>
+
+          Ver landing
         </button>
+
+        <!-- Logout -->
 
         <button
           type="button"
@@ -215,118 +415,368 @@ watch(
           :disabled="cerrandoSesion"
           @click="salir"
         >
-          <span v-if="cerrandoSesion" aria-hidden="true">⏳</span>
-          <span>{{ cerrandoSesion ? 'Cerrando...' : 'Cerrar sesión' }}</span>
+          <span
+            v-if="cerrandoSesion"
+            aria-hidden="true"
+          >
+            ⏳
+          </span>
+
+          <span>
+            {{
+              cerrandoSesion
+                ? 'Cerrando...'
+                : 'Cerrar sesión'
+            }}
+          </span>
         </button>
 
       </div>
-
     </header>
 
-    <!-- CUERPO -->
+    <!-- ===================================================
+         CUERPO
+         =================================================== -->
+
     <div class="admin-layout__body">
 
       <!-- SIDEBAR -->
+
       <aside
         id="admin-sidebar"
         class="admin-layout__sidebar"
-        :class="{ 'admin-layout__sidebar--open': menuAbierto }"
+        :class="{
+          'admin-layout__sidebar--open':
+            menuAbierto,
+        }"
         aria-label="Menú administrativo"
         role="navigation"
       >
 
         <!-- BRAND -->
+
         <div class="admin-sidebar__brand">
-          <div class="admin-sidebar__logo" aria-hidden="true">IA</div>
-          <div>
-            <strong>Landing Admin</strong>
-            <span>Gestión de contenido</span>
+
+          <div
+            class="admin-sidebar__logo"
+            aria-hidden="true"
+          >
+            IA
           </div>
+
+          <div>
+            <strong>
+              Landing Admin
+            </strong>
+
+            <span>
+              Gestión de contenido
+            </span>
+          </div>
+
         </div>
 
         <!-- NAVEGACIÓN -->
-        <nav class="admin-sidebar__nav" aria-label="Navegación administrativa">
 
-          <p class="admin-sidebar__label">PRINCIPAL</p>
+        <nav
+          class="admin-sidebar__nav"
+          aria-label="Navegación administrativa"
+        >
+
+          <p class="admin-sidebar__label">
+            PRINCIPAL
+          </p>
+
+          <!-- Dashboard -->
 
           <button
             type="button"
             class="admin-sidebar__link"
-            :class="{ 'admin-sidebar__link--active': route.path === '/admin' || route.path === '/admin/dashboard' }"
-            :aria-current="route.path === '/admin' || route.path === '/admin/dashboard' ? 'page' : undefined"
-            @click="navegar('/admin/dashboard')"
+            :class="{
+              'admin-sidebar__link--active':
+                route.path === '/admin' ||
+                route.path === '/admin/dashboard',
+            }"
+            :aria-current="
+              route.path === '/admin' ||
+              route.path === '/admin/dashboard'
+                ? 'page'
+                : undefined
+            "
+            @click="
+              navegar('/admin/dashboard')
+            "
           >
-            <span class="admin-sidebar__icon" aria-hidden="true">▦</span>
-            <span>Dashboard</span>
+            <span
+              class="admin-sidebar__icon"
+              aria-hidden="true"
+            >
+              ▦
+            </span>
+
+            <span>
+              Dashboard
+            </span>
           </button>
 
-          <p class="admin-sidebar__label">CONTENIDO</p>
+          <p class="admin-sidebar__label">
+            CONTENIDO
+          </p>
+
+          <!-- Planes -->
 
           <button
             type="button"
             class="admin-sidebar__link"
-            :class="{ 'admin-sidebar__link--active': route.path.startsWith('/admin/planes') }"
-            :aria-current="route.path.startsWith('/admin/planes') ? 'page' : undefined"
-            @click="navegar('/admin/planes')"
+            :class="{
+              'admin-sidebar__link--active':
+                route.path.startsWith(
+                  '/admin/planes'
+                ),
+            }"
+            :aria-current="
+              route.path.startsWith(
+                '/admin/planes'
+              )
+                ? 'page'
+                : undefined
+            "
+            @click="
+              navegar('/admin/planes')
+            "
           >
-            <span class="admin-sidebar__icon" aria-hidden="true">$</span>
-            <span>Planes</span>
+            <span
+              class="admin-sidebar__icon"
+              aria-hidden="true"
+            >
+              $
+            </span>
+
+            <span>
+              Planes
+            </span>
           </button>
 
+          <!-- Secciones -->
+
           <button
             type="button"
             class="admin-sidebar__link"
-            :class="{ 'admin-sidebar__link--active': route.path.startsWith('/admin/secciones') }"
-            :aria-current="route.path.startsWith('/admin/secciones') ? 'page' : undefined"
-            @click="navegar('/admin/secciones')"
+            :class="{
+              'admin-sidebar__link--active':
+                route.path.startsWith(
+                  '/admin/secciones'
+                ),
+            }"
+            :aria-current="
+              route.path.startsWith(
+                '/admin/secciones'
+              )
+                ? 'page'
+                : undefined
+            "
+            @click="
+              navegar('/admin/secciones')
+            "
           >
-            <span class="admin-sidebar__icon" aria-hidden="true">◫</span>
-            <span>Secciones</span>
+            <span
+              class="admin-sidebar__icon"
+              aria-hidden="true"
+            >
+              ◫
+            </span>
+
+            <span>
+              Secciones
+            </span>
           </button>
 
+          <!-- Contenido -->
+
           <button
             type="button"
             class="admin-sidebar__link"
-            :class="{ 'admin-sidebar__link--active': route.path.startsWith('/admin/contenido') }"
-            :aria-current="route.path.startsWith('/admin/contenido') ? 'page' : undefined"
-            @click="navegar('/admin/contenido')"
+            :class="{
+              'admin-sidebar__link--active':
+                route.path.startsWith(
+                  '/admin/contenido'
+                ),
+            }"
+            :aria-current="
+              route.path.startsWith(
+                '/admin/contenido'
+              )
+                ? 'page'
+                : undefined
+            "
+            @click="
+              navegar('/admin/contenido')
+            "
           >
-            <span class="admin-sidebar__icon" aria-hidden="true">◈</span>
-            <span>Contenido</span>
+            <span
+              class="admin-sidebar__icon"
+              aria-hidden="true"
+            >
+              ◈
+            </span>
+
+            <span class="admin-sidebar__link-text">
+              Contenido
+            </span>
           </button>
 
-          <p class="admin-sidebar__label">SISTEMA</p>
+          <!-- Contactos -->
+
+          <button
+            type="button"
+            class="admin-sidebar__link admin-sidebar__link--contacts"
+            :class="{
+              'admin-sidebar__link--active':
+                route.path.startsWith(
+                  '/admin/contactos'
+                ),
+            }"
+            :aria-current="
+              route.path.startsWith(
+                '/admin/contactos'
+              )
+                ? 'page'
+                : undefined
+            "
+            @click="
+              navegar('/admin/contactos')
+            "
+          >
+            <span
+              class="admin-sidebar__icon"
+              aria-hidden="true"
+            >
+              ✉
+            </span>
+
+            <span class="admin-sidebar__link-text">
+              Contactos
+            </span>
+
+            <span
+              v-if="contactosNuevos > 0"
+              class="admin-sidebar__badge"
+              :aria-label="
+                `${contactosNuevos} contactos nuevos`
+              "
+            >
+              {{
+                contactosNuevos > 99
+                  ? '99+'
+                  : contactosNuevos
+              }}
+            </span>
+          </button>
+
+          <p class="admin-sidebar__label">
+            SISTEMA
+          </p>
+          <!-- Usuarios -->
 
           <button
             type="button"
             class="admin-sidebar__link"
-            :class="{ 'admin-sidebar__link--active': route.path.startsWith('/admin/configuracion') }"
-            :aria-current="route.path.startsWith('/admin/configuracion') ? 'page' : undefined"
-            @click="navegar('/admin/configuracion')"
+            :class="{
+              'admin-sidebar__link--active':
+                route.path.startsWith(
+                  '/admin/usuarios'
+                ),
+            }"
+            :aria-current="
+              route.path.startsWith(
+                '/admin/usuarios'
+              )
+                ? 'page'
+                : undefined
+            "
+            @click="
+              navegar('/admin/usuarios')
+            "
           >
-            <span class="admin-sidebar__icon" aria-hidden="true">⚙</span>
-            <span>Configuración</span>
+            <span
+              class="admin-sidebar__icon"
+              aria-hidden="true"
+            >
+              👥
+            </span>
+
+            <span class="admin-sidebar__link-text">
+              Usuarios
+            </span>
+          </button>
+          
+          <!-- Configuración -->
+
+          <button
+            type="button"
+            class="admin-sidebar__link"
+            :class="{
+              'admin-sidebar__link--active':
+                route.path.startsWith(
+                  '/admin/configuracion'
+                ),
+            }"
+            :aria-current="
+              route.path.startsWith(
+                '/admin/configuracion'
+              )
+                ? 'page'
+                : undefined
+            "
+            @click="
+              navegar('/admin/configuracion')
+            "
+          >
+            <span
+              class="admin-sidebar__icon"
+              aria-hidden="true"
+            >
+              ⚙
+            </span>
+
+            <span>
+              Configuración
+            </span>
           </button>
 
         </nav>
 
         <!-- FOOTER SIDEBAR -->
+
         <div class="admin-sidebar__footer">
+
           <button
             type="button"
             class="admin-sidebar__logout"
             :disabled="cerrandoSesion"
             @click="salir"
           >
-            <span aria-hidden="true">↪</span>
-            <span>{{ cerrandoSesion ? 'Cerrando sesión...' : 'Cerrar sesión' }}</span>
+            <span aria-hidden="true">
+              ↪
+            </span>
+
+            <span>
+              {{
+                cerrandoSesion
+                  ? 'Cerrando sesión...'
+                  : 'Cerrar sesión'
+              }}
+            </span>
           </button>
+
         </div>
 
       </aside>
 
-      <!-- OVERLAY MÓVIL -->
+      <!-- OVERLAY -->
+
       <transition name="fade">
+
         <div
           v-if="menuAbierto"
           class="admin-layout__overlay"
@@ -336,28 +786,58 @@ watch(
           @click="cerrarMenu"
           @keydown.enter="cerrarMenu"
           @keydown.space.prevent="cerrarMenu"
-        />
+        ></div>
+
       </transition>
 
-      <!-- CONTENIDO PRINCIPAL -->
-      <main class="admin-layout__content" tabindex="-1">
+      <!-- CONTENIDO -->
 
-        <!-- Indicador de carga de ruta -->
-        <div v-if="cargandoRuta" class="admin-layout__loading" aria-live="polite">
-          <span class="admin-spinner" aria-hidden="true"></span>
+      <main
+        class="admin-layout__content"
+        tabindex="-1"
+      >
+
+        <div
+          v-if="cargandoRuta"
+          class="admin-layout__loading"
+          aria-live="polite"
+        >
+          <span
+            class="admin-spinner"
+            aria-hidden="true"
+          ></span>
+
           Cargando...
         </div>
 
-        <!-- Error de sesión -->
-        <div v-if="errorSesion" class="admin-alert admin-alert--error" role="alert">
-          <span aria-hidden="true">⚠️</span>
+        <div
+          v-if="errorSesion"
+          class="admin-alert admin-alert--error"
+          role="alert"
+        >
+          <span aria-hidden="true">
+            ⚠️
+          </span>
+
           {{ errorSesion }}
-          <button type="button" class="admin-alert__close" @click="errorSesion = null" aria-label="Cerrar mensaje">✕</button>
+
+          <button
+            type="button"
+            class="admin-alert__close"
+            aria-label="Cerrar mensaje"
+            @click="errorSesion = null"
+          >
+            ✕
+          </button>
         </div>
 
-        <!-- Vista principal con transición -->
-        <transition name="fade-slide" mode="out-in">
-          <RouterView :key="route.fullPath" />
+        <transition
+          name="fade-slide"
+          mode="out-in"
+        >
+          <RouterView
+            :key="route.fullPath"
+          />
         </transition>
 
       </main>
@@ -366,191 +846,3 @@ watch(
 
   </div>
 </template>
-
-<style scoped>
-/* =========================================================
-   MEJORAS UX: TRANSICIONES, ANIMACIONES Y ESTILOS
-   ========================================================= */
-
-/* Animación de entrada/salida para el overlay */
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.3s ease;
-}
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-}
-
-/* Transición de páginas */
-.fade-slide-enter-active,
-.fade-slide-leave-active {
-  transition: all 0.25s ease;
-}
-.fade-slide-enter-from {
-  opacity: 0;
-  transform: translateY(8px);
-}
-.fade-slide-leave-to {
-  opacity: 0;
-  transform: translateY(-8px);
-}
-
-/* Mejora visual del sidebar en móvil */
-.admin-layout__sidebar {
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  will-change: transform;
-}
-
-/* Avatar del usuario */
-.admin-layout__avatar {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: var(--color-accent, #2f80ed);
-  color: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  font-size: 14px;
-  flex-shrink: 0;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
-}
-
-.admin-layout__user {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 6px 12px 6px 6px;
-  border-radius: 30px;
-  background: var(--color-background, #f8fafc);
-  border: 1px solid var(--color-border, #e2e8f0);
-  transition: border-color 0.2s;
-}
-
-.admin-layout__user:hover {
-  border-color: var(--color-accent, #2f80ed);
-}
-
-.admin-layout__user-info {
-  display: flex;
-  flex-direction: column;
-  line-height: 1.2;
-}
-
-.admin-layout__user-label {
-  font-size: 9px;
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
-  color: var(--color-text-muted, #94a3b8);
-  font-weight: 700;
-}
-
-.admin-layout__user-name {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--color-primary, #0f172a);
-}
-
-/* Botón de menú mejorado */
-.admin-layout__menu-button {
-  display: none;
-  transition: transform 0.2s;
-}
-
-.admin-layout__menu-button.is-active {
-  transform: rotate(90deg);
-}
-
-@media (max-width: 900px) {
-  .admin-layout__menu-button {
-    display: grid;
-    place-items: center;
-  }
-}
-
-/* Indicador de carga */
-.admin-layout__loading {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 20px;
-  color: var(--color-text-muted);
-  font-size: 14px;
-  justify-content: center;
-}
-
-.admin-spinner {
-  width: 22px;
-  height: 22px;
-  border: 3px solid var(--color-border);
-  border-top-color: var(--color-accent);
-  border-radius: 50%;
-  animation: spin 0.7s linear infinite;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-/* Alerta mejorada */
-.admin-alert {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 12px 16px;
-  border-radius: var(--radius-md, 10px);
-  margin-bottom: 20px;
-  font-size: 14px;
-  font-weight: 600;
-  position: relative;
-}
-
-.admin-alert--error {
-  background: #fef2f2;
-  border: 1px solid #fecaca;
-  color: #b91c1c;
-}
-
-.admin-alert__close {
-  background: none;
-  border: none;
-  margin-left: auto;
-  padding: 4px 8px;
-  font-size: 18px;
-  cursor: pointer;
-  color: inherit;
-  opacity: 0.6;
-  transition: opacity 0.2s;
-  line-height: 1;
-}
-
-.admin-alert__close:hover {
-  opacity: 1;
-}
-
-/* Ajustes responsivos para el usuario */
-@media (max-width: 800px) {
-  .admin-layout__user {
-    padding: 6px 10px 6px 6px;
-  }
-  .admin-layout__user-info {
-    display: none; /* Solo avatar en pantallas muy pequeñas */
-  }
-  .admin-layout__user-label {
-    display: none;
-  }
-}
-
-@media (max-width: 480px) {
-  .admin-layout__user {
-    padding: 4px;
-  }
-  .admin-layout__avatar {
-    width: 30px;
-    height: 30px;
-    font-size: 12px;
-  }
-}
-</style>

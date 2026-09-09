@@ -5,11 +5,12 @@ import {
   doc,
   getDoc,
   getDocs,
+  onSnapshot,
   setDoc,
   updateDoc,
 } from 'firebase/firestore'
 
-import { db } from '../config/firebase'
+import { db } from '../config/firebaseFirestore.js'
 
 /*
 |--------------------------------------------------------------------------
@@ -17,10 +18,20 @@ import { db } from '../config/firebase'
 |--------------------------------------------------------------------------
 */
 
-export async function obtenerSeccionAdmin(sectionId) {
-  const ref = doc(db, 'secciones', sectionId)
+/**
+ * Obtiene una sección una sola vez.
+ */
+export async function obtenerSeccionAdmin(
+  sectionId
+) {
+  const ref = doc(
+    db,
+    'secciones',
+    sectionId
+  )
 
-  const snapshot = await getDoc(ref)
+  const snapshot =
+    await getDoc(ref)
 
   if (!snapshot.exists()) {
     return null
@@ -32,6 +43,54 @@ export async function obtenerSeccionAdmin(sectionId) {
   }
 }
 
+/**
+ * Suscripción en tiempo real a una sección.
+ *
+ * Escucha directamente:
+ *
+ * secciones/{sectionId}
+ *
+ * Devuelve la función unsubscribe
+ * proporcionada por Firestore.
+ */
+export function suscribirSeccionAdmin(
+  sectionId,
+  callback,
+  onError
+) {
+  const ref = doc(
+    db,
+    'secciones',
+    sectionId
+  )
+
+  return onSnapshot(
+    ref,
+    (snapshot) => {
+      if (!snapshot.exists()) {
+        callback(null)
+        return
+      }
+
+      callback({
+        id: snapshot.id,
+        ...snapshot.data(),
+      })
+    },
+    (error) => {
+      console.error(
+        `Error suscribiéndose a la sección "${sectionId}":`,
+        error
+      )
+
+      onError?.(error)
+    }
+  )
+}
+
+/**
+ * Actualiza una sección existente.
+ */
 export async function actualizarSeccion(
   sectionId,
   datos
@@ -42,13 +101,25 @@ export async function actualizarSeccion(
     sectionId
   )
 
-  await updateDoc(ref, {
-    ...datos,
-  })
+  await updateDoc(
+    ref,
+    {
+      ...datos,
+    }
+  )
 
-  return obtenerSeccionAdmin(sectionId)
+  return obtenerSeccionAdmin(
+    sectionId
+  )
 }
 
+/**
+ * Crea o actualiza una sección.
+ *
+ * Utiliza merge para no eliminar
+ * campos existentes que no formen
+ * parte de los datos enviados.
+ */
 export async function guardarSeccion(
   sectionId,
   datos
@@ -69,7 +140,9 @@ export async function guardarSeccion(
     }
   )
 
-  return obtenerSeccionAdmin(sectionId)
+  return obtenerSeccionAdmin(
+    sectionId
+  )
 }
 
 /*
@@ -78,6 +151,9 @@ export async function guardarSeccion(
 |--------------------------------------------------------------------------
 */
 
+/**
+ * Obtiene la configuración una sola vez.
+ */
 export async function obtenerConfiguracionAdmin(
   configId = 'general'
 ) {
@@ -87,7 +163,8 @@ export async function obtenerConfiguracionAdmin(
     configId
   )
 
-  const snapshot = await getDoc(ref)
+  const snapshot =
+    await getDoc(ref)
 
   if (!snapshot.exists()) {
     return null
@@ -99,6 +176,9 @@ export async function obtenerConfiguracionAdmin(
   }
 }
 
+/**
+ * Actualiza la configuración.
+ */
 export async function actualizarConfiguracion(
   configId = 'general',
   datos
@@ -119,7 +199,53 @@ export async function actualizarConfiguracion(
     }
   )
 
-  return obtenerConfiguracionAdmin(configId)
+  return obtenerConfiguracionAdmin(
+    configId
+  )
+}
+
+/**
+ * Suscripción en tiempo real a una configuración.
+ *
+ * Escucha:
+ *
+ * configuracion/{configId}
+ *
+ * Devuelve la función unsubscribe.
+ */
+export function suscribirConfiguracionAdmin(
+  configId = 'general',
+  callback,
+  onError
+) {
+  const ref = doc(
+    db,
+    'configuracion',
+    configId
+  )
+
+  return onSnapshot(
+    ref,
+    (snapshot) => {
+      if (!snapshot.exists()) {
+        callback(null)
+        return
+      }
+
+      callback({
+        id: snapshot.id,
+        ...snapshot.data(),
+      })
+    },
+    (error) => {
+      console.error(
+        `Error suscribiéndose a la configuración "${configId}":`,
+        error
+      )
+
+      onError?.(error)
+    }
+  )
 }
 
 /*
@@ -128,10 +254,19 @@ export async function actualizarConfiguracion(
 |--------------------------------------------------------------------------
 */
 
+/**
+ * Normaliza el campo características
+ * de un plan para garantizar que
+ * siempre se almacene como array.
+ */
 function normalizarCaracteristicas(
   caracteristicas
 ) {
-  if (Array.isArray(caracteristicas)) {
+  if (
+    Array.isArray(
+      caracteristicas
+    )
+  ) {
     return caracteristicas
   }
 
@@ -141,39 +276,62 @@ function normalizarCaracteristicas(
   ) {
     try {
       const parsed =
-        JSON.parse(caracteristicas)
+        JSON.parse(
+          caracteristicas
+        )
 
-      if (Array.isArray(parsed)) {
+      if (
+        Array.isArray(parsed)
+      ) {
         return parsed
       }
 
-      return [caracteristicas]
+      return [
+        caracteristicas,
+      ]
     } catch {
       return caracteristicas
         .split('\n')
-        .map((item) => item.trim())
+        .map(
+          (item) =>
+            item.trim()
+        )
         .filter(Boolean)
     }
   }
 
   if (
     caracteristicas !== null &&
-    typeof caracteristicas === 'object'
+    typeof caracteristicas ===
+      'object'
   ) {
-    return Object.values(caracteristicas)
+    return Object.values(
+      caracteristicas
+    )
   }
 
   if (
-    caracteristicas !== undefined &&
+    caracteristicas !==
+      undefined &&
     caracteristicas !== null
   ) {
-    return [String(caracteristicas)]
+    return [
+      String(
+        caracteristicas
+      ),
+    ]
   }
 
   return []
 }
 
-function prepararPlan(datos) {
+/**
+ * Prepara los datos de un plan
+ * antes de guardarlos en Firestore.
+ */
+function prepararPlan(
+  datos
+) {
   return {
     ...datos,
 
@@ -200,27 +358,101 @@ function prepararPlan(datos) {
   }
 }
 
-export async function obtenerPlanesAdmin() {
-  const ref = collection(
-    db,
-    'planes'
+/**
+ * Ordena planes por el campo orden.
+ *
+ * Se hace en JavaScript para evitar
+ * depender de índices compuestos
+ * de Firestore.
+ */
+function ordenarPlanes(
+  planes
+) {
+  return [...planes].sort(
+    (a, b) =>
+      Number(
+        a.orden ?? 999
+      ) -
+      Number(
+        b.orden ?? 999
+      )
   )
+}
+
+/**
+ * Obtiene todos los planes
+ * una sola vez.
+ */
+export async function obtenerPlanesAdmin() {
+  const ref =
+    collection(
+      db,
+      'planes'
+    )
 
   const snapshot =
     await getDocs(ref)
 
-  return snapshot.docs
-    .map((document) => ({
-      id: document.id,
-      ...document.data(),
-    }))
-    .sort(
-      (a, b) =>
-        Number(a.orden ?? 999) -
-        Number(b.orden ?? 999)
+  const planes =
+    snapshot.docs.map(
+      (document) => ({
+        id: document.id,
+        ...document.data(),
+      })
     )
+
+  return ordenarPlanes(
+    planes
+  )
 }
 
+/**
+ * Suscripción en tiempo real
+ * a todos los planes.
+ *
+ * Devuelve unsubscribe.
+ */
+export function suscribirPlanesAdmin(
+  callback,
+  onError
+) {
+  const ref =
+    collection(
+      db,
+      'planes'
+    )
+
+  return onSnapshot(
+    ref,
+    (snapshot) => {
+      const planes =
+        snapshot.docs.map(
+          (document) => ({
+            id: document.id,
+            ...document.data(),
+          })
+        )
+
+      callback(
+        ordenarPlanes(
+          planes
+        )
+      )
+    },
+    (error) => {
+      console.error(
+        'Error suscribiéndose a planes:',
+        error
+      )
+
+      onError?.(error)
+    }
+  )
+}
+
+/**
+ * Obtiene un plan.
+ */
 export async function obtenerPlanAdmin(
   planId
 ) {
@@ -233,7 +465,9 @@ export async function obtenerPlanAdmin(
   const snapshot =
     await getDoc(ref)
 
-  if (!snapshot.exists()) {
+  if (
+    !snapshot.exists()
+  ) {
     return null
   }
 
@@ -243,18 +477,24 @@ export async function obtenerPlanAdmin(
   }
 }
 
+/**
+ * Crea un nuevo plan.
+ */
 export async function crearPlan(
   datos
 ) {
-  const ref = collection(
-    db,
-    'planes'
-  )
+  const ref =
+    collection(
+      db,
+      'planes'
+    )
 
   const documento =
     await addDoc(
       ref,
-      prepararPlan(datos)
+      prepararPlan(
+        datos
+      )
     )
 
   return obtenerPlanAdmin(
@@ -262,6 +502,9 @@ export async function crearPlan(
   )
 }
 
+/**
+ * Actualiza un plan.
+ */
 export async function actualizarPlan(
   planId,
   datos
@@ -274,7 +517,9 @@ export async function actualizarPlan(
 
   await updateDoc(
     ref,
-    prepararPlan(datos)
+    prepararPlan(
+      datos
+    )
   )
 
   return obtenerPlanAdmin(
@@ -282,6 +527,9 @@ export async function actualizarPlan(
   )
 }
 
+/**
+ * Elimina un plan.
+ */
 export async function eliminarPlan(
   planId
 ) {
@@ -291,11 +539,17 @@ export async function eliminarPlan(
     planId
   )
 
-  await deleteDoc(ref)
+  await deleteDoc(
+    ref
+  )
 
   return true
 }
 
+/**
+ * Cambia el estado activo
+ * de un plan.
+ */
 export async function cambiarEstadoPlan(
   planId,
   activo
@@ -306,9 +560,14 @@ export async function cambiarEstadoPlan(
     planId
   )
 
-  await updateDoc(ref, {
-    activo: Boolean(activo),
-  })
+  await updateDoc(
+    ref,
+    {
+      activo: Boolean(
+        activo
+      ),
+    }
+  )
 
   return obtenerPlanAdmin(
     planId
@@ -321,29 +580,96 @@ export async function cambiarEstadoPlan(
 |--------------------------------------------------------------------------
 */
 
+/**
+ * Obtiene todos los elementos
+ * de una colección.
+ */
 export async function obtenerElementosAdmin(
   coleccion
+) {
+  const ref =
+    collection(
+      db,
+      coleccion
+    )
+
+  const snapshot =
+    await getDocs(ref)
+
+  return snapshot.docs
+    .map(
+      (document) => ({
+        id: document.id,
+        ...document.data(),
+      })
+    )
+    .sort(
+      (a, b) =>
+        Number(
+          a.orden ?? 999
+        ) -
+        Number(
+          b.orden ?? 999
+        )
+    )
+}
+
+/**
+ * Suscripción en tiempo real a todos los elementos
+ * de una colección.
+ *
+ * Escucha:
+ *
+ * soluciones
+ * caracteristicas
+ * faq
+ *
+ * Los elementos se ordenan localmente por "orden"
+ * para evitar depender de índices compuestos
+ * de Firestore.
+ *
+ * Devuelve la función unsubscribe.
+ */
+export function suscribirElementosAdmin(
+  coleccion,
+  callback,
+  onError
 ) {
   const ref = collection(
     db,
     coleccion
   )
 
-  const snapshot =
-    await getDocs(ref)
+  return onSnapshot(
+    ref,
+    (snapshot) => {
+      const elementos = snapshot.docs
+        .map((document) => ({
+          id: document.id,
+          ...document.data(),
+        }))
+        .sort(
+          (a, b) =>
+            Number(a.orden ?? 999) -
+            Number(b.orden ?? 999)
+        )
 
-  return snapshot.docs
-    .map((document) => ({
-      id: document.id,
-      ...document.data(),
-    }))
-    .sort(
-      (a, b) =>
-        Number(a.orden ?? 999) -
-        Number(b.orden ?? 999)
-    )
+      callback(elementos)
+    },
+    (error) => {
+      console.error(
+        `Error suscribiéndose a la colección "${coleccion}":`,
+        error
+      )
+
+      onError?.(error)
+    }
+  )
 }
 
+/**
+ * Obtiene un elemento específico.
+ */
 export async function obtenerElementoAdmin(
   coleccion,
   elementoId
@@ -357,7 +683,9 @@ export async function obtenerElementoAdmin(
   const snapshot =
     await getDoc(ref)
 
-  if (!snapshot.exists()) {
+  if (
+    !snapshot.exists()
+  ) {
     return null
   }
 
@@ -367,43 +695,59 @@ export async function obtenerElementoAdmin(
   }
 }
 
-function prepararElemento(datos) {
+/**
+ * Normaliza datos genéricos
+ * antes de guardarlos.
+ */
+function prepararElemento(
+  datos
+) {
   const resultado = {
     ...datos,
   }
 
   if (
-    resultado.orden !== undefined
+    resultado.orden !==
+    undefined
   ) {
-    resultado.orden = Number(
-      resultado.orden
-    )
+    resultado.orden =
+      Number(
+        resultado.orden
+      )
   }
 
   if (
-    resultado.activo !== undefined
+    resultado.activo !==
+    undefined
   ) {
-    resultado.activo = Boolean(
-      resultado.activo
-    )
+    resultado.activo =
+      Boolean(
+        resultado.activo
+      )
   }
 
   return resultado
 }
 
+/**
+ * Crea un elemento.
+ */
 export async function crearElementoAdmin(
   coleccion,
   datos
 ) {
-  const ref = collection(
-    db,
-    coleccion
-  )
+  const ref =
+    collection(
+      db,
+      coleccion
+    )
 
   const documento =
     await addDoc(
       ref,
-      prepararElemento(datos)
+      prepararElemento(
+        datos
+      )
     )
 
   return obtenerElementoAdmin(
@@ -412,6 +756,9 @@ export async function crearElementoAdmin(
   )
 }
 
+/**
+ * Actualiza un elemento.
+ */
 export async function actualizarElementoAdmin(
   coleccion,
   elementoId,
@@ -425,7 +772,9 @@ export async function actualizarElementoAdmin(
 
   await updateDoc(
     ref,
-    prepararElemento(datos)
+    prepararElemento(
+      datos
+    )
   )
 
   return obtenerElementoAdmin(
@@ -434,6 +783,9 @@ export async function actualizarElementoAdmin(
   )
 }
 
+/**
+ * Elimina un elemento.
+ */
 export async function eliminarElementoAdmin(
   coleccion,
   elementoId
@@ -444,11 +796,17 @@ export async function eliminarElementoAdmin(
     elementoId
   )
 
-  await deleteDoc(ref)
+  await deleteDoc(
+    ref
+  )
 
   return true
 }
 
+/**
+ * Cambia el estado activo
+ * de un elemento.
+ */
 export async function cambiarEstadoElementoAdmin(
   coleccion,
   elementoId,
@@ -460,12 +818,262 @@ export async function cambiarEstadoElementoAdmin(
     elementoId
   )
 
-  await updateDoc(ref, {
-    activo: Boolean(activo),
-  })
+  await updateDoc(
+    ref,
+    {
+      activo: Boolean(
+        activo
+      ),
+    }
+  )
 
   return obtenerElementoAdmin(
     coleccion,
     elementoId
+  )
+}
+
+/*
+|--------------------------------------------------------------------------
+| USUARIOS
+|--------------------------------------------------------------------------
+|
+| Colección:
+|
+| usuarios/{documentId}
+|
+| Campos:
+|
+| activo
+| email
+| isUser
+| nombre
+| rol
+|
+| El documentId es generado por Firebase.
+|
+| isUser contiene el UID relacionado
+| con Firebase Authentication.
+|
+|--------------------------------------------------------------------------
+*/
+
+/**
+ * Obtiene todos los usuarios una sola vez.
+ */
+export async function obtenerUsuariosAdmin() {
+  const ref =
+    collection(
+      db,
+      'usuarios'
+    )
+
+  const snapshot =
+    await getDocs(ref)
+
+  return snapshot.docs.map(
+    (documento) => ({
+      id: documento.id,
+      ...documento.data(),
+    })
+  )
+}
+
+/**
+ * Suscripción en tiempo real
+ * a la colección usuarios.
+ */
+export function suscribirUsuariosAdmin(
+  callback,
+  onError
+) {
+  const ref =
+    collection(
+      db,
+      'usuarios'
+    )
+
+  return onSnapshot(
+    ref,
+    (snapshot) => {
+      const usuarios =
+        snapshot.docs.map(
+          (documento) => ({
+            id: documento.id,
+            ...documento.data(),
+          })
+        )
+
+      callback(usuarios)
+    },
+    (error) => {
+      console.error(
+        'Error suscribiéndose a usuarios:',
+        error
+      )
+
+      onError?.(error)
+    }
+  )
+}
+
+/**
+ * Obtiene un usuario por el ID
+ * del documento de Firestore.
+ */
+export async function obtenerUsuarioAdmin(
+  usuarioId
+) {
+  const ref = doc(
+    db,
+    'usuarios',
+    usuarioId
+  )
+
+  const snapshot =
+    await getDoc(ref)
+
+  if (
+    !snapshot.exists()
+  ) {
+    return null
+  }
+
+  return {
+    id: snapshot.id,
+    ...snapshot.data(),
+  }
+}
+
+/**
+ * Crea un nuevo usuario.
+ *
+ * Firestore genera automáticamente
+ * el ID del documento.
+ */
+export async function crearUsuarioAdmin(
+  datos
+) {
+  const ref =
+    collection(
+      db,
+      'usuarios'
+    )
+
+  const documento =
+    await addDoc(
+      ref,
+      {
+        activo:
+          datos.activo !== false,
+
+        email:
+          datos.email || '',
+
+        isUser:
+          datos.isUser || '',
+
+        nombre:
+          datos.nombre || '',
+
+        rol:
+          datos.rol || '',
+
+        creadoEn:
+          new Date(),
+
+        actualizadoEn:
+          new Date(),
+      }
+    )
+
+  return obtenerUsuarioAdmin(
+    documento.id
+  )
+}
+
+/**
+ * Actualiza un usuario.
+ *
+ * No modifica isUser ni email
+ * a menos que se envíen explícitamente.
+ */
+export async function actualizarUsuarioAdmin(
+  usuarioId,
+  datos
+) {
+  const ref = doc(
+    db,
+    'usuarios',
+    usuarioId
+  )
+
+  await updateDoc(
+    ref,
+    {
+      ...datos,
+
+      actualizadoEn:
+        new Date(),
+    }
+  )
+
+  return obtenerUsuarioAdmin(
+    usuarioId
+  )
+}
+
+/**
+ * Elimina el documento del usuario
+ * de la colección usuarios.
+ *
+ * IMPORTANTE:
+ *
+ * Esto NO elimina la cuenta de
+ * Firebase Authentication.
+ */
+export async function eliminarUsuarioAdmin(
+  usuarioId
+) {
+  const ref = doc(
+    db,
+    'usuarios',
+    usuarioId
+  )
+
+  await deleteDoc(
+    ref
+  )
+
+  return true
+}
+
+/**
+ * Cambia el estado activo
+ * de un usuario.
+ */
+export async function cambiarEstadoUsuarioAdmin(
+  usuarioId,
+  activo
+) {
+  const ref = doc(
+    db,
+    'usuarios',
+    usuarioId
+  )
+
+  await updateDoc(
+    ref,
+    {
+      activo:
+        Boolean(activo),
+
+      actualizadoEn:
+        new Date(),
+    }
+  )
+
+  return obtenerUsuarioAdmin(
+    usuarioId
   )
 }

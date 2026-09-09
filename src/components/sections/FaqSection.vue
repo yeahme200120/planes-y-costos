@@ -1,68 +1,145 @@
 <script setup>
+import { computed } from 'vue'
+
 import FaqItem from './FaqItem.vue'
 
-defineProps({
+const props = defineProps({
   contenido: {
     type: Object,
     default: () => ({}),
   },
 })
 
-const ordenarItems = (items = []) => {
-  if (!Array.isArray(items)) {
+const activo = computed(() => {
+  return props.contenido?.activo !== false
+})
+
+const eyebrow = computed(() => {
+  return String(
+    props.contenido?.eyebrow || ''
+  ).trim()
+})
+
+const titulo = computed(() => {
+  return String(
+    props.contenido?.titulo || ''
+  ).trim()
+})
+
+const descripcion = computed(() => {
+  return String(
+    props.contenido?.descripcion || ''
+  ).trim()
+})
+
+const items = computed(() => {
+  const elementos =
+    props.contenido?.items
+
+  if (!Array.isArray(elementos)) {
     return []
   }
 
-  return [...items]
-    .filter((item) => item && item.activo !== false)
-    .sort((a, b) => {
-      return Number(a.orden ?? 999) - Number(b.orden ?? 999)
+  return [...elementos]
+    .filter((item) => {
+      return (
+        item &&
+        item.activo !== false &&
+        String(
+          item.pregunta || ''
+        ).trim()
+      )
     })
-}
+    .sort((a, b) => {
+      return (
+        Number(a.orden ?? 999) -
+        Number(b.orden ?? 999)
+      )
+    })
+})
+
+const tieneEncabezado = computed(() => {
+  return Boolean(
+    eyebrow.value ||
+    titulo.value ||
+    descripcion.value
+  )
+})
+
+const mensajeVacio = computed(() => {
+  return String(
+    props.contenido?.mensajeVacio ||
+      'Actualmente no hay preguntas frecuentes disponibles.'
+  ).trim()
+})
 </script>
 
 <template>
   <section
-    v-if="contenido && contenido.activo !== false"
+    v-if="activo"
     id="faq"
     class="section faq"
+    aria-labelledby="faq-title"
   >
     <div class="container">
 
-      <div class="section-header">
-
+      <header
+        v-if="tieneEncabezado"
+        class="section-header faq__header"
+      >
         <span
-          v-if="contenido.eyebrow"
+          v-if="eyebrow"
           class="section-eyebrow"
         >
-          {{ contenido.eyebrow }}
+          {{ eyebrow }}
         </span>
 
         <h2
-          v-if="contenido.titulo"
+          v-if="titulo"
+          id="faq-title"
           class="section-title"
         >
-          {{ contenido.titulo }}
+          {{ titulo }}
         </h2>
 
         <p
-          v-if="contenido.descripcion"
+          v-if="descripcion"
           class="section-description"
         >
-          {{ contenido.descripcion }}
+          {{ descripcion }}
         </p>
-
-      </div>
+      </header>
 
       <div
-        v-if="ordenarItems(contenido.items).length"
+        v-if="items.length"
         class="faq__list"
       >
         <FaqItem
-          v-for="item in ordenarItems(contenido.items)"
-          :key="item.id || `${item.orden}-${item.pregunta}`"
+          v-for="(item, index) in items"
+          :key="
+            item.id ||
+            `faq-${item.orden ?? index}-${item.pregunta}`
+          "
           :item="item"
+          :indice="index"
         />
+      </div>
+
+      <div
+        v-else
+        class="faq__empty"
+        aria-live="polite"
+      >
+        <span
+          class="faq__empty-icon"
+          aria-hidden="true"
+        >
+          ?
+        </span>
+
+        <p>
+          {{ mensajeVacio }}
+        </p>
       </div>
 
     </div>

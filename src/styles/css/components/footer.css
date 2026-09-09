@@ -1,0 +1,494 @@
+/* =========================================================
+   FOOTER
+   ========================================================= */
+
+.app-footer {
+  width: 100%;
+
+  padding: 68px 0 28px;
+
+  background: var(--color-primary);
+  color: var(--color-text);
+}
+
+/* =========================================================
+   MAIN CONTAINER
+   ========================================================= */
+
+.app-footer__container {
+  display: grid;
+
+  grid-template-columns:
+    minmax(260px, 1.45fr)
+    repeat(2, minmax(160px, 1fr));
+
+  gap: 56px;
+
+  width: min(1180px, calc(100% - 40px));
+
+  margin: 0 auto;
+}
+
+/* =========================================================
+   BRAND
+   ========================================================= */
+
+.app-footer__brand {
+  max-width: 400px;
+}
+
+.app-footer__logo {
+  display: inline-flex;
+
+  align-items: center;
+  justify-content: center;
+
+  width: 48px;
+  height: 48px;
+
+  margin-bottom: 18px;
+
+  overflow: hidden;
+
+  border: 1px solid
+    color-mix(
+      in srgb,
+      var(--color-accent) 45%,
+      transparent
+    );
+
+  border-radius: var(--radius-md);
+
+  background: var(--color-accent);
+  color: var(--color-white);
+
+  font-size: 18px;
+  font-weight: 900;
+  line-height: 1;
+
+  box-shadow: var(--shadow-sm);
+}
+
+.app-footer__logo img {
+  display: block;
+
+  width: 100%;
+  height: 100%;
+
+  object-fit: contain;
+}
+
+.app-footer__company {
+  margin: 0 0 10px;
+
+  color: var(--color-text);
+
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1.3;
+
+  letter-spacing: -0.2px;
+}
+
+.app-footer__description {
+  max-width: 380px;
+
+  margin: 0;
+
+  color: var(--color-text);
+
+  opacity: 0.72;
+
+  font-size: 15px;
+  line-height: 1.75;
+}
+
+/* =========================================================
+   COLUMNS
+   ========================================================= */
+
+.app-footer__column {
+  min-width: 0;
+}
+
+.app-footer__column-title {
+  position: relative;
+
+  margin: 0 0 20px;
+
+  padding-bottom: 11px;
+
+  color: var(--color-text);
+
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.4;
+
+  letter-spacing: 0.8px;
+
+  text-transform: uppercase;
+}
+
+.app-footer__column-title::after {
+  content: "";
+
+  position: absolute;
+
+  left: 0;
+  bottom: 0;
+
+  width: 28px;
+  height: 2px;
+
+  border-radius: 999px;
+
+  background: var(--color-accent);
+}
+
+/* =========================================================
+   NAVIGATION
+   ========================================================= */
+
+.app-footer__links {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 11px;
+
+  margin: 0;
+  padding: 0;
+
+  list-style: none;
+}
+
+.app-footer__links a {
+  display: inline-flex;
+
+  align-items: center;
+
+  width: fit-content;
+
+  color: var(--color-text);
+
+  opacity: 0.72;
+
+  font-size: 14px;
+  line-height: 1.5;
+
+  transition:
+    color var(--transition-fast),
+    opacity var(--transition-fast),
+    transform var(--transition-fast);
+}
+
+.app-footer__links a::before {
+  content: "→";
+
+  margin-right: 7px;
+
+  color: var(--color-accent);
+
+  opacity: 0;
+
+  transform: translateX(-4px);
+
+  transition:
+    opacity var(--transition-fast),
+    transform var(--transition-fast);
+}
+
+.app-footer__links a:hover {
+  color: var(--color-text);
+
+  opacity: 1;
+
+  transform: translateX(2px);
+}
+
+.app-footer__links a:hover::before {
+  opacity: 1;
+
+  transform: translateX(0);
+}
+
+/* =========================================================
+   CONTACT
+   ========================================================= */
+
+.app-footer__contact {
+  display: flex;
+
+  flex-direction: column;
+  align-items: flex-start;
+
+  gap: 11px;
+}
+
+.app-footer__contact-item {
+  color: var(--color-text);
+
+  opacity: 0.72;
+
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.app-footer__contact-item a {
+  color: inherit;
+
+  transition:
+    color var(--transition-fast),
+    opacity var(--transition-fast);
+}
+
+.app-footer__contact-item a:hover {
+  color: var(--color-text);
+
+  opacity: 1;
+}
+
+/* =========================================================
+   WHATSAPP / CONTACT CTA
+   ========================================================= */
+
+.app-footer__whatsapp {
+  display: inline-flex;
+
+  align-items: center;
+  justify-content: center;
+
+  min-height: 40px;
+
+  width: fit-content;
+
+  margin-top: 4px;
+
+  padding: 9px 16px;
+
+  border: 1px solid
+    color-mix(
+      in srgb,
+      var(--color-accent) 45%,
+      transparent
+    );
+
+  border-radius: var(--radius-md);
+
+  background:
+    color-mix(
+      in srgb,
+      var(--color-accent) 14%,
+      transparent
+    );
+
+  color: var(--color-text);
+
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1;
+
+  transition:
+    background var(--transition-fast),
+    border-color var(--transition-fast),
+    color var(--transition-fast),
+    transform var(--transition-fast);
+}
+
+.app-footer__whatsapp::before {
+  content: "↗";
+
+  margin-right: 7px;
+
+  color: var(--color-accent);
+
+  font-size: 14px;
+}
+
+.app-footer__whatsapp:hover {
+  border-color: var(--color-accent);
+
+  background: var(--color-accent);
+
+  color: var(--color-white);
+
+  transform: translateY(-2px);
+}
+
+.app-footer__whatsapp:hover::before {
+  color: var(--color-white);
+}
+
+/* =========================================================
+   DIVIDER
+   ========================================================= */
+
+.app-footer__divider {
+  width: min(1180px, calc(100% - 40px));
+
+  height: 1px;
+
+  margin: 50px auto 24px;
+
+  background:
+    color-mix(
+      in srgb,
+      var(--color-text) 16%,
+      transparent
+    );
+}
+
+/* =========================================================
+   BOTTOM
+   ========================================================= */
+
+.app-footer__bottom {
+  display: flex;
+
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 20px;
+
+  width: min(1180px, calc(100% - 40px));
+
+  margin: 0 auto;
+}
+
+.app-footer__copyright {
+  margin: 0;
+
+  color: var(--color-text);
+
+  opacity: 0.55;
+
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.app-footer__legal {
+  display: flex;
+
+  align-items: center;
+
+  gap: 20px;
+}
+
+.app-footer__legal a {
+  display: inline-flex;
+
+  align-items: center;
+
+  color: var(--color-text);
+
+  opacity: 0.55;
+
+  font-size: 13px;
+  line-height: 1.5;
+
+  transition:
+    color var(--transition-fast),
+    opacity var(--transition-fast);
+}
+
+.app-footer__legal a:hover {
+  color: var(--color-text);
+
+  opacity: 1;
+}
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 900px) {
+  .app-footer {
+    padding-top: 56px;
+  }
+
+  .app-footer__container {
+    grid-template-columns:
+      minmax(0, 1.2fr)
+      repeat(2, minmax(140px, 1fr));
+
+    gap: 36px;
+  }
+}
+
+@media (max-width: 700px) {
+  .app-footer__container {
+    grid-template-columns: 1fr 1fr;
+
+    gap: 36px 28px;
+  }
+
+  .app-footer__brand {
+    grid-column: 1 / -1;
+
+    max-width: 600px;
+  }
+
+  .app-footer__description {
+    max-width: 520px;
+  }
+
+  .app-footer__divider {
+    margin-top: 42px;
+  }
+}
+
+@media (max-width: 520px) {
+  .app-footer {
+    padding: 48px 0 24px;
+  }
+
+  .app-footer__container {
+    grid-template-columns: 1fr;
+
+    gap: 32px;
+
+    width: min(100% - 32px, 1180px);
+  }
+
+  .app-footer__brand {
+    grid-column: auto;
+  }
+
+  .app-footer__column-title {
+    margin-bottom: 16px;
+  }
+
+  .app-footer__divider {
+    width: min(100% - 32px, 1180px);
+
+    margin-top: 38px;
+  }
+
+  .app-footer__bottom {
+    width: min(100% - 32px, 1180px);
+
+    flex-direction: column;
+
+    align-items: flex-start;
+
+    gap: 14px;
+  }
+
+  .app-footer__legal {
+    width: 100%;
+  }
+}
+
+/* =========================================================
+   REDUCED MOTION
+   ========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  .app-footer__links a,
+  .app-footer__links a::before,
+  .app-footer__contact-item a,
+  .app-footer__whatsapp,
+  .app-footer__legal a {
+    transition: none;
+  }
+}

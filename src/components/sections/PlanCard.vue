@@ -4,121 +4,306 @@ import { computed } from 'vue'
 const props = defineProps({
   plan: {
     type: Object,
-    required: true,
+    default: () => ({}),
   },
 })
 
-const caracteristicas = computed(() => {
-  const valor = props.plan?.caracteristicas
+const nombre = computed(() => {
+  return String(
+    props.plan?.nombre || 'Plan'
+  ).trim()
+})
 
-  // Ya es un arreglo
-  if (Array.isArray(valor)) {
-    return valor.filter(Boolean)
+const descripcion = computed(() => {
+  return String(
+    props.plan?.descripcion || ''
+  ).trim()
+})
+
+const destacado = computed(() => {
+  return props.plan?.destacado === true
+})
+
+const periodo = computed(() => {
+  return String(
+    props.plan?.periodo || ''
+  ).trim()
+})
+
+const precio = computed(() => {
+  const valor = Number(
+    props.plan?.precio ?? 0
+  )
+
+  if (!Number.isFinite(valor)) {
+    return '0'
   }
 
-  // No existe
-  if (valor === null || valor === undefined || valor === '') {
+  return valor.toLocaleString(
+    'es-MX',
+    {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2,
+    }
+  )
+})
+
+const caracteristicas = computed(() => {
+  const valor =
+    props.plan?.caracteristicas
+
+  if (
+    valor === null ||
+    valor === undefined ||
+    valor === ''
+  ) {
     return []
   }
 
-  // Si Firebase guarda JSON como string
+  if (Array.isArray(valor)) {
+    return valor
+      .map((item) => {
+        if (
+          item &&
+          typeof item === 'object'
+        ) {
+          return (
+            item.texto ||
+            item.nombre ||
+            item.descripcion ||
+            ''
+          )
+        }
+
+        return String(item || '')
+      })
+      .map((item) => String(item).trim())
+      .filter(Boolean)
+  }
+
   if (typeof valor === 'string') {
     try {
       const parsed = JSON.parse(valor)
 
       if (Array.isArray(parsed)) {
-        return parsed.filter(Boolean)
+        return parsed
+          .map((item) => {
+            if (
+              item &&
+              typeof item === 'object'
+            ) {
+              return (
+                item.texto ||
+                item.nombre ||
+                item.descripcion ||
+                ''
+              )
+            }
+
+            return String(item || '')
+          })
+          .map((item) => String(item).trim())
+          .filter(Boolean)
       }
 
-      // Si es un objeto
-      if (parsed && typeof parsed === 'object') {
-        return Object.values(parsed).filter(Boolean)
+      if (
+        parsed &&
+        typeof parsed === 'object'
+      ) {
+        return Object.values(parsed)
+          .map((item) => {
+            if (
+              item &&
+              typeof item === 'object'
+            ) {
+              return (
+                item.texto ||
+                item.nombre ||
+                item.descripcion ||
+                ''
+              )
+            }
+
+            return String(item || '')
+          })
+          .map((item) => String(item).trim())
+          .filter(Boolean)
       }
     } catch {
-      // Si no es JSON, lo tratamos como una característica individual
-      return [valor]
+      return [valor.trim()].filter(Boolean)
     }
+
+    return [valor.trim()].filter(Boolean)
   }
 
-  // Si llega como objeto
-  if (typeof valor === 'object') {
-    return Object.values(valor).filter(Boolean)
+  if (
+    typeof valor === 'object'
+  ) {
+    return Object.values(valor)
+      .map((item) => {
+        if (
+          item &&
+          typeof item === 'object'
+        ) {
+          return (
+            item.texto ||
+            item.nombre ||
+            item.descripcion ||
+            ''
+          )
+        }
+
+        return String(item || '')
+      })
+      .map((item) => String(item).trim())
+      .filter(Boolean)
   }
 
-  return [String(valor)]
+  return [String(valor).trim()].filter(Boolean)
 })
 
-const precio = computed(() => {
-  const valor = Number(props.plan?.precio ?? 0)
+const tieneCaracteristicas =
+  computed(() => {
+    return caracteristicas.value.length > 0
+  })
 
-  return Number.isFinite(valor)
-    ? valor.toLocaleString('es-MX')
-    : '0'
+const textoBoton = computed(() => {
+  return String(
+    props.plan?.botonTexto ||
+      props.plan?.ctaTexto ||
+      `Elegir ${nombre.value}`
+  ).trim()
+})
+
+const enlace = computed(() => {
+  return String(
+    props.plan?.url ||
+      props.plan?.enlace ||
+      ''
+  ).trim()
+})
+
+const esEnlaceExterno = computed(() => {
+  return (
+    /^https?:\/\//i.test(
+      enlace.value
+    ) ||
+    /^www\./i.test(
+      enlace.value
+    )
+  )
+})
+
+const usarEnlace = computed(() => {
+  return Boolean(enlace.value)
 })
 </script>
 
 <template>
   <article
     class="plan-card"
-    :class="{ 'plan-card--featured': plan.destacado }"
+    :class="{
+      'plan-card--featured': destacado,
+    }"
   >
     <div
-      v-if="plan.destacado"
+      v-if="destacado"
       class="plan-card__badge"
+      aria-label="Plan recomendado"
     >
-      <span>★</span>
-      <span>Más popular</span>
+      <span
+        class="plan-card__badge-icon"
+        aria-hidden="true"
+      >
+        ★
+      </span>
+
+      <span>
+        Más popular
+      </span>
     </div>
 
     <div class="plan-card__content">
 
-      <div class="plan-card__header">
-        <h3 class="plan-card__name">
-          {{ plan.nombre }}
-        </h3>
+      <header class="plan-card__header">
+        <div class="plan-card__title-row">
+          <h3 class="plan-card__name">
+            {{ nombre }}
+          </h3>
+
+          <span
+            v-if="destacado"
+            class="plan-card__recommended"
+          >
+            Recomendado
+          </span>
+        </div>
 
         <p
-          v-if="plan.descripcion"
+          v-if="descripcion"
           class="plan-card__description"
         >
-          {{ plan.descripcion }}
+          {{ descripcion }}
         </p>
-      </div>
+      </header>
 
       <div class="plan-card__price">
-        <span class="plan-card__currency">
+        <span
+          class="plan-card__currency"
+          aria-hidden="true"
+        >
           $
         </span>
 
-        <span class="plan-card__amount">
+        <span
+          class="plan-card__amount"
+          :aria-label="`Precio ${precio} pesos`"
+        >
           {{ precio }}
         </span>
 
         <span
-          v-if="plan.periodo"
+          v-if="periodo"
           class="plan-card__period"
         >
-          / {{ plan.periodo }}
+          / {{ periodo }}
         </span>
       </div>
 
-      <div class="plan-card__divider"></div>
+      <div
+        class="plan-card__divider"
+        aria-hidden="true"
+      ></div>
 
       <div class="plan-card__features">
         <p class="plan-card__features-title">
-          Incluye:
+          Todo lo que incluye:
         </p>
 
-        <ul v-if="caracteristicas.length">
+        <ul
+          v-if="tieneCaracteristicas"
+          class="plan-card__features-list"
+        >
           <li
-            v-for="(caracteristica, index) in caracteristicas"
-            :key="`${plan.id}-feature-${index}`"
+            v-for="(
+              caracteristica,
+              index
+            ) in caracteristicas"
+            :key="
+              `${plan.id || nombre}-feature-${index}`
+            "
+            class="plan-card__feature"
           >
-            <span class="plan-card__check">
+            <span
+              class="plan-card__check"
+              aria-hidden="true"
+            >
               ✓
             </span>
 
-            <span class="plan-card__feature-text">
+            <span
+              class="plan-card__feature-text"
+            >
               {{ caracteristica }}
             </span>
           </li>
@@ -128,19 +313,62 @@ const precio = computed(() => {
           v-else
           class="plan-card__no-features"
         >
-          Consulta las características del plan.
+          Consulta las características
+          disponibles para este plan.
         </p>
       </div>
 
-      <button
-        type="button"
+      <a
+        v-if="usarEnlace"
+        :href="enlace"
         class="plan-card__button"
         :class="{
-          'plan-card__button--featured': plan.destacado
+          'plan-card__button--featured':
+            destacado,
+        }"
+        :target="
+          esEnlaceExterno
+            ? '_blank'
+            : undefined
+        "
+        :rel="
+          esEnlaceExterno
+            ? 'noopener noreferrer'
+            : undefined
+        "
+      >
+        <span>
+          {{ textoBoton }}
+        </span>
+
+        <span
+          class="plan-card__button-icon"
+          aria-hidden="true"
+        >
+          →
+        </span>
+      </a>
+
+      <a
+        v-else
+        href="#contacto"
+        class="plan-card__button"
+        :class="{
+          'plan-card__button--featured':
+            destacado,
         }"
       >
-        Elegir {{ plan.nombre }}
-      </button>
+        <span>
+          {{ textoBoton }}
+        </span>
+
+        <span
+          class="plan-card__button-icon"
+          aria-hidden="true"
+        >
+          →
+        </span>
+      </a>
 
     </div>
   </article>

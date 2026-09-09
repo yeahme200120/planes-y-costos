@@ -1,6 +1,6 @@
 import { collection, getDocs, orderBy, query, where } from 'firebase/firestore'
 
-import { db } from '../config/firebase'
+import { db } from '../config/firebaseFirestore.js'
 
 export async function obtenerPlanes() {
   const planesRef = collection(db, 'planes')

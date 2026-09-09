@@ -8,7 +8,7 @@ import {
   where,
 } from 'firebase/firestore'
 
-import { db } from '../config/firebase'
+import { db } from '../config/firebaseFirestore.js'
 
 /**
  * Obtiene una sección una sola vez.

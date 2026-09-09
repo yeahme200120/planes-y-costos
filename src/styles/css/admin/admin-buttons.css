@@ -1,0 +1,110 @@
+/* ADMIN BUTTONS */
+@keyframes button-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.admin-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  min-height: 42px;
+
+  padding: 0 16px;
+
+  border: 1px solid transparent;
+
+  border-radius: var(--radius-md);
+
+  font-size: 12px;
+  font-weight: 750;
+
+  transition:
+    transform var(--transition-fast),
+    background var(--transition-fast),
+    border-color var(--transition-fast),
+    color var(--transition-fast),
+    box-shadow var(--transition-fast);
+}
+
+.admin-button:hover {
+  transform: translateY(-1px);
+}
+
+.admin-button:disabled {
+  opacity: 0.55;
+
+  transform: none;
+
+  pointer-events: none;
+}
+
+.admin-button--primary {
+  background: var(--color-accent);
+
+  color: var(--color-white);
+
+  box-shadow: var(--shadow-sm);
+}
+
+.admin-button--primary:hover {
+  background: var(--color-accent-dark);
+
+  box-shadow: var(--shadow-md);
+}
+
+.admin-button--secondary {
+  background: var(--color-white);
+
+  border-color: var(--color-border);
+
+  color: var(--color-primary);
+}
+
+.admin-button--secondary:hover {
+  background: var(--color-background);
+
+  border-color: var(--color-accent);
+}
+
+.admin-button--danger {
+  background: var(--color-danger);
+
+  color: var(--color-white);
+}
+
+.admin-button--danger:hover {
+  background: #b91c1c;
+}
+
+.admin-button--success {
+  background: var(--color-success);
+
+  color: var(--color-white);
+}
+
+.admin-button--warning {
+  background: var(--color-warning);
+
+  color: var(--color-white);
+}
+
+.admin-button--small {
+  min-height: 34px;
+
+  padding: 0 11px;
+
+  font-size: 11px;
+}
+
+.admin-button--full {
+  width: 100%;
+}
+
+@keyframes button-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

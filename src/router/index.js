@@ -3,41 +3,30 @@ import {
   createWebHistory,
 } from 'vue-router'
 
-import {
-  onAuthStateChanged,
-} from 'firebase/auth'
-
-import { auth } from '../config/firebase'
-
-import LandingView from '../views/LandingView.vue'
-
-import AdminLogin from '../views/admin/AdminLogin.vue'
-import AdminLayout from '../views/admin/AdminLayout.vue'
-import AdminDashboardView from '../views/admin/AdminDashboardView.vue'
-import AdminPlanesView from '../views/admin/AdminPlanesView.vue'
-import AdminSeccionesView from '../views/admin/AdminSeccionesView.vue'
-import AdminContenidoView from '../views/admin/AdminContenidoView.vue'
-import AdminConfiguracionView from '../views/admin/AdminConfiguracionView.vue'
-
 const routes = [
   {
     path: '/',
     name: 'landing',
-    component: LandingView,
+    component: () =>
+      import('../views/LandingView.vue'),
   },
 
   {
     path: '/admin/login',
     name: 'admin-login',
-    component: AdminLogin,
+    component: () =>
+      import('../views/admin/AdminLogin.vue'),
   },
 
   {
     path: '/admin',
-    component: AdminLayout,
+    component: () =>
+      import('../views/admin/AdminLayout.vue'),
+
     meta: {
       requiresAuth: true,
     },
+
     children: [
       {
         path: '',
@@ -47,31 +36,64 @@ const routes = [
       {
         path: 'dashboard',
         name: 'admin-dashboard',
-        component: AdminDashboardView,
+        component: () =>
+          import(
+            '../views/admin/AdminDashboardView.vue'
+          ),
       },
 
       {
         path: 'planes',
         name: 'admin-planes',
-        component: AdminPlanesView,
+        component: () =>
+          import(
+            '../views/admin/AdminPlanesView.vue'
+          ),
       },
 
       {
         path: 'secciones',
         name: 'admin-secciones',
-        component: AdminSeccionesView,
+        component: () =>
+          import(
+            '../views/admin/AdminSeccionesView.vue'
+          ),
       },
 
       {
         path: 'contenido',
         name: 'admin-contenido',
-        component: AdminContenidoView,
+        component: () =>
+          import(
+            '../views/admin/AdminContenidoView.vue'
+          ),
       },
 
       {
         path: 'configuracion',
         name: 'admin-configuracion',
-        component: AdminConfiguracionView,
+        component: () =>
+          import(
+            '../views/admin/AdminConfiguracionView.vue'
+          ),
+      },
+
+      {
+        path: 'contactos',
+        name: 'admin-contactos',
+        component: () =>
+          import(
+            '../views/admin/ContactosAdmin.vue'
+          ),
+      },
+
+      {
+        path: 'usuarios',
+        name: 'admin-usuarios',
+        component: () =>
+          import(
+            '../views/admin/AdminUsuariosView.vue'
+          ),
       },
     ],
   },
@@ -92,25 +114,37 @@ const router = createRouter({
 let authInicializada = false
 let authPromise = null
 
-function esperarAutenticacion() {
+async function esperarAutenticacion() {
+  const {
+    onAuthStateChanged,
+  } = await import('firebase/auth')
+
+  const {
+    auth,
+  } = await import(
+    '../config/firebaseAuth.js'
+  )
+
   if (authInicializada) {
-    return Promise.resolve(auth.currentUser)
+    return auth.currentUser
   }
 
   if (!authPromise) {
-    authPromise = new Promise((resolve) => {
-      const unsubscribe =
-        onAuthStateChanged(
-          auth,
-          (usuario) => {
-            authInicializada = true
+    authPromise = new Promise(
+      (resolve) => {
+        const unsubscribe =
+          onAuthStateChanged(
+            auth,
+            (usuario) => {
+              authInicializada = true
 
-            unsubscribe()
+              unsubscribe()
 
-            resolve(usuario)
-          }
-        )
-    })
+              resolve(usuario)
+            }
+          )
+      }
+    )
   }
 
   return authPromise
@@ -127,8 +161,10 @@ router.beforeEach(async (to) => {
   if (!usuario) {
     return {
       name: 'admin-login',
+
       query: {
-        redirect: to.fullPath,
+        redirect:
+          to.fullPath,
       },
     }
   }

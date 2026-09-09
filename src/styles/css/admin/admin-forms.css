@@ -1,0 +1,136 @@
+/* ADMIN FORMS */
+.admin-form {
+  display: flex;
+  flex-direction: column;
+
+  gap: 20px;
+}
+
+.admin-form__group {
+  display: flex;
+  flex-direction: column;
+
+  gap: 8px;
+}
+
+.admin-form__label {
+  color: var(--color-primary);
+
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.admin-form__input,
+.admin-form__textarea,
+.admin-form__select {
+  min-height: 46px;
+
+  padding: 10px 13px;
+
+  border: 1px solid var(--color-border);
+
+  border-radius: var(--radius-md);
+
+  background: var(--color-white);
+
+  color: var(--color-text);
+
+  font-size: 14px;
+
+  outline: none;
+
+  transition:
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast);
+}
+
+.admin-form__textarea {
+  min-height: 120px;
+
+  resize: vertical;
+}
+
+.admin-form__input:focus,
+.admin-form__textarea:focus,
+.admin-form__select:focus {
+  border-color: var(--color-accent);
+
+  box-shadow:
+    0 0 0 3px rgba(47, 128, 237, 0.1);
+}
+
+.admin-form__grid {
+  display: grid;
+
+  gap: 18px;
+}
+
+.admin-form__grid--2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.admin-form__grid--3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.admin-form__options {
+  display: flex;
+  flex-wrap: wrap;
+
+  gap: 18px;
+}
+
+.admin-form__hint {
+  color: var(--color-text-muted);
+
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.admin-form__actions {
+  display: flex;
+  flex-wrap: wrap;
+
+  gap: 10px;
+
+  margin-top: 4px;
+}
+
+@media (max-width: 800px) {
+.admin-form__grid--3 {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 700px) {
+.admin-form__grid--2 {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+.admin-form__actions {
+    flex-direction: column;
+  }
+
+.admin-form__actions .admin-button {
+    width: 100%;
+  }
+}
+
+.admin-checkbox {
+  display: inline-flex;
+  align-items: center;
+
+  gap: 8px;
+
+  color: var(--color-text-secondary);
+
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.admin-checkbox input {
+  width: 17px;
+  height: 17px;
+}
