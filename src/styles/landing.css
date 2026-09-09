@@ -1,22 +1,45 @@
 /* =========================================================
-   LANDING
+   LANDING CSS
    ========================================================= */
 
-@import './css/base/variables.css';
-@import './css/base/reset.css';
-@import './css/base/utilities.css';
+/* =========================================================
+   BASE
+   ========================================================= */
 
-@import './css/components/buttons.css';
-@import './css/components/states.css';
-@import './css/components/header.css';
-@import './css/components/hero.css';
-@import './css/components/solutions.css';
-@import './css/components/features.css';
-@import './css/components/plans.css';
-@import './css/components/about.css';
-@import './css/components/faq.css';
-@import './css/components/contact.css';
-@import './css/components/footer.css';
-@import './css/components/benefits.css';
+@import "./css/base/variables.css";
 
-@import './responsive.css';
+@import "./css/base/reset.css";
+
+@import "./css/base/utilities.css";
+
+/* =========================================================
+   COMPONENTES
+   ========================================================= */
+
+@import "./css/components/buttons.css";
+
+@import "./css/components/states.css";
+
+@import "./css/components/header.css";
+
+/* =========================================================
+   SECCIONES LANDING
+   ========================================================= */
+
+@import "./css/components/hero.css";
+
+@import "./css/components/solutions.css";
+
+@import "./css/components/features.css";
+
+@import "./css/components/benefits.css";
+
+@import "./css/components/plans.css";
+
+@import "./css/components/about.css";
+
+@import "./css/components/faq.css";
+
+@import "./css/components/contact.css";
+
+@import "./css/components/footer.css";

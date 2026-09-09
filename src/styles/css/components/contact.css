@@ -3,7 +3,7 @@
    ========================================================= */
 
 .contact {
-  background: var(--color-white);
+  background: var(--color-background);
 }
 
 /* =========================================================
@@ -79,7 +79,7 @@
   border: 1px solid
     color-mix(
       in srgb,
-      var(--color-text) 10%,
+      var(--color-primary-text) 10%,
       transparent
     );
 
@@ -101,6 +101,8 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
+
+  color: var(--color-primary-text);
 }
 
 .contact__content .section-eyebrow {
@@ -112,7 +114,7 @@
 
   max-width: 600px;
 
-  color: var(--color-text);
+  color: var(--color-primary-text);
 
   font-size: clamp(32px, 4vw, 48px);
   font-weight: 900;
@@ -126,9 +128,9 @@
 
   margin: 20px 0 0;
 
-  color: var(--color-text);
+  color: var(--color-primary-text);
 
-  opacity: 0.78;
+  opacity: 0.82;
 
   font-size: 16px;
   line-height: 1.8;
@@ -157,7 +159,7 @@
 
   min-width: 0;
 
-  color: var(--color-text);
+  color: var(--color-primary-text);
 
   font-size: 14px;
   line-height: 1.5;
@@ -170,7 +172,7 @@
 
   color: inherit;
 
-  opacity: 0.82;
+  opacity: 0.86;
 
   transition:
     color var(--transition-fast),
@@ -178,7 +180,7 @@
 }
 
 .contact__detail a:hover {
-  color: var(--color-accent);
+  color: var(--color-accent-light);
 
   opacity: 1;
 }
@@ -195,7 +197,7 @@
   border: 1px solid
     color-mix(
       in srgb,
-      var(--color-text) 14%,
+      var(--color-primary-text) 18%,
       transparent
     );
 
@@ -204,11 +206,11 @@
   background:
     color-mix(
       in srgb,
-      var(--color-text) 7%,
+      var(--color-primary-text) 10%,
       transparent
     );
 
-  color: var(--color-accent);
+  color: var(--color-accent-light);
 
   font-size: 16px;
   font-weight: 800;
@@ -219,9 +221,9 @@
 
   margin-bottom: 2px;
 
-  color: var(--color-text);
+  color: var(--color-primary-text);
 
-  opacity: 0.5;
+  opacity: 0.58;
 
   font-size: 11px;
   font-weight: 800;
@@ -245,7 +247,7 @@
   border-top: 1px solid
     color-mix(
       in srgb,
-      var(--color-text) 14%,
+      var(--color-primary-text) 18%,
       transparent
     );
 }
@@ -253,9 +255,9 @@
 .contact__alternatives-title {
   margin: 0 0 14px;
 
-  color: var(--color-text);
+  color: var(--color-primary-text);
 
-  opacity: 0.72;
+  opacity: 0.76;
 
   font-size: 12px;
   font-weight: 800;
@@ -287,7 +289,7 @@
   border: 1px solid
     color-mix(
       in srgb,
-      var(--color-text) 16%,
+      var(--color-primary-text) 20%,
       transparent
     );
 
@@ -296,11 +298,11 @@
   background:
     color-mix(
       in srgb,
-      var(--color-text) 7%,
+      var(--color-primary-text) 9%,
       transparent
     );
 
-  color: var(--color-text);
+  color: var(--color-primary-text);
 
   font-size: 13px;
   font-weight: 800;
@@ -318,7 +320,7 @@
 
   background: var(--color-accent);
 
-  color: var(--color-white);
+  color: var(--color-accent-text);
 
   transform: translateY(-2px);
 }
@@ -327,14 +329,14 @@
   border-color:
     color-mix(
       in srgb,
-      var(--color-accent) 42%,
+      var(--color-accent) 48%,
       transparent
     );
 
   background:
     color-mix(
       in srgb,
-      var(--color-accent) 13%,
+      var(--color-accent) 16%,
       transparent
     );
 }
@@ -360,7 +362,7 @@
 
   border-radius: var(--radius-lg);
 
-  background: var(--color-background);
+  background: var(--color-surface);
 
   box-shadow: var(--shadow-md);
 }
@@ -380,7 +382,7 @@
 .contact__form-header h3 {
   margin: 0;
 
-  color: var(--color-text);
+  color: var(--color-primary);
 
   font-size: 22px;
   font-weight: 850;
@@ -443,7 +445,7 @@
 
   border-radius: var(--radius-md);
 
-  background: var(--color-white);
+  background: var(--color-surface);
 
   color: var(--color-text);
 
@@ -489,7 +491,7 @@
       transparent
     );
 
-  background: var(--color-white);
+  background: var(--color-surface);
 }
 
 .contact__field-error {
@@ -547,7 +549,7 @@
 
   border-radius: var(--radius-md);
 
-  background: var(--color-white);
+  background: var(--color-surface);
 
   color: var(--color-text);
 
@@ -603,7 +605,7 @@
 
   background: currentColor;
 
-  color: var(--color-white);
+  color: var(--color-accent-text);
 
   font-size: 12px;
   font-weight: 900;
@@ -658,7 +660,7 @@
 
   background: var(--color-accent);
 
-  color: var(--color-white);
+  color: var(--color-accent-text);
 
   font-family: inherit;
 
@@ -684,6 +686,8 @@
 
   background: var(--color-primary);
 
+  color: var(--color-primary-text);
+
   box-shadow: var(--shadow-md);
 }
 
@@ -697,11 +701,11 @@
   border-color:
     color-mix(
       in srgb,
-      var(--color-white) 30%,
+      var(--color-accent-text) 30%,
       transparent
     );
 
-  border-top-color: var(--color-white);
+  border-top-color: var(--color-accent-text);
 }
 
 .contact__submit-icon {
@@ -754,7 +758,7 @@
       var(--color-background)
     );
 
-  color: var(--color-accent);
+  color: var(--color-accent-dark);
 }
 
 /* =========================================================

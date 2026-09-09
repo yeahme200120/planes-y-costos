@@ -2,6 +2,11 @@
    STATES
    ========================================================= */
 
+
+/* =========================================================
+   BASE STATE
+   ========================================================= */
+
 .state {
   display: flex;
   flex-direction: column;
@@ -28,6 +33,7 @@
   line-height: 1.6;
 }
 
+
 /* =========================================================
    SPINNER
    ========================================================= */
@@ -47,8 +53,7 @@
 
   border-radius: 50%;
 
-  animation:
-    state-spin 0.8s linear infinite;
+  animation: state-spin 0.8s linear infinite;
 }
 
 @keyframes state-spin {
@@ -56,6 +61,7 @@
     transform: rotate(360deg);
   }
 }
+
 
 /* =========================================================
    ERROR
@@ -65,6 +71,11 @@
   color: var(--color-danger);
 }
 
+
+/* =========================================================
+   STATE ICON
+   ========================================================= */
+
 .state__icon {
   display: flex;
   align-items: center;
@@ -73,8 +84,7 @@
   width: 36px;
   height: 36px;
 
-  border:
-    1px solid
+  border: 1px solid
     color-mix(
       in srgb,
       var(--color-danger) 22%,
@@ -96,6 +106,7 @@
   font-weight: 800;
 }
 
+
 /* =========================================================
    EMPTY
    ========================================================= */
@@ -107,14 +118,4 @@
       var(--color-text) 62%,
       var(--color-background)
     );
-}
-
-/* =========================================================
-   REDUCED MOTION
-   ========================================================= */
-
-@media (prefers-reduced-motion: reduce) {
-  .state__spinner {
-    animation: none;
-  }
 }

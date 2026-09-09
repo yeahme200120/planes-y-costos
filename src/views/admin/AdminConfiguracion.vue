@@ -5,6 +5,7 @@ import {
   onUnmounted,
   reactive,
   ref,
+  watch,
 } from 'vue'
 
 import {
@@ -12,17 +13,14 @@ import {
   suscribirConfiguracionAdmin,
 } from '../../services/adminService'
 
-import {
-  generarPaleta,
-  normalizarHex,
-} from '../../services/colorPalette'
+import ConfiguracionIdentidad from '../../components/admin/configuracion/ConfiguracionIdentidad.vue'
+import ConfiguracionApariencia from '../../components/admin/configuracion/ConfiguracionApariencia.vue'
+import ConfiguracionDatos from '../../components/admin/configuracion/ConfiguracionDatos.vue'
 
 const cargando = ref(true)
 const guardando = ref(false)
-
 const error = ref('')
 const mensaje = ref('')
-
 const conectadaTiempoReal = ref(false)
 
 const configuracion = reactive({})
@@ -30,575 +28,318 @@ const configuracionOriginal = reactive({})
 
 let unsubscribeConfiguracion = null
 
-/* =========================================================
-   UTILIDADES
-   ========================================================= */
+const panelActivo = ref('identidad')
+
+const paneles = [
+  {
+    id: 'identidad',
+    titulo: 'Identidad visual',
+    descripcion: 'Logo, favicon y recursos gráficos',
+    icono: '◇',
+  },
+  {
+    id: 'apariencia',
+    titulo: 'Apariencia',
+    descripcion: 'Colores y sistema visual',
+    icono: '✦',
+  },
+  {
+    id: 'datos',
+    titulo: 'Datos generales',
+    descripcion: 'Información de la empresa',
+    icono: '☷',
+  },
+]
+
+const camposColor = [
+  'primary',
+  'primaryLight',
+  'primaryDark',
+  'primaryText',
+  'secondary',
+  'secondaryLight',
+  'secondaryDark',
+  'secondaryText',
+  'accent',
+  'accentLight',
+  'accentDark',
+  'accentText',
+  'background',
+  'backgroundAlt',
+  'surface',
+  'surfaceAlt',
+  'text',
+  'textSecondary',
+  'textMuted',
+  'border',
+  'success',
+  'danger',
+  'warning',
+]
+
+const coloresPredeterminados = {
+  primary: '#0F172A',
+  primaryLight: '#1E293B',
+  primaryDark: '#020617',
+  primaryText: '#FFFFFF',
+
+  secondary: '#334155',
+  secondaryLight: '#E2E8F0',
+  secondaryDark: '#1E293B',
+  secondaryText: '#FFFFFF',
+
+  accent: '#2F80ED',
+  accentLight: '#EFF6FF',
+  accentDark: '#1D4ED8',
+  accentText: '#FFFFFF',
+
+  background: '#F8FAFC',
+  backgroundAlt: '#F1F5F9',
+
+  surface: '#FFFFFF',
+  surfaceAlt: '#F8FAFC',
+
+  text: '#1E293B',
+  textSecondary: '#64748B',
+  textMuted: '#94A3B8',
+
+  border: '#E2E8F0',
+
+  success: '#16A34A',
+  danger: '#DC2626',
+  warning: '#D97706',
+}
 
 function limpiarObjeto(objeto) {
-  Object.keys(objeto).forEach((key) => {
-    delete objeto[key]
+  Object.keys(objeto).forEach((clave) => {
+    delete objeto[clave]
   })
 }
 
 function copiarConfiguracion(objeto) {
-  return JSON.parse(
-    JSON.stringify(objeto ?? {})
-  )
+  try {
+    return JSON.parse(JSON.stringify(objeto || {}))
+  } catch {
+    return {}
+  }
 }
 
-function aplicarConfiguracion(datos) {
+function aplicarConfiguracion(datos = {}) {
   limpiarObjeto(configuracion)
   limpiarObjeto(configuracionOriginal)
 
-  if (!datos) {
-    return
-  }
-
   const copia = copiarConfiguracion(datos)
 
-  delete copia.id
+  Object.assign(configuracion, copia)
+  Object.assign(configuracionOriginal, copiarConfiguracion(copia))
 
-  Object.assign(
-    configuracion,
-    copia
-  )
+  aplicarVariablesGlobales()
+}
 
-  Object.assign(
-    configuracionOriginal,
-    copiarConfiguracion(copia)
-  )
-
-  cargarPaletaDesdeConfiguracion(
-    copia
+function esHexValido(valor) {
+  return /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/.test(
+    String(valor || '').trim(),
   )
 }
 
-/* =========================================================
-   COLORES
-   ========================================================= */
+function normalizarHex(valor) {
+  const limpio = String(valor || '').trim()
 
-const camposColor = [
-  'primary',
-  'secondary',
-  'accent',
-  'background',
-  'text',
-]
-
-const coloresPredeterminados = {
-  primary: '#4678EC',
-  secondary: '#EC8A46',
-  accent: '#46ECA8',
-  background: '#F8FAFC',
-  text: '#172033',
-}
-
-const nombresColor = {
-  primary: 'Color primario',
-  secondary: 'Color secundario',
-  accent: 'Color de acento',
-  background: 'Color de fondo',
-  text: 'Color de texto',
-}
-
-const descripcionesColor = {
-  primary:
-    'Botones principales, acciones y elementos destacados de la landing.',
-
-  secondary:
-    'Elementos secundarios, superficies y componentes complementarios.',
-
-  accent:
-    'Acentos visuales, indicadores y elementos de énfasis.',
-
-  background:
-    'Fondo principal de las secciones y superficies de la landing.',
-
-  text:
-    'Color utilizado para el texto principal sobre los fondos.',
-}
-
-/* =========================================================
-   GENERADOR DE PALETA
-   ========================================================= */
-
-const colorBase = ref(
-  coloresPredeterminados.primary
-)
-
-const armoniaSeleccionada =
-  ref('triadica')
-
-const suavidad = ref(45)
-
-const contraste = ref(55)
-
-const paletaGenerada = ref(
-  generarPaleta(
-    colorBase.value,
-    {
-      armonia:
-        armoniaSeleccionada.value,
-
-      suavidad:
-        suavidad.value,
-
-      contraste:
-        contraste.value,
-    }
-  )
-)
-
-function regenerarPaleta() {
-  paletaGenerada.value =
-    generarPaleta(
-      colorBase.value,
-      {
-        armonia:
-          armoniaSeleccionada.value,
-
-        suavidad:
-          suavidad.value,
-
-        contraste:
-          contraste.value,
-      }
-    )
-}
-
-function cambiarColorBase(valor) {
-  if (
-    typeof valor !== 'string'
-  ) {
-    return
-  }
-
-  const valorLimpio =
-    valor.trim()
-
-  if (
-    !/^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(
-      valorLimpio
-    )
-  ) {
-    return
-  }
-
-  colorBase.value =
-    normalizarHex(
-      valorLimpio
-    )
-
-  regenerarPaleta()
-}
-
-function cargarPaletaDesdeConfiguracion(
-  datos
-) {
-  if (!datos) {
-    return
-  }
-
-  const base =
-    datos?.paleta?.base ||
-    datos.primary ||
-    coloresPredeterminados.primary
-
-  colorBase.value =
-    normalizarHex(base)
-
-  armoniaSeleccionada.value =
-    datos?.paleta?.armonia ||
-    'triadica'
-
-  suavidad.value =
-    Number(
-      datos?.paleta?.suavidad ??
-        45
-    )
-
-  contraste.value =
-    Number(
-      datos?.paleta?.contraste ??
-        55
-    )
-
-  regenerarPaleta()
-}
-
-function aplicarPaletaGenerada() {
-  const paleta =
-    paletaGenerada.value
-
-  if (!paleta) {
-    return
-  }
-
-  Object.entries(
-    paleta
-  ).forEach(
-    ([campo, valor]) => {
-      if (
-        typeof valor !==
-        'string'
-      ) {
-        return
-      }
-
-      configuracion[campo] =
-        valor
-    }
-  )
-
-  configuracion.paleta = {
-    base:
-      colorBase.value,
-
-    armonia:
-      armoniaSeleccionada.value,
-
-    suavidad:
-      suavidad.value,
-
-    contraste:
-      contraste.value,
-
-    ...paleta,
-  }
-
-  mensaje.value =
-    'Paleta aplicada. Guarda la configuración para publicar los cambios.'
-
-  error.value = ''
-}
-
-/* =========================================================
-   PALETA VISUAL
-   ========================================================= */
-
-const coloresGenerados = computed(() => {
-  const paleta =
-    paletaGenerada.value || {}
-
-  return [
-    {
-      key: 'primary',
-      nombre: 'Primario',
-      color: paleta.primary,
-    },
-
-    {
-      key: 'secondary',
-      nombre: 'Secundario',
-      color: paleta.secondary,
-    },
-
-    {
-      key: 'accent',
-      nombre: 'Acento',
-      color: paleta.accent,
-    },
-
-    {
-      key: 'primaryLight',
-      nombre: 'Primario suave',
-      color: paleta.primaryLight,
-    },
-
-    {
-      key: 'secondaryLight',
-      nombre: 'Secundario suave',
-      color: paleta.secondaryLight,
-    },
-
-    {
-      key: 'accentLight',
-      nombre: 'Acento suave',
-      color: paleta.accentLight,
-    },
-
-    {
-      key: 'background',
-      nombre: 'Fondo',
-      color: paleta.background,
-    },
-
-    {
-      key: 'backgroundAlt',
-      nombre: 'Fondo alternativo',
-      color: paleta.backgroundAlt,
-    },
-
-    {
-      key: 'surface',
-      nombre: 'Superficie',
-      color: paleta.surface,
-    },
-
-    {
-      key: 'text',
-      nombre: 'Texto',
-      color: paleta.text,
-    },
-
-    {
-      key: 'textSecondary',
-      nombre: 'Texto secundario',
-      color: paleta.textSecondary,
-    },
-
-    {
-      key: 'border',
-      nombre: 'Bordes',
-      color: paleta.border,
-    },
-  ].filter(
-    (color) =>
-      typeof color.color ===
-      'string'
-  )
-})
-
-function esColorConfiguracion(campo) {
-  return camposColor.includes(campo)
-}
-
-function normalizarColor(valor) {
-  if (
-    typeof valor !== 'string' ||
-    !/^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(
-      valor.trim()
-    )
-  ) {
-    return '#000000'
-  }
-
-  return valor.trim().toUpperCase()
-}
-
-function actualizarColor(
-  campo,
-  valor
-) {
-  if (
-    typeof valor !== 'string'
-  ) {
-    return
-  }
-
-  const valorLimpio =
-    valor.trim()
-
-  if (
-    !/^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(
-      valorLimpio
-    )
-  ) {
-    return
-  }
-
-  configuracion[campo] =
-    valorLimpio.toUpperCase()
-}
-
-/* =========================================================
-   CAMPOS GENERALES
-   ========================================================= */
-
-const camposGenerales = computed(() => {
-  return Object.entries(
-    configuracion
-  ).filter(
-    ([campo]) =>
-      !esColorConfiguracion(
-        campo
-      ) &&
-      campo !== 'paleta'
-  )
-})
-
-const camposColores = computed(() => {
-  return camposColor
-    .filter(
-      (campo) =>
-        Object.prototype.hasOwnProperty.call(
-          configuracion,
-          campo
-        )
-    )
-    .map(
-      (campo) => [
-        campo,
-        configuracion[campo],
-      ]
-    )
-})
-
-const existeConfiguracion = computed(() => {
-  return (
-    Object.keys(configuracion)
-      .length > 0
-  )
-})
-
-/* =========================================================
-   PREVISUALIZACIÓN
-   ========================================================= */
-
-const previewStyle = computed(() => {
-  const paleta =
-    paletaGenerada.value || {}
-
-  return {
-    '--preview-primary':
-      normalizarColor(
-        paleta.primary ||
-          configuracion.primary
-      ),
-
-    '--preview-primary-light':
-      normalizarColor(
-        paleta.primaryLight ||
-          configuracion.primary
-      ),
-
-    '--preview-primary-dark':
-      normalizarColor(
-        paleta.primaryDark ||
-          configuracion.primary
-      ),
-
-    '--preview-secondary':
-      normalizarColor(
-        paleta.secondary ||
-          configuracion.secondary
-      ),
-
-    '--preview-secondary-light':
-      normalizarColor(
-        paleta.secondaryLight ||
-          configuracion.secondary
-      ),
-
-    '--preview-accent':
-      normalizarColor(
-        paleta.accent ||
-          configuracion.accent
-      ),
-
-    '--preview-accent-light':
-      normalizarColor(
-        paleta.accentLight ||
-          configuracion.accent
-      ),
-
-    '--preview-background':
-      normalizarColor(
-        paleta.background ||
-          configuracion.background
-      ),
-
-    '--preview-background-alt':
-      normalizarColor(
-        paleta.backgroundAlt ||
-          configuracion.background
-      ),
-
-    '--preview-surface':
-      normalizarColor(
-        paleta.surface ||
-          '#FFFFFF'
-      ),
-
-    '--preview-surface-alt':
-      normalizarColor(
-        paleta.surfaceAlt ||
-          '#F8FAFC'
-      ),
-
-    '--preview-text':
-      normalizarColor(
-        paleta.text ||
-          configuracion.text
-      ),
-
-    '--preview-text-secondary':
-      normalizarColor(
-        paleta.textSecondary ||
-          configuracion.text
-      ),
-
-    '--preview-border':
-      normalizarColor(
-        paleta.border ||
-          '#E2E8F0'
-      ),
-  }
-})
-
-/* =========================================================
-   JSON
-   ========================================================= */
-
-function obtenerJson(valor) {
-  try {
-    return JSON.stringify(
-      valor,
-      null,
-      2
-    )
-  } catch {
+  if (!esHexValido(limpio)) {
     return ''
   }
+
+  if (limpio.length === 4) {
+    return (
+      '#' +
+      limpio[1] +
+      limpio[1] +
+      limpio[2] +
+      limpio[2] +
+      limpio[3] +
+      limpio[3]
+    ).toUpperCase()
+  }
+
+  return limpio.toUpperCase()
 }
 
-function actualizarObjeto(
-  campo,
-  evento
-) {
-  const texto =
-    evento.target.value
+function valorColor(campo) {
+  const valor = configuracion[campo]
+
+  if (esHexValido(valor)) {
+    return normalizarHex(valor)
+  }
+
+  return coloresPredeterminados[campo]
+}
+
+function aplicarVariablesGlobales() {
+  if (typeof document === 'undefined') return
+
+  const root = document.documentElement
+
+  const variables = {
+    '--color-primary': valorColor('primary'),
+    '--color-primary-light': valorColor('primaryLight'),
+    '--color-primary-dark': valorColor('primaryDark'),
+    '--color-primary-text': valorColor('primaryText'),
+
+    '--color-secondary': valorColor('secondary'),
+    '--color-secondary-light': valorColor('secondaryLight'),
+    '--color-secondary-dark': valorColor('secondaryDark'),
+    '--color-secondary-text': valorColor('secondaryText'),
+
+    '--color-accent': valorColor('accent'),
+    '--color-accent-light': valorColor('accentLight'),
+    '--color-accent-dark': valorColor('accentDark'),
+    '--color-accent-text': valorColor('accentText'),
+
+    '--color-background': valorColor('background'),
+    '--color-background-alt': valorColor('backgroundAlt'),
+
+    '--color-surface': valorColor('surface'),
+    '--color-surface-alt': valorColor('surfaceAlt'),
+
+    '--color-text': valorColor('text'),
+    '--color-text-secondary': valorColor('textSecondary'),
+    '--color-text-muted': valorColor('textMuted'),
+
+    '--color-border': valorColor('border'),
+
+    '--color-success': valorColor('success'),
+    '--color-danger': valorColor('danger'),
+    '--color-warning': valorColor('warning'),
+  }
+
+  Object.entries(variables).forEach(([variable, valor]) => {
+    root.style.setProperty(variable, valor)
+  })
+}
+
+function cambiarPanel(panel) {
+  panelActivo.value = panel
+  error.value = ''
+  mensaje.value = ''
+}
+
+function actualizarConfiguracionLocal(datos = {}) {
+  Object.entries(datos).forEach(([clave, valor]) => {
+    configuracion[clave] = valor
+  })
+
+  aplicarVariablesGlobales()
+}
+
+function actualizarColor({ campo, valor }) {
+  if (!camposColor.includes(campo)) return
+
+  const color = normalizarHex(valor)
+
+  if (!color) return
+
+  configuracion[campo] = color
+
+  aplicarVariablesGlobales()
+}
+
+function actualizarLogo(datos = {}) {
+  Object.entries(datos).forEach(([clave, valor]) => {
+    if (valor !== undefined && valor !== null && valor !== '') {
+      configuracion[clave] = valor
+    }
+  })
+}
+
+function actualizarPaleta(datos = {}) {
+  Object.entries(datos).forEach(([clave, valor]) => {
+    if (camposColor.includes(clave) && esHexValido(valor)) {
+      configuracion[clave] = normalizarHex(valor)
+    }
+  })
+
+  if (datos.paleta) {
+    configuracion.paleta = copiarConfiguracion(datos.paleta)
+  }
+
+  aplicarVariablesGlobales()
+}
+
+function restaurarCambios() {
+  if (guardando.value) return
 
   try {
-    configuracion[campo] =
-      JSON.parse(texto)
+    const restaurada =
+      copiarConfiguracion(configuracionOriginal)
+
+    limpiarObjeto(configuracion)
+
+    Object.assign(
+      configuracion,
+      restaurada,
+    )
+
+    aplicarVariablesGlobales()
+
+    mensaje.value =
+      'Cambios descartados correctamente.'
 
     error.value = ''
-  } catch {
-    // No modificar mientras
-    // el JSON sea inválido.
+  } catch (err) {
+    console.error(
+      'Error al descartar cambios:',
+      err,
+    )
+
+    error.value =
+      err?.message ||
+      'No fue posible descartar los cambios.'
+
+    mensaje.value = ''
   }
 }
 
-/* =========================================================
-   ARRAYS
-   ========================================================= */
+async function guardarConfiguracion() {
+  if (guardando.value) return
 
-function obtenerArrayTexto(valor) {
-  if (!Array.isArray(valor)) {
-    return ''
+  try {
+    guardando.value = true
+    error.value = ''
+    mensaje.value = ''
+
+    const datos = copiarConfiguracion(configuracion)
+
+    delete datos.id
+
+    datos.paleta = {
+      ...(datos.paleta && typeof datos.paleta === 'object'
+        ? datos.paleta
+        : {}),
+    }
+
+    await actualizarConfiguracion('general', datos)
+
+    limpiarObjeto(configuracionOriginal)
+
+    Object.assign(
+      configuracionOriginal,
+      copiarConfiguracion(datos),
+    )
+
+    aplicarVariablesGlobales()
+
+    mensaje.value =
+      'Configuración actualizada correctamente.'
+  } catch (err) {
+    console.error(err)
+
+    error.value =
+      err?.message ||
+      'No fue posible guardar la configuración.'
+  } finally {
+    guardando.value = false
   }
-
-  return valor.join('\n')
 }
-
-function actualizarArray(
-  campo,
-  evento
-) {
-  configuracion[campo] =
-    evento.target.value
-      .split('\n')
-      .map(
-        (item) =>
-          item.trim()
-      )
-      .filter(Boolean)
-}
-
-/* =========================================================
-   FIRESTORE
-   ========================================================= */
 
 function iniciarSuscripcion() {
   if (unsubscribeConfiguracion) {
@@ -608,226 +349,75 @@ function iniciarSuscripcion() {
 
   cargando.value = true
   error.value = ''
-  mensaje.value = ''
-  conectadaTiempoReal.value = false
 
-  unsubscribeConfiguracion =
-    suscribirConfiguracionAdmin(
-      'general',
-      (datos) => {
-        cargando.value = false
-
-        if (!datos) {
-          limpiarObjeto(
-            configuracion
-          )
-
-          limpiarObjeto(
-            configuracionOriginal
-          )
-
-          conectadaTiempoReal.value =
-            true
-
-          return
-        }
-
-        aplicarConfiguracion(
-          datos
-        )
-
-        conectadaTiempoReal.value =
-          true
-
-        error.value = ''
-      },
-      (err) => {
-        console.error(
-          'Error en configuración en tiempo real:',
-          err
-        )
-
-        cargando.value = false
-
-        conectadaTiempoReal.value =
-          false
-
-        error.value =
-          'No fue posible sincronizar la configuración en tiempo real.'
-      }
-    )
-}
-
-/* =========================================================
-   RESTAURAR
-   ========================================================= */
-
-function restaurarCambios() {
-  limpiarObjeto(
-    configuracion
-  )
-
-  Object.assign(
-    configuracion,
-    copiarConfiguracion(
-      configuracionOriginal
-    )
-  )
-
-  cargarPaletaDesdeConfiguracion(
-    configuracionOriginal
-  )
-
-  mensaje.value =
-    'Cambios descartados.'
-
-  error.value = ''
-}
-
-/* =========================================================
-   GUARDAR
-   ========================================================= */
-
-async function guardarConfiguracion() {
   try {
-    guardando.value = true
+    unsubscribeConfiguracion =
+      suscribirConfiguracionAdmin(
+        'general',
+        (datos) => {
+          cargando.value = false
+          conectadaTiempoReal.value = true
 
-    error.value = ''
-    mensaje.value = ''
+          if (!datos) {
+            limpiarObjeto(configuracion)
+            limpiarObjeto(configuracionOriginal)
 
-    const datos =
-      copiarConfiguracion(
-        configuracion
+            Object.assign(
+              configuracion,
+              copiarConfiguracion(coloresPredeterminados),
+            )
+
+            aplicarVariablesGlobales()
+
+            return
+          }
+
+          aplicarConfiguracion(datos)
+        },
+        (err) => {
+          cargando.value = false
+          conectadaTiempoReal.value = false
+
+          error.value =
+            err?.message ||
+            'No fue posible conectar con Firebase.'
+        },
       )
-
-    delete datos.id
-
-    await actualizarConfiguracion(
-      'general',
-      datos
-    )
-
-    Object.assign(
-      configuracionOriginal,
-      copiarConfiguracion(
-        datos
-      )
-    )
-
-    mensaje.value =
-      'Configuración actualizada correctamente.'
   } catch (err) {
-    console.error(
-      'Error guardando configuración:',
-      err
-    )
+    cargando.value = false
+    conectadaTiempoReal.value = false
 
     error.value =
-      err?.message ??
-      'No fue posible guardar la configuración.'
-  } finally {
-    guardando.value = false
+      err?.message ||
+      'No fue posible iniciar la configuración.'
   }
 }
 
-/* =========================================================
-   CAMPOS
-   ========================================================= */
+watch(
+  () => configuracion.primary,
+  () => {
+    aplicarVariablesGlobales()
+  },
+)
 
-function tipoCampo(valor) {
-  if (
-    typeof valor ===
-    'boolean'
-  ) {
-    return 'boolean'
-  }
+watch(
+  () => configuracion.primaryLight,
+  aplicarVariablesGlobales,
+)
 
-  if (
-    typeof valor ===
-    'number'
-  ) {
-    return 'number'
-  }
+watch(
+  () => configuracion.primaryDark,
+  aplicarVariablesGlobales,
+)
 
-  if (
-    Array.isArray(valor)
-  ) {
-    return 'array'
-  }
+watch(
+  () => configuracion.accent,
+  aplicarVariablesGlobales,
+)
 
-  if (
-    typeof valor ===
-    'object' &&
-    valor !== null
-  ) {
-    return 'object'
-  }
-
-  if (
-    typeof valor ===
-    'string' &&
-    valor.length > 150
-  ) {
-    return 'textarea'
-  }
-
-  return 'text'
-}
-
-function restablecerConfiguracion() {
-  const paleta =
-    generarPaleta(
-      coloresPredeterminados.primary,
-      {
-        armonia:
-          'triadica',
-
-        suavidad:
-          45,
-
-        contraste:
-          55,
-      }
-    )
-
-  colorBase.value =
-    coloresPredeterminados.primary
-
-  armoniaSeleccionada.value =
-    'triadica'
-
-  suavidad.value = 45
-
-  contraste.value = 55
-
-  paletaGenerada.value =
-    paleta
-
-  Object.entries(
-    coloresPredeterminados
-  ).forEach(
-    ([campo, valor]) => {
-      if (
-        Object.prototype.hasOwnProperty.call(
-          configuracion,
-          campo
-        )
-      ) {
-        configuracion[campo] =
-          valor
-      }
-    }
-  )
-
-  mensaje.value =
-    'Colores restablecidos a sus valores predeterminados.'
-
-  error.value = ''
-}
-
-/* =========================================================
-   LIFECYCLE
-   ========================================================= */
+const existeConfiguracion = computed(
+  () => Object.keys(configuracion).length > 0,
+)
 
 onMounted(() => {
   iniciarSuscripcion()
@@ -844,945 +434,114 @@ onUnmounted(() => {
 <template>
   <section class="admin-configuracion">
 
-    <!-- HEADER -->
-
+    <!-- ENCABEZADO -->
     <header class="admin-configuracion__header">
       <div>
-        <h1 class="admin-configuracion__title">
-          Configuración
-        </h1>
+        <span class="admin-configuracion__eyebrow">
+          SISTEMA
+        </span>
 
-        <p class="admin-configuracion__subtitle">
-          Administra los valores generales
-          de la plataforma y personaliza
-          la apariencia de la landing page.
+        <h1>Configuración</h1>
+
+        <p>
+          Administra la identidad visual y los datos generales
+          de tu empresa.
         </p>
       </div>
 
-      <div
-        class="admin-configuracion__realtime"
-        :class="{
-          'admin-configuracion__realtime--online':
-            conectadaTiempoReal
-        }"
-      >
-        <span
-          class="admin-configuracion__realtime-dot"
-          aria-hidden="true"
-        ></span>
+      <div class="admin-configuracion__realtime">
+        <span class="admin-configuracion__realtime-dot" :class="{
+          'is-online': conectadaTiempoReal,
+        }" />
 
         <span>
           {{
             conectadaTiempoReal
-              ? 'Tiempo real conectado'
-              : 'Sin conexión'
+              ? 'Sincronización en tiempo real'
+              : 'Conectando...'
           }}
         </span>
       </div>
     </header>
 
-    <!-- LOADING -->
-
-    <div
-      v-if="cargando"
-      class="admin-configuracion__loading"
-    >
-      <span
-        class="admin-configuracion__spinner"
-        aria-hidden="true"
-      ></span>
-
+    <!-- ESTADO DE CARGA -->
+    <div v-if="cargando" class="admin-configuracion__state">
+      <div class="admin-configuracion__spinner" />
+      <strong>Cargando configuración</strong>
       <span>
-        Cargando configuración...
+        Conectando con Firebase...
       </span>
     </div>
 
     <!-- ERROR -->
-
-    <div
-      v-else-if="error"
-      class="admin-configuracion__message admin-configuracion__message--error"
-      role="alert"
-    >
-      <span aria-hidden="true">
-        ⚠
-      </span>
-
-      <span>
-        {{ error }}
-      </span>
-    </div>
-
-    <!-- EMPTY -->
-
-    <div
-      v-else-if="!existeConfiguracion"
-      class="admin-configuracion__empty"
-    >
-      <div
-        class="admin-configuracion__empty-icon"
-        aria-hidden="true"
-      >
-        ⚙
+    <div v-else-if="error" class="admin-configuracion__alert admin-configuracion__alert--error">
+      <div>
+        <strong>No fue posible cargar la configuración</strong>
+        <p>{{ error }}</p>
       </div>
 
-      <h2
-        class="admin-configuracion__empty-title"
-      >
-        No existe configuración
-      </h2>
-
-      <p
-        class="admin-configuracion__empty-text"
-      >
-        No se encontró el documento
-        <strong>
-          configuracion/general
-        </strong>
-        en Firestore.
-      </p>
+      <button type="button" class="admin-configuracion__alert-action" @click="iniciarSuscripcion">
+        Reintentar
+      </button>
     </div>
 
-    <!-- FORM -->
-
-    <form
-      v-else
-      class="admin-configuracion__form"
-      @submit.prevent="
-        guardarConfiguracion
-      "
-    >
-
-      <!-- SUCCESS -->
-
-      <div
-        v-if="mensaje"
-        class="admin-configuracion__message admin-configuracion__message--success"
-        role="status"
-      >
-        <span aria-hidden="true">
-          ✓
-        </span>
-
-        <span>
-          {{ mensaje }}
-        </span>
-      </div>
-
-      <!-- =================================================
-           APARIENCIA
-           ================================================= -->
-
-      <section
-        v-if="camposColores.length"
-        class="admin-configuracion__section admin-configuracion__section--appearance"
-      >
-        <div
-          class="admin-configuracion__section-header"
-        >
-          <div>
-            <span
-              class="admin-configuracion__section-eyebrow"
-            >
-              PERSONALIZACIÓN
-            </span>
-
-            <h2
-              class="admin-configuracion__section-title"
-            >
-              Colores y apariencia
-            </h2>
-
-            <p
-              class="admin-configuracion__section-description"
-            >
-              Selecciona un color base y genera
-              automáticamente una paleta
-              armonizada para toda la landing.
-            </p>
-          </div>
-        </div>
-
-        <!-- PALETTE BUILDER -->
-
-        <div
-          class="admin-configuracion__palette-builder"
-        >
-
-          <!-- CONTROLS -->
-
-          <div
-            class="admin-configuracion__palette-controls"
-          >
-
-            <!-- BASE -->
-
-            <div
-              class="admin-configuracion__palette-control"
-            >
-              <label
-                class="admin-configuracion__label"
-                for="color-base"
-              >
-                Color base
-              </label>
-
-              <p
-                class="admin-configuracion__color-description"
-              >
-                Define el color principal de
-                la identidad visual.
-              </p>
-
-              <div
-                class="admin-configuracion__palette-base"
-              >
-                <input
-                  id="color-base"
-                  v-model="colorBase"
-                  type="color"
-                  class="admin-configuracion__color-picker"
-                  aria-label="Seleccionar color base"
-                  @input="
-                    cambiarColorBase(
-                      $event.target.value
-                    )
-                  "
-                />
-
-                <input
-                  v-model="colorBase"
-                  type="text"
-                  class="admin-configuracion__input admin-configuracion__color-input-text"
-                  maxlength="7"
-                  placeholder="#4678EC"
-                  @input="
-                    cambiarColorBase(
-                      $event.target.value
-                    )
-                  "
-                />
-              </div>
-            </div>
-
-            <!-- HARMONY -->
-
-            <div
-              class="admin-configuracion__palette-control"
-            >
-              <label
-                class="admin-configuracion__label"
-                for="armonia"
-              >
-                Armonía de color
-              </label>
-
-              <p
-                class="admin-configuracion__color-description"
-              >
-                Determina cómo se relacionan
-                los colores principales.
-              </p>
-
-              <select
-                id="armonia"
-                v-model="armoniaSeleccionada"
-                class="admin-configuracion__input"
-                @change="
-                  regenerarPaleta
-                "
-              >
-                <option value="triadica">
-                  Triádica
-                </option>
-
-                <option value="analogica">
-                  Análoga
-                </option>
-
-                <option value="complementaria">
-                  Complementaria
-                </option>
-
-                <option value="monocromatica">
-                  Monocromática
-                </option>
-              </select>
-            </div>
-
-            <!-- SOFTNESS -->
-
-            <div
-              class="admin-configuracion__palette-control"
-            >
-              <div
-                class="admin-configuracion__range-header"
-              >
-                <label
-                  class="admin-configuracion__label"
-                  for="suavidad"
-                >
-                  Suavidad
-                </label>
-
-                <strong>
-                  {{ suavidad }}%
-                </strong>
-              </div>
-
-              <input
-                id="suavidad"
-                v-model.number="suavidad"
-                type="range"
-                min="0"
-                max="100"
-                step="1"
-                class="admin-configuracion__range"
-                @input="
-                  regenerarPaleta
-                "
-              />
-
-              <p
-                class="admin-configuracion__color-description"
-              >
-                Aumenta este valor para
-                obtener colores más suaves
-                y pastel.
-              </p>
-            </div>
-
-            <!-- CONTRAST -->
-
-            <div
-              class="admin-configuracion__palette-control"
-            >
-              <div
-                class="admin-configuracion__range-header"
-              >
-                <label
-                  class="admin-configuracion__label"
-                  for="contraste"
-                >
-                  Contraste
-                </label>
-
-                <strong>
-                  {{ contraste }}%
-                </strong>
-              </div>
-
-              <input
-                id="contraste"
-                v-model.number="contraste"
-                type="range"
-                min="0"
-                max="100"
-                step="1"
-                class="admin-configuracion__range"
-                @input="
-                  regenerarPaleta
-                "
-              />
-
-              <p
-                class="admin-configuracion__color-description"
-              >
-                Controla la profundidad de
-                textos, fondos y variantes.
-              </p>
-            </div>
-
-          </div>
-
-          <!-- GENERATED PALETTE -->
-
-          <div
-            class="admin-configuracion__palette-preview"
-          >
-
-            <div
-              class="admin-configuracion__palette-preview-header"
-            >
-              <div>
-                <span
-                  class="admin-configuracion__section-eyebrow"
-                >
-                  VISTA PREVIA
-                </span>
-
-                <h3>
-                  Paleta generada
-                </h3>
-              </div>
-
-              <span
-                class="admin-configuracion__palette-harmony"
-              >
-                {{
-                  armoniaSeleccionada
-                }}
-              </span>
-            </div>
-
-            <div
-              class="admin-configuracion__palette-colors"
-            >
-              <div
-                v-for="color in coloresGenerados"
-                :key="color.key"
-                class="admin-configuracion__palette-color"
-              >
-                <div
-                  class="admin-configuracion__palette-color-swatch"
-                  :style="{
-                    backgroundColor:
-                      color.color
-                  }"
-                ></div>
-
-                <div
-                  class="admin-configuracion__palette-color-info"
-                >
-                  <strong>
-                    {{ color.nombre }}
-                  </strong>
-
-                  <span>
-                    {{ color.color }}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <button
-              type="button"
-              class="admin-configuracion__button admin-configuracion__button--primary"
-              @click="
-                aplicarPaletaGenerada
-              "
-            >
-              <span aria-hidden="true">
-                ✦
-              </span>
-
-              Aplicar paleta generada
-            </button>
-
-          </div>
-        </div>
-
-        <!-- MANUAL COLORS -->
-
-        <div
-          class="admin-configuracion__manual-colors"
-        >
-          <div
-            class="admin-configuracion__section-header"
-          >
-            <div>
-              <span
-                class="admin-configuracion__section-eyebrow"
-              >
-                AVANZADO
-              </span>
-
-              <h3
-                class="admin-configuracion__section-title"
-              >
-                Personalización manual
-              </h3>
-
-              <p
-                class="admin-configuracion__section-description"
-              >
-                Puedes modificar individualmente
-                cualquier color después de generar
-                la paleta.
-              </p>
-            </div>
-          </div>
-
-          <div
-            class="admin-configuracion__colors"
-          >
-            <article
-              v-for="[
-                campo,
-                valor
-              ] in camposColores"
-              :key="campo"
-              class="admin-configuracion__color-field"
-            >
-              <div
-                class="admin-configuracion__color-field-header"
-              >
-                <div>
-                  <label
-                    class="admin-configuracion__label"
-                    :for="`config-${campo}`"
-                  >
-                    {{
-                      nombresColor[campo] ??
-                      campo
-                    }}
-                  </label>
-
-                  <p
-                    class="admin-configuracion__color-description"
-                  >
-                    {{
-                      descripcionesColor[campo] ??
-                      'Color de la interfaz.'
-                    }}
-                  </p>
-                </div>
-
-                <span
-                  class="admin-configuracion__color-key"
-                >
-                  {{ campo }}
-                </span>
-              </div>
-
-              <div
-                class="admin-configuracion__color-control"
-              >
-                <input
-                  :id="`color-picker-${campo}`"
-                  type="color"
-                  class="admin-configuracion__color-picker"
-                  :value="
-                    normalizarColor(
-                      configuracion[campo]
-                    )
-                  "
-                  :aria-label="`Seleccionar ${
-                    nombresColor[campo] ??
-                    campo
-                  }`"
-                  @input="
-                    actualizarColor(
-                      campo,
-                      $event.target.value
-                    )
-                  "
-                />
-
-                <input
-                  :id="`config-${campo}`"
-                  type="text"
-                  class="admin-configuracion__input admin-configuracion__color-input-text"
-                  :value="
-                    configuracion[campo]
-                  "
-                  maxlength="7"
-                  placeholder="#000000"
-                  @input="
-                    actualizarColor(
-                      campo,
-                      $event.target.value
-                    )
-                  "
-                />
-
-                <span
-                  class="admin-configuracion__color-swatch"
-                  :style="{
-                    backgroundColor:
-                      normalizarColor(
-                        configuracion[
-                          campo
-                        ]
-                      ),
-                  }"
-                  aria-hidden="true"
-                ></span>
-              </div>
-            </article>
-          </div>
-        </div>
-
-        <!-- LANDING PREVIEW -->
-
-        <div
-          class="admin-configuracion__preview"
-          :style="previewStyle"
-        >
-
-          <div
-            class="admin-configuracion__preview-header"
-          >
-            <div
-              class="admin-configuracion__preview-brand"
-            >
-              <span
-                class="admin-configuracion__preview-logo"
-              >
-                {{
-                  configuracion.logoTexto ??
-                  'IA'
-                }}
-              </span>
-
-              <span>
-                {{
-                  configuracion.nombreEmpresa ??
-                  'Empresa'
-                }}
-              </span>
-            </div>
-
-            <span
-              class="admin-configuracion__preview-label"
-            >
-              PREVISUALIZACIÓN
-            </span>
-          </div>
-
-          <div
-            class="admin-configuracion__preview-content"
-          >
-            <span
-              class="admin-configuracion__preview-eyebrow"
-            >
-              SOLUCIONES TECNOLÓGICAS
-            </span>
-
-            <h3
-              class="admin-configuracion__preview-title"
-            >
-              Tu empresa,
-              <strong>
-                más eficiente.
-              </strong>
-            </h3>
-
-            <p
-              class="admin-configuracion__preview-text"
-            >
-              {{
-                configuracion.descripcion ??
-                'Soluciones tecnológicas para empresas.'
-              }}
-            </p>
-
-            <div
-              class="admin-configuracion__preview-actions"
-            >
-              <button
-                type="button"
-                class="admin-configuracion__preview-button admin-configuracion__preview-button--primary"
-              >
-                Comenzar ahora
-              </button>
-
-              <button
-                type="button"
-                class="admin-configuracion__preview-button admin-configuracion__preview-button--secondary"
-              >
-                Conocer más
-              </button>
-            </div>
-
-            <div
-              class="admin-configuracion__preview-card"
-            >
-              <div
-                class="admin-configuracion__preview-card-icon"
-              >
-                ✓
-              </div>
-
-              <div>
-                <strong>
-                  Plataforma empresarial
-                </strong>
-
-                <span>
-                  Todo lo que necesitas en
-                  un solo lugar.
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <div
-            class="admin-configuracion__preview-footer"
-          >
-            <span>
-              {{
-                configuracion.nombreEmpresa
-              }}
-            </span>
-
-            <span>
-              Vista previa de colores
-            </span>
-          </div>
-        </div>
-      </section>
-
-      <!-- =================================================
-           CONFIGURACIÓN GENERAL
-           ================================================= -->
-
-      <section
-        v-if="camposGenerales.length"
-        class="admin-configuracion__section"
-      >
-        <div
-          class="admin-configuracion__section-header"
-        >
-          <div>
-            <span
-              class="admin-configuracion__section-eyebrow"
-            >
-              CONFIGURACIÓN
-            </span>
-
-            <h2
-              class="admin-configuracion__section-title"
-            >
-              Datos generales
-            </h2>
-
-            <p
-              class="admin-configuracion__section-description"
-            >
-              Información general utilizada
-              por la plataforma.
-            </p>
-          </div>
-        </div>
-
-        <div
-          class="admin-configuracion__grid"
-        >
-          <div
-            v-for="[
-              campo,
-              valor
-            ] in camposGenerales"
-            :key="campo"
-            class="admin-configuracion__field"
-          >
-
-            <label
-              class="admin-configuracion__label"
-              :for="`config-${campo}`"
-            >
-              {{ campo }}
-            </label>
-
-            <!-- BOOLEAN -->
-
-            <label
-              v-if="
-                tipoCampo(valor) ===
-                'boolean'
-              "
-              class="admin-configuracion__toggle"
-            >
-              <input
-                :id="`config-${campo}`"
-                v-model="
-                  configuracion[campo]
-                "
-                type="checkbox"
-              />
-
-              <span
-                class="admin-configuracion__toggle-track"
-                aria-hidden="true"
-              >
-                <span
-                  class="admin-configuracion__toggle-thumb"
-                ></span>
-              </span>
-
-              <span
-                class="admin-configuracion__toggle-text"
-              >
-                {{
-                  configuracion[campo]
-                    ? 'Activado'
-                    : 'Desactivado'
-                }}
-              </span>
-            </label>
-
-            <!-- NUMBER -->
-
-            <input
-              v-else-if="
-                tipoCampo(valor) ===
-                'number'
-              "
-              :id="`config-${campo}`"
-              v-model.number="
-                configuracion[campo]
-              "
-              type="number"
-              class="admin-configuracion__input"
-            />
-
-            <!-- ARRAY -->
-
-            <template
-              v-else-if="
-                tipoCampo(valor) ===
-                'array'
-              "
-            >
-              <textarea
-                :id="`config-${campo}`"
-                class="admin-configuracion__textarea"
-                :value="
-                  obtenerArrayTexto(
-                    valor
-                  )
-                "
-                rows="6"
-                @input="
-                  actualizarArray(
-                    campo,
-                    $event
-                  )
-                "
-              ></textarea>
-
-              <p
-                class="admin-configuracion__help"
-              >
-                Un elemento por línea.
-              </p>
-            </template>
-
-            <!-- OBJECT -->
-
-            <template
-              v-else-if="
-                tipoCampo(valor) ===
-                'object'
-              "
-            >
-              <textarea
-                :id="`config-${campo}`"
-                class="admin-configuracion__textarea admin-configuracion__textarea--code"
-                :value="
-                  obtenerJson(
-                    valor
-                  )
-                "
-                rows="8"
-                spellcheck="false"
-                @input="
-                  actualizarObjeto(
-                    campo,
-                    $event
-                  )
-                "
-              ></textarea>
-
-              <p
-                class="admin-configuracion__help"
-              >
-                Introduce un objeto JSON válido.
-              </p>
-            </template>
-
-            <!-- TEXTAREA -->
-
-            <textarea
-              v-else-if="
-                tipoCampo(valor) ===
-                'textarea'
-              "
-              :id="`config-${campo}`"
-              v-model="
-                configuracion[campo]
-              "
-              class="admin-configuracion__textarea"
-              rows="6"
-            ></textarea>
-
-            <!-- TEXT -->
-
-            <input
-              v-else
-              :id="`config-${campo}`"
-              v-model="
-                configuracion[campo]
-              "
-              type="text"
-              class="admin-configuracion__input"
-            />
-
-          </div>
-        </div>
-      </section>
-
-      <!-- ACTIONS -->
-
-      <div
-        class="admin-configuracion__actions"
-      >
-        <button
-          type="button"
-          class="admin-configuracion__button admin-configuracion__button--secondary"
-          :disabled="guardando"
-          @click="
-            restaurarCambios
-          "
-        >
-          <span aria-hidden="true">
-            ↶
+    <template v-else>
+
+      <!-- NAVEGACIÓN -->
+      <nav class="admin-configuracion__tabs">
+        <button v-for="panel in paneles" :key="panel.id" type="button" class="admin-configuracion__tab" :class="{
+          'is-active': panelActivo === panel.id,
+        }" @click="cambiarPanel(panel.id)">
+          <span class="admin-configuracion__tab-icon">
+            {{ panel.icono }}
           </span>
 
+          <span class="admin-configuracion__tab-content">
+            <strong>{{ panel.titulo }}</strong>
+            <small>{{ panel.descripcion }}</small>
+          </span>
+        </button>
+      </nav>
+
+      <!-- MENSAJE -->
+      <div v-if="mensaje" class="admin-configuracion__alert admin-configuracion__alert--success">
+        {{ mensaje }}
+      </div>
+
+      <!-- CONTENIDO -->
+      <main v-if="existeConfiguracion" class="admin-configuracion__workspace">
+
+        <ConfiguracionIdentidad v-if="panelActivo === 'identidad'" :configuracion="configuracion"
+          @actualizar-logo="actualizarLogo" />
+
+        <ConfiguracionApariencia v-else-if="panelActivo === 'apariencia'" :configuracion="configuracion"
+          :colores-predeterminados="coloresPredeterminados" @actualizar-color="actualizarColor"
+          @actualizar-paleta="actualizarPaleta" />
+
+        <ConfiguracionDatos v-else-if="panelActivo === 'datos'" :configuracion="configuracion"
+          :campos-color="camposColor" @actualizar="actualizarConfiguracionLocal" />
+
+      </main>
+
+      <!-- ACCIONES -->
+      <footer class="admin-configuracion__actions">
+        <button type="button" class="admin-configuracion__button admin-configuracion__button--secondary"
+          :disabled="guardando" @click="restaurarCambios">
           Descartar cambios
         </button>
 
-        <button
-          type="button"
-          class="admin-configuracion__button admin-configuracion__button--secondary"
-          :disabled="guardando"
-          @click="
-            restablecerConfiguracion
-          "
-        >
-          <span aria-hidden="true">
-            ↺
+        <button type="button" class="admin-configuracion__button admin-configuracion__button--primary"
+          :disabled="guardando" @click="guardarConfiguracion">
+          <span v-if="guardando">
+            Guardando...
           </span>
 
-          Restablecer colores
-        </button>
-
-        <button
-          type="submit"
-          class="admin-configuracion__button admin-configuracion__button--primary"
-          :disabled="guardando"
-        >
-          <span
-            v-if="guardando"
-            class="admin-configuracion__button-spinner"
-            aria-hidden="true"
-          ></span>
-
-          <span
-            v-else
-            aria-hidden="true"
-          >
-            ✓
+          <span v-else>
+            Guardar configuración
           </span>
-
-          {{
-            guardando
-              ? 'Guardando...'
-              : 'Guardar configuración'
-          }}
         </button>
-      </div>
-    </form>
+      </footer>
+
+    </template>
   </section>
 </template>

@@ -65,13 +65,15 @@ async function iniciar() {
     <section class="admin-login__card">
 
       <div class="admin-login__brand">
+
         <div class="admin-login__logo">
-          IA
+          <img class="logo-image" src="/img/logo.jpg" alt="Logo">
         </div>
 
         <span>
           Administración
         </span>
+
       </div>
 
       <div class="admin-login__header">
@@ -91,65 +93,35 @@ async function iniciar() {
 
       </div>
 
-      <form
-        class="admin-form"
-        @submit.prevent="iniciar"
-      >
+      <form class="admin-form" @submit.prevent="iniciar">
 
         <div class="admin-form__group">
 
-          <label
-            for="email"
-            class="admin-form__label"
-          >
+          <label for="email" class="admin-form__label">
             Correo electrónico
           </label>
 
-          <input
-            id="email"
-            v-model="email"
-            class="admin-form__input"
-            type="email"
-            autocomplete="username"
-            placeholder="correo@ejemplo.com"
-            required
-          >
+          <input id="email" v-model="email" class="admin-form__input" type="email" autocomplete="username"
+            placeholder="correo@ejemplo.com" required>
 
         </div>
 
         <div class="admin-form__group">
 
-          <label
-            for="password"
-            class="admin-form__label"
-          >
+          <label for="password" class="admin-form__label">
             Contraseña
           </label>
 
-          <input
-            id="password"
-            v-model="password"
-            class="admin-form__input"
-            type="password"
-            autocomplete="current-password"
-            placeholder="••••••••"
-            required
-          >
+          <input id="password" v-model="password" class="admin-form__input" type="password"
+            autocomplete="current-password" placeholder="••••••••" required>
 
         </div>
 
-        <div
-          v-if="error"
-          class="admin-alert admin-alert--error"
-        >
+        <div v-if="error" class="admin-alert admin-alert--error">
           {{ error }}
         </div>
 
-        <button
-          type="submit"
-          class="admin-button admin-button--primary admin-button--full"
-          :disabled="cargando"
-        >
+        <button type="submit" class="admin-button admin-button--primary admin-button--full" :disabled="cargando">
           {{
             cargando
               ? 'Iniciando sesión...'
@@ -159,10 +131,7 @@ async function iniciar() {
 
       </form>
 
-      <RouterLink
-        to="/"
-        class="admin-login__back"
-      >
+      <RouterLink to="/" class="admin-login__back">
         ← Volver a la landing
       </RouterLink>
 

@@ -8,6 +8,10 @@ import {
   watch,
 } from 'vue'
 
+/* =========================================================
+   PROPS
+   ========================================================= */
+
 const props = defineProps({
   contenido: {
     type: Object,
@@ -20,22 +24,28 @@ const props = defineProps({
   },
 })
 
+/* =========================================================
+   ESTADO
+   ========================================================= */
+
 const menuAbierto = ref(false)
 
 const headerRef = ref(null)
+
 const menuButtonRef = ref(null)
+
+/* =========================================================
+   ESTADO DEL HEADER
+   ========================================================= */
 
 const headerActivo = computed(() => {
   return props.contenido?.activo !== false
 })
 
-/*
- * Navegación principal.
- *
- * Los elementos pueden venir desde Firebase.
- * Si Contacto no existe, se agrega automáticamente
- * para garantizar que siempre esté disponible.
- */
+/* =========================================================
+   NAVEGACIÓN PRINCIPAL
+   ========================================================= */
+
 const navegacion = computed(() => {
   const items = props.contenido?.navegacion
 
@@ -56,35 +66,36 @@ const navegacion = computed(() => {
         })
     : []
 
-  /*
-   * Detectamos si Firebase ya tiene un enlace
-   * hacia Contacto.
-   */
-  const existeContacto = navegacionFirebase.some((item) => {
-    const texto = String(
-      item.texto || ''
-    )
-      .trim()
-      .toLowerCase()
+  /* -------------------------------------------------------
+     DETECTAR CONTACTO
+     ------------------------------------------------------- */
 
-    const url = String(
-      item.url || ''
-    )
-      .trim()
-      .toLowerCase()
+  const existeContacto =
+    navegacionFirebase.some((item) => {
+      const texto = String(
+        item.texto || '',
+      )
+        .trim()
+        .toLowerCase()
 
-    return (
-      texto === 'contacto' ||
-      texto.includes('contacto') ||
-      url === '#contacto' ||
-      url.endsWith('#contacto')
-    )
-  })
+      const url = String(
+        item.url || '',
+      )
+        .trim()
+        .toLowerCase()
 
-  /*
-   * Si Contacto no está configurado en Firebase,
-   * lo agregamos automáticamente.
-   */
+      return (
+        texto === 'contacto' ||
+        texto.includes('contacto') ||
+        url === '#contacto' ||
+        url.endsWith('#contacto')
+      )
+    })
+
+  /* -------------------------------------------------------
+     CONTACTO POR DEFECTO
+     ------------------------------------------------------- */
+
   if (!existeContacto) {
     navegacionFirebase.push({
       id: 'contacto-default',
@@ -98,6 +109,10 @@ const navegacion = computed(() => {
   return navegacionFirebase
 })
 
+/* =========================================================
+   EMPRESA
+   ========================================================= */
+
 const nombreEmpresa = computed(() => {
   return (
     props.configuracion?.nombreEmpresa ||
@@ -105,6 +120,10 @@ const nombreEmpresa = computed(() => {
     'Desarrollos IAEH'
   )
 })
+
+/* =========================================================
+   TEXTO DEL LOGO
+   ========================================================= */
 
 const logoTexto = computed(() => {
   return (
@@ -114,13 +133,30 @@ const logoTexto = computed(() => {
   )
 })
 
+/* =========================================================
+   LOGO
+   ========================================================= */
+
 const logoUrl = computed(() => {
+  const logo =
+    props.configuracion?.logo || {}
+
+  if (logo.activo === false) {
+    return ''
+  }
+
   return (
+    logo.pngUrl ||
+    logo.originalUrl ||
     props.configuracion?.logoUrl ||
     props.contenido?.logoUrl ||
-    ''
+    '/img/logo.jpg'
   )
 })
+
+/* =========================================================
+   SUBTÍTULO
+   ========================================================= */
 
 const subtitulo = computed(() => {
   return (
@@ -129,6 +165,10 @@ const subtitulo = computed(() => {
     ''
   )
 })
+
+/* =========================================================
+   CTA
+   ========================================================= */
 
 const ctaTexto = computed(() => {
   return (
@@ -144,17 +184,34 @@ const ctaUrl = computed(() => {
   )
 })
 
+/* =========================================================
+   NAVEGACIÓN
+   ========================================================= */
+
 const tieneNavegacion = computed(() => {
   return navegacion.value.length > 0
 })
+
+/* =========================================================
+   CERRAR MENÚ
+   ========================================================= */
 
 function cerrarMenu() {
   menuAbierto.value = false
 }
 
+/* =========================================================
+   ALTERNAR MENÚ
+   ========================================================= */
+
 function alternarMenu() {
-  menuAbierto.value = !menuAbierto.value
+  menuAbierto.value =
+    !menuAbierto.value
 }
+
+/* =========================================================
+   ESCAPE
+   ========================================================= */
 
 function manejarTeclaEscape(event) {
   if (event.key !== 'Escape') {
@@ -172,6 +229,10 @@ function manejarTeclaEscape(event) {
   })
 }
 
+/* =========================================================
+   CLICK EXTERIOR
+   ========================================================= */
+
 function manejarClickExterior(event) {
   if (!menuAbierto.value) {
     return
@@ -187,14 +248,14 @@ function manejarClickExterior(event) {
   }
 }
 
-/*
- * Detecta correctamente:
- * - https://...
- * - http://...
- * - www....
- */
+/* =========================================================
+   ENLACE EXTERNO
+   ========================================================= */
+
 function esEnlaceExterno(url) {
-  const valor = String(url || '').trim()
+  const valor = String(
+    url || '',
+  ).trim()
 
   if (!valor) {
     return false
@@ -206,12 +267,14 @@ function esEnlaceExterno(url) {
   )
 }
 
-/*
- * Maneja navegación sin interferir con
- * el comportamiento natural del navegador.
- */
+/* =========================================================
+   NAVEGACIÓN
+   ========================================================= */
+
 function manejarNavegacion(url) {
-  const valor = String(url || '').trim()
+  const valor = String(
+    url || '',
+  ).trim()
 
   cerrarMenu()
 
@@ -219,26 +282,18 @@ function manejarNavegacion(url) {
     return
   }
 
-  /*
-   * Los enlaces de ancla se dejan al navegador.
-   *
-   * Ejemplo:
-   * #inicio
-   * #soluciones
-   * #caracteristicas
-   * #planes
-   * #nosotros
-   * #faq
-   * #contacto
-   */
+  /* -------------------------------------------------------
+     ANCLAS INTERNAS
+     ------------------------------------------------------- */
+
   if (valor.startsWith('#')) {
     return
   }
 
-  /*
-   * Estos enlaces también deben conservar
-   * el comportamiento nativo del navegador.
-   */
+  /* -------------------------------------------------------
+     ENLACES EXTERNOS / CONTACTO
+     ------------------------------------------------------- */
+
   if (
     valor.startsWith('mailto:') ||
     valor.startsWith('tel:') ||
@@ -248,19 +303,30 @@ function manejarNavegacion(url) {
   }
 }
 
+/* =========================================================
+   WATCH MENÚ
+   ========================================================= */
+
 watch(
   menuAbierto,
   (abierto) => {
-    if (typeof document === 'undefined') {
+    if (
+      typeof document ===
+      'undefined'
+    ) {
       return
     }
 
     document.body.classList.toggle(
       'mobile-menu-open',
-      abierto
+      abierto,
     )
-  }
+  },
 )
+
+/* =========================================================
+   WATCH CONTENIDO
+   ========================================================= */
 
 watch(
   () => props.contenido,
@@ -269,35 +335,46 @@ watch(
   },
   {
     deep: true,
-  }
+  },
 )
+
+/* =========================================================
+   MOUNT
+   ========================================================= */
 
 onMounted(() => {
   document.addEventListener(
     'keydown',
-    manejarTeclaEscape
+    manejarTeclaEscape,
   )
 
   document.addEventListener(
     'click',
-    manejarClickExterior
+    manejarClickExterior,
   )
 })
+
+/* =========================================================
+   UNMOUNT
+   ========================================================= */
 
 onBeforeUnmount(() => {
   document.removeEventListener(
     'keydown',
-    manejarTeclaEscape
+    manejarTeclaEscape,
   )
 
   document.removeEventListener(
     'click',
-    manejarClickExterior
+    manejarClickExterior,
   )
 
-  if (typeof document !== 'undefined') {
+  if (
+    typeof document !==
+    'undefined'
+  ) {
     document.body.classList.remove(
-      'mobile-menu-open'
+      'mobile-menu-open',
     )
   }
 })
@@ -311,7 +388,10 @@ onBeforeUnmount(() => {
   >
     <div class="container app-header__inner">
 
-      <!-- LOGOTIPO / MARCA -->
+      <!-- =================================================
+           LOGOTIPO / MARCA
+           ================================================= -->
+
       <a
         href="#inicio"
         class="app-header__brand"
@@ -321,15 +401,12 @@ onBeforeUnmount(() => {
         <span class="app-header__logo">
           <img
             v-if="logoUrl"
+            class="logo-image"
             :src="logoUrl"
             :alt="nombreEmpresa"
-            loading="eager"
-          />
-
-          <span
-            v-else
-            aria-hidden="true"
           >
+
+          <span v-else>
             {{ logoTexto }}
           </span>
         </span>
@@ -345,7 +422,10 @@ onBeforeUnmount(() => {
         </span>
       </a>
 
-      <!-- NAVEGACIÓN DESKTOP -->
+      <!-- =================================================
+           NAVEGACIÓN DESKTOP
+           ================================================= -->
+
       <nav
         v-if="tieneNavegacion"
         class="app-header__nav"
@@ -367,7 +447,10 @@ onBeforeUnmount(() => {
         </a>
       </nav>
 
-      <!-- CTA DESKTOP -->
+      <!-- =================================================
+           CTA DESKTOP
+           ================================================= -->
+
       <a
         v-if="ctaTexto"
         :href="ctaUrl"
@@ -396,7 +479,10 @@ onBeforeUnmount(() => {
         </span>
       </a>
 
-      <!-- BOTÓN MENÚ MÓVIL -->
+      <!-- =================================================
+           BOTÓN MENÚ MÓVIL
+           ================================================= -->
+
       <button
         ref="menuButtonRef"
         type="button"
@@ -430,7 +516,10 @@ onBeforeUnmount(() => {
       </button>
     </div>
 
-    <!-- MENÚ MÓVIL -->
+    <!-- =================================================
+         MENÚ MÓVIL
+         ================================================= -->
+
     <Transition name="header-mobile-menu">
       <div
         v-if="menuAbierto"
@@ -465,6 +554,7 @@ onBeforeUnmount(() => {
             </a>
 
             <!-- CTA MÓVIL -->
+
             <a
               v-if="ctaTexto"
               :href="ctaUrl"

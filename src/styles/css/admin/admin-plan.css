@@ -1,4 +1,11 @@
-/* ADMIN PLANES */
+/* =========================================================
+   ADMIN PLANES
+   ========================================================= */
+
+/* =========================================================
+   PLAN LIST
+   ========================================================= */
+
 .admin-plan-list {
   display: grid;
 
@@ -8,16 +15,19 @@
   gap: 18px;
 }
 
+/* =========================================================
+   PLAN CARD
+   ========================================================= */
+
 .admin-plan-card {
+  min-width: 0;
+
   display: flex;
   flex-direction: column;
-
-  min-width: 0;
 
   padding: 22px;
 
   border: 1px solid var(--color-border);
-
   border-radius: var(--radius-lg);
 
   background: var(--color-white);
@@ -38,6 +48,10 @@
   box-shadow: var(--shadow-md);
 }
 
+/* =========================================================
+   PLAN HEADER
+   ========================================================= */
+
 .admin-plan-card__header {
   display: flex;
   align-items: flex-start;
@@ -53,6 +67,10 @@
   gap: 5px;
 }
 
+/* =========================================================
+   BADGES
+   ========================================================= */
+
 .admin-badge {
   display: inline-flex;
   align-items: center;
@@ -64,7 +82,6 @@
   border-radius: 999px;
 
   background: var(--color-background);
-
   color: var(--color-text-secondary);
 
   font-size: 9px;
@@ -75,21 +92,22 @@
 
 .admin-badge--success {
   background: var(--color-success-light);
-
   color: var(--color-success);
 }
 
 .admin-badge--danger {
   background: var(--color-danger-light);
-
   color: var(--color-danger);
 }
 
 .admin-badge--accent {
   background: var(--color-accent-light);
-
   color: var(--color-accent);
 }
+
+/* =========================================================
+   PLAN PRICE
+   ========================================================= */
 
 .admin-plan-card__price {
   margin-top: 16px;
@@ -100,6 +118,10 @@
   font-weight: 850;
 }
 
+/* =========================================================
+   PLAN DESCRIPTION
+   ========================================================= */
+
 .admin-plan-card__description {
   min-height: 42px;
 
@@ -108,9 +130,12 @@
   color: var(--color-text-secondary);
 
   font-size: 12px;
-
   line-height: 1.6;
 }
+
+/* =========================================================
+   PLAN META
+   ========================================================= */
 
 .admin-plan-card__meta {
   display: flex;
@@ -121,9 +146,12 @@
   margin-top: 15px;
 }
 
+/* =========================================================
+   PLAN FEATURES
+   ========================================================= */
+
 .admin-plan-card__features {
   margin-top: 18px;
-
   padding-top: 17px;
 
   border-top: 1px solid var(--color-border-light);
@@ -158,7 +186,6 @@
   color: var(--color-text-secondary);
 
   font-size: 11px;
-
   line-height: 1.5;
 }
 
@@ -166,13 +193,16 @@
   content: "✓";
 
   position: absolute;
-
   left: 0;
 
   color: var(--color-success);
 
   font-weight: 900;
 }
+
+/* =========================================================
+   PLAN ACTIONS
+   ========================================================= */
 
 .admin-plan-card__actions {
   display: flex;
@@ -184,6 +214,10 @@
   padding-top: 20px;
 }
 
+/* =========================================================
+   INLINE FORM
+   ========================================================= */
+
 .admin-inline-form {
   display: flex;
   align-items: flex-end;
@@ -194,6 +228,10 @@
 .admin-inline-form .admin-form__group {
   flex: 1;
 }
+
+/* =========================================================
+   TAG LIST
+   ========================================================= */
 
 .admin-tag-list {
   display: flex;
@@ -217,7 +255,6 @@
   border-radius: 999px;
 
   background: var(--color-accent-light);
-
   color: var(--color-accent);
 
   font-size: 11px;
@@ -225,36 +262,26 @@
 }
 
 .admin-tag button {
-  display: grid;
-  place-items: center;
-
   width: 18px;
   height: 18px;
+
+  display: grid;
+  place-items: center;
 
   border-radius: 50%;
 
   background: rgba(47, 128, 237, 0.12);
-
   color: var(--color-accent);
 
   font-size: 11px;
 }
 
+/* =========================================================
+   COUNT
+   ========================================================= */
+
 .admin-count {
   color: var(--color-text-muted);
 
   font-size: 11px;
-}
-
-@media (max-width: 900px) {
-.admin-plan-list {
-    grid-template-columns:
-      repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 700px) {
-.admin-plan-list {
-    grid-template-columns: 1fr;
-  }
 }

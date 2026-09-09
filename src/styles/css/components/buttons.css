@@ -2,6 +2,11 @@
    BUTTONS
    ========================================================= */
 
+
+/* =========================================================
+   BASE
+   ========================================================= */
+
 .btn {
   display: inline-flex;
   align-items: center;
@@ -31,9 +36,19 @@
     box-shadow var(--transition-fast);
 }
 
+
+/* =========================================================
+   HOVER
+   ========================================================= */
+
 .btn:hover {
   transform: translateY(-2px);
 }
+
+
+/* =========================================================
+   FOCUS
+   ========================================================= */
 
 .btn:focus-visible {
   outline: 3px solid
@@ -45,6 +60,7 @@
 
   outline-offset: 3px;
 }
+
 
 /* =========================================================
    PRIMARY
@@ -63,11 +79,11 @@
   border-color: var(--color-primary);
 
   background: var(--color-primary);
-
   color: var(--color-white);
 
   box-shadow: var(--shadow-md);
 }
+
 
 /* =========================================================
    SECONDARY
@@ -92,6 +108,8 @@
 }
 
 .btn--secondary:hover {
+  border-color: var(--color-accent);
+
   background:
     color-mix(
       in srgb,
@@ -99,10 +117,9 @@
       var(--color-background)
     );
 
-  border-color: var(--color-accent);
-
   color: var(--color-accent);
 }
+
 
 /* =========================================================
    LIGHT
@@ -117,11 +134,12 @@
     );
 
   background: var(--color-white);
-
   color: var(--color-primary);
 }
 
 .btn--light:hover {
+  border-color: var(--color-secondary);
+
   background:
     color-mix(
       in srgb,
@@ -129,10 +147,9 @@
       var(--color-white)
     );
 
-  border-color: var(--color-secondary);
-
   box-shadow: var(--shadow-md);
 }
+
 
 /* =========================================================
    GHOST
@@ -142,7 +159,6 @@
   border-color: transparent;
 
   background: transparent;
-
   color: var(--color-text);
 }
 
@@ -157,6 +173,7 @@
   color: var(--color-accent);
 }
 
+
 /* =========================================================
    FULL WIDTH
    ========================================================= */
@@ -164,6 +181,7 @@
 .btn--full {
   width: 100%;
 }
+
 
 /* =========================================================
    DISABLED
@@ -179,6 +197,7 @@
   transform: none;
 }
 
+
 /* =========================================================
    LOADING
    ========================================================= */
@@ -187,7 +206,6 @@
   position: relative;
 
   color: transparent;
-
   pointer-events: none;
 }
 
@@ -204,30 +222,16 @@
 
   border-radius: 50%;
 
-  animation:
-    button-spin 0.7s linear infinite;
+  animation: button-spin 0.7s linear infinite;
 }
+
+
+/* =========================================================
+   LOADING ANIMATION
+   ========================================================= */
 
 @keyframes button-spin {
   to {
     transform: rotate(360deg);
-  }
-}
-
-/* =========================================================
-   REDUCED MOTION
-   ========================================================= */
-
-@media (prefers-reduced-motion: reduce) {
-  .btn {
-    transition: none;
-  }
-
-  .btn:hover {
-    transform: none;
-  }
-
-  .btn--loading::after {
-    animation: none;
   }
 }

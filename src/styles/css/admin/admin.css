@@ -1,16 +1,54 @@
-/* ADMIN CSS ENTRYPOINT
- * Source of truth: stylerespaldo.css
- * Extracted without redesigning selectors or values.
- */
+/* =========================================================
+   ADMIN CSS ENTRYPOINT
+   =========================================================
+
+   Fuente de verdad:
+   stylerespaldo.css
+
+   Este archivo únicamente importa los módulos de Admin.
+
+   ========================================================= */
+
+
+/* =========================================================
+   LAYOUT
+   ========================================================= */
 
 @import "./admin-layout.css";
+
+
+/* =========================================================
+   AUTH
+   ========================================================= */
+
 @import "./admin-login.css";
+
+
+/* =========================================================
+   COMPONENTES
+   ========================================================= */
+
 @import "./admin-forms.css";
+
 @import "./admin-buttons.css";
+
+
+/* =========================================================
+   PÁGINAS / CONTENIDO
+   ========================================================= */
+
 @import "./admin-pages.css";
+
 @import "./admin-dashboard.css";
+
+@import "./admin-contenido.css";
+
 @import "./admin-plan.css";
+
 @import "./admin-contactos.css";
+
 @import "./admin-secciones.css";
+
 @import "./admin-configuracion.css";
+
 @import "./admin-usuarios.css";

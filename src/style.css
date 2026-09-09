@@ -3,25 +3,28 @@
    ========================================================= */
 
 /*
- * Entrada global de estilos.
- *
- * Landing:
- *   - variables
- *   - reset
- *   - utilidades
- *   - componentes Landing
- *   - responsive
- *
- * Admin:
- *   - layout
- *   - botones
- *   - formularios
- *   - páginas
- *   - dashboard
- *   - configuración
- *   - usuarios
- *   - etc.
+ * LANDING
+ * Incluye:
+ * - variables
+ * - reset
+ * - utilities
+ * - componentes
+ * - secciones públicas
  */
 
 @import "./styles/landing.css";
+
+/*
+ * ADMIN
+ * Incluye todos los módulos administrativos.
+ */
+
 @import "./styles/css/admin/admin.css";
+
+/*
+ * RESPONSIVE GLOBAL
+ *
+ * Se aplica tanto a Landing como a Admin.
+ */
+
+@import "./styles/responsive.css";

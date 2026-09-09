@@ -1,6 +1,15 @@
 /* =========================================================
    RESPONSIVE - LANDING + ADMIN
-   Extraído de stylerespaldo.css sin cambiar selectores ni valores.
+   =========================================================
+   Fuente de verdad: stylerespaldo.css
+   Un solo archivo responsive para Landing + Admin.
+   No contiene estilos estructurales base.
+   No contiene estilos de componentes fuera de @media.
+   ========================================================= */
+
+
+/* =========================================================
+   GLOBAL
    ========================================================= */
 
 @media (max-width: 1024px) {
@@ -13,9 +22,7 @@
   }
 
   .plans__grid {
-    grid-template-columns:
-      repeat(2, minmax(0, 1fr));
-
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 22px;
   }
 
@@ -24,182 +31,31 @@
   }
 
   .plan-card__amount {
-    font-size: clamp(34px, 5vw, 44px);
+    font-size: clamp(38px, 5vw, 48px);
   }
 
   .features__grid {
-    grid-template-columns:
-      repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
-@media (max-width: 900px) {
-  .about__layout {
-    grid-template-columns: 1fr;
-
-    gap: 50px;
-  }
-
-  .about__content {
-    max-width: 100%;
-  }
-
-  .about__content .section-title {
-    text-align: center;
-  }
-
-  .about__content .section-eyebrow {
-    display: block;
-
-    text-align: center;
-  }
-
-  .benefits__grid {
-    grid-template-columns:
-      repeat(2, minmax(0, 1fr));
-  }
-
-  .solutions__grid {
-    grid-template-columns:
-      repeat(2, minmax(0, 1fr));
-  }
-
-  .app-header__nav,
-  .app-header__cta {
-    display: none;
-  }
-
-  .app-header__menu-button {
-    display: block;
-  }
-
-  .app-header__mobile-menu {
-    display: block;
-  }
-
-  .app-footer__container {
-    grid-template-columns:
-      repeat(2, minmax(0, 1fr));
-
-    gap: 36px;
-  }
-
-  .app-footer__brand {
-    grid-column: 1 / -1;
-
-    max-width: 560px;
-  }
-
-  .admin-layout__menu-button {
-    display: grid;
-    place-items: center;
-  }
-
-  .admin-layout__sidebar {
-    position: fixed;
-
-    top: 0;
-    bottom: 0;
-    left: 0;
-
-    z-index: 1000;
-
-    transform: translateX(-100%);
-
-    transition: transform var(--transition-normal);
-
-    box-shadow: var(--shadow-lg);
-  }
-
-  .admin-layout__sidebar--open {
-    transform: translateX(0);
-  }
-
-  .admin-layout__overlay {
-    position: fixed;
-
-    inset: 0;
-
-    z-index: 999;
-
-    display: block;
-
-    background: rgba(15, 23, 42, 0.4);
-  }
-
-  .admin-layout__content {
+@media (max-width: 768px) {
+  .landing-loading__content,
+  .loading__content {
     width: 100%;
+    max-width: 320px;
+    padding: 28px 24px;
   }
 
-  .admin-stat-grid {
-    grid-template-columns:
-      repeat(2, minmax(0, 1fr));
+  .landing-error,
+  .error-state {
+    left: 16px;
+    right: 16px;
+    bottom: 16px;
   }
 
-  .admin-dashboard-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .admin-plan-list {
-    grid-template-columns:
-      repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 800px) {
-  .contact__card {
-    grid-template-columns: 1fr;
-
-    gap: 30px;
-
-    padding: 45px 35px;
-
-    text-align: center;
-  }
-
-  .contact__content {
-    max-width: 100%;
-  }
-
-  .contact__description {
-    margin-left: auto;
-    margin-right: auto;
-  }
-
-  .contact__details {
-    align-items: center;
-  }
-
-  .contact__action {
-    display: flex;
-    justify-content: center;
-  }
-
-  .admin-layout__header {
-    padding: 12px 18px;
-  }
-
-  .admin-layout__user {
-    display: none;
-  }
-
-  .admin-layout__content {
-    padding: 24px 18px;
-  }
-
-  .admin-page__header {
-    align-items: flex-start;
-
-    flex-direction: column;
-  }
-
-  .admin-form__grid--3 {
-    grid-template-columns: 1fr;
-  }
-
-  .admin-section-selector {
-    grid-template-columns:
-      repeat(2, minmax(0, 1fr));
+  .loading {
+    padding: 16px;
   }
 }
 
@@ -219,15 +75,740 @@
   .section-description {
     font-size: 15px;
   }
+}
 
-  .plans__grid {
+@media (max-width: 480px) {
+  h1,
+  h2 {
+    letter-spacing: -1px;
+  }
+
+  .section {
+    padding: 56px 0;
+  }
+}
+
+
+/* =========================================================
+   HEADER
+   ========================================================= */
+
+@media (max-width: 900px) {
+  .app-header__inner {
+    min-height: 68px;
+  }
+
+  .app-header__nav,
+  .app-header__cta {
+    display: none;
+  }
+
+  .app-header__menu-button {
+    display: block;
+  }
+
+  .app-header__mobile-menu {
+    display: block;
+  }
+}
+
+@media (max-width: 480px) {
+  .app-header__inner {
+    min-height: 64px;
+    gap: 16px;
+  }
+
+  .app-header__logo {
+    width: 38px;
+    height: 38px;
+  }
+
+  .app-header__brand-text strong {
+    font-size: 14px;
+  }
+
+  .app-header__brand-text small {
+    font-size: 9px;
+  }
+
+  .app-header__menu-button {
+    width: 40px;
+    height: 40px;
+  }
+
+  .app-header__mobile-menu nav {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+}
+
+
+/* =========================================================
+   HERO
+   ========================================================= */
+
+@media (max-width: 1100px) {
+  .hero__container {
+    grid-template-columns:
+      minmax(0, 1fr)
+      minmax(320px, 0.8fr);
+
+    gap: 45px;
+  }
+
+  .hero__title {
+    font-size: clamp(40px, 5.5vw, 62px);
+  }
+
+  .hero__visual {
+    min-height: 420px;
+  }
+
+  .hero__visual-decoration--two {
+    width: 440px;
+    height: 440px;
+  }
+
+  .hero__visual-decoration--one {
+    width: 370px;
+    height: 370px;
+  }
+
+  .hero__visual-glow {
+    width: 340px;
+    height: 340px;
+  }
+
+  .hero__floating-badge--top {
+    right: -10px;
+  }
+
+  .hero__floating-badge--bottom {
+    right: -5px;
+  }
+}
+
+@media (max-width: 900px) {
+  .hero {
+    min-height: auto;
+  }
+
+  .hero__container {
     grid-template-columns: 1fr;
+    gap: 50px;
+    padding: 75px 0 90px;
+  }
 
+  .hero__content {
+    max-width: 760px;
+  }
+
+  .hero__visual {
+    min-height: 430px;
+  }
+
+  .hero__visual-card {
+    width: min(100%, 440px);
+  }
+
+  .hero__scroll {
+    bottom: 18px;
+  }
+}
+
+@media (max-width: 850px) {
+  .hero {
+    min-height: auto;
+  }
+
+  .hero__container {
+    min-height: auto;
+    grid-template-columns: 1fr;
+    gap: 50px;
+    padding-top: 75px;
+    padding-bottom: 80px;
+  }
+
+  .hero__content {
+    max-width: 720px;
+    margin: 0 auto;
+    text-align: center;
+  }
+
+  .hero__eyebrow-wrapper {
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .hero__title {
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .hero__title-highlight {
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .hero__description {
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .hero__actions {
+    justify-content: center;
+  }
+
+  .hero__trust {
+    justify-content: center;
+  }
+
+  .hero__visual {
+    width: min(100%, 620px);
+    min-height: 500px;
+    margin: 0 auto;
+  }
+
+  .hero__floating-badge--top {
+    left: 0;
+  }
+
+  .hero__floating-badge--bottom {
+    right: 0;
+  }
+
+  .hero__scroll {
+    display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .hero__container {
+    width: min(100%, calc(100% - 32px));
+    gap: 38px;
+    padding: 55px 0 78px;
+  }
+
+  .hero__eyebrow-wrapper {
+    margin-bottom: 16px;
+    padding: 6px 10px;
+  }
+
+  .hero__eyebrow {
+    font-size: 11px;
+    letter-spacing: 1px;
+  }
+
+  .hero__title {
+    font-size: clamp(38px, 12vw, 52px);
+    letter-spacing: -1.8px;
+  }
+
+  .hero__description {
+    margin-top: 20px;
+    font-size: 15px;
+    line-height: 1.7;
+  }
+
+  .hero__actions {
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 28px;
+  }
+
+  .hero__button {
+    width: 100%;
+  }
+
+  .hero__trust {
+    flex-direction: column;
+    gap: 9px;
+    margin-top: 24px;
+  }
+
+  .hero__visual {
+    min-height: 340px;
+  }
+
+  .hero__visual-card {
+    width: calc(100% - 38px);
+    padding: 8px;
+    border-radius: var(--radius-lg);
+  }
+
+  .hero__image {
+    max-height: 340px;
+    border-radius: calc(var(--radius-lg) - 5px);
+  }
+
+  .hero__visual-glow {
+    width: 280px;
+    height: 280px;
+  }
+
+  .hero__visual-decoration--one {
+    width: 300px;
+    height: 300px;
+  }
+
+  .hero__visual-decoration--two {
+    width: 360px;
+    height: 360px;
+  }
+
+  .hero__floating-badge {
+    min-width: 0;
+    padding: 9px 11px;
+    gap: 8px;
+  }
+
+  .hero__floating-badge--top {
+    top: 10px;
+    right: 0;
+  }
+
+  .hero__floating-badge--bottom {
+    right: 0;
+    bottom: 12px;
+  }
+
+  .hero__floating-icon,
+  .hero__floating-check {
+    width: 29px;
+    height: 29px;
+    font-size: 13px;
+  }
+
+  .hero__floating-badge strong {
+    font-size: 11px;
+  }
+
+  .hero__floating-badge small {
+    font-size: 9px;
+  }
+
+  .hero__scroll {
+    display: none;
+  }
+}
+
+@media (max-width: 600px) {
+  .hero__container {
+    gap: 35px;
+    padding-top: 55px;
+    padding-bottom: 60px;
+  }
+
+  .hero__eyebrow-wrapper {
+    margin-bottom: 18px;
+  }
+
+  .hero__title {
+    font-size: clamp(39px, 11vw, 55px);
+    line-height: 1;
+    letter-spacing: -0.045em;
+  }
+
+  .hero__description {
+    margin-top: 23px;
+    font-size: 16px;
+    line-height: 1.65;
+  }
+
+  .hero__actions {
+    flex-direction: column;
+    width: 100%;
+    margin-top: 28px;
+  }
+
+  .hero__button {
+    width: 100%;
+    min-height: 52px;
+  }
+
+  .hero__trust {
+    align-items: flex-start;
+    flex-direction: column;
+    width: fit-content;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 26px;
+    gap: 9px;
+  }
+
+  .hero__visual {
+    min-height: 370px;
+  }
+
+  .hero__visual-card {
+    width: calc(100% - 34px);
+    padding: 12px;
+    border-radius: 22px;
+    transform: none;
+  }
+
+  .hero__visual-card:hover {
+    transform: translateY(-3px);
+  }
+
+  .hero__image {
+    max-height: 370px;
+    border-radius: 13px;
+  }
+
+  .hero__floating-badge {
+    min-width: auto;
+    padding: 9px 11px;
+    border-radius: 12px;
+  }
+
+  .hero__floating-badge--top {
+    top: 6%;
+    left: 0;
+  }
+
+  .hero__floating-badge--bottom {
+    right: 0;
+    bottom: 5%;
+  }
+
+  .hero__floating-icon,
+  .hero__floating-check {
+    width: 29px;
+    height: 29px;
+    flex-basis: 29px;
+    border-radius: 9px;
+    font-size: 12px;
+  }
+
+  .hero__floating-badge strong {
+    font-size: 10px;
+  }
+
+  .hero__floating-badge small {
+    font-size: 8px;
+  }
+
+  .hero__visual-decoration--one {
+    width: 70px;
+    height: 70px;
+  }
+
+  .hero__visual-decoration--two {
+    width: 48px;
+    height: 48px;
+  }
+}
+
+@media (max-width: 420px) {
+  .hero__container {
+    width: min(100%, calc(100% - 24px));
+    padding-top: 45px;
+  }
+
+  .hero__title {
+    font-size: 36px;
+    letter-spacing: -1.4px;
+  }
+
+  .hero__description {
+    font-size: 14px;
+  }
+
+  .hero__visual {
+    min-height: 290px;
+  }
+
+  .hero__visual-card {
+    width: calc(100% - 24px);
+  }
+
+  .hero__floating-badge {
+    transform: scale(0.88);
+  }
+
+  .hero__floating-badge--top,
+  .hero__floating-badge--bottom {
+    right: -8px;
+  }
+}
+
+@media (max-width: 400px) {
+  .hero__container {
+    padding-top: 45px;
+  }
+
+  .hero__title {
+    font-size: 37px;
+  }
+
+  .hero__description {
+    font-size: 15px;
+  }
+
+  .hero__visual {
+    min-height: 315px;
+  }
+
+  .hero__floating-badge {
+    transform: scale(0.86);
+    transform-origin: center;
+  }
+
+  .hero__floating-badge--top {
+    left: -10px;
+  }
+
+  .hero__floating-badge--bottom {
+    right: -10px;
+  }
+}
+
+
+/* =========================================================
+   SOLUTIONS
+   ========================================================= */
+
+@media (max-width: 1000px) {
+  .solutions__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .solutions__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .solutions__grid {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+
+  .solution-card {
+    min-height: 0;
+    padding: 26px 24px 24px;
+  }
+
+  .solution-card__icon {
+    width: 52px;
+    height: 52px;
+    margin-bottom: 20px;
+    font-size: 22px;
+  }
+
+  .solution-card__title,
+  .solution-card h3 {
+    font-size: 18px;
+  }
+
+  .solution-card__description,
+  .solution-card p {
+    font-size: 14px;
+    line-height: 1.65;
+  }
+
+  .solutions__empty {
+    min-height: 180px;
+    padding: 30px 20px;
+  }
+}
+
+
+/* =========================================================
+   FEATURES
+   ========================================================= */
+
+@media (max-width: 1100px) {
+  .features__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .features__grid {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+
+  .feature-card {
+    min-height: 0;
+    padding: 26px 24px 24px;
+  }
+
+  .feature-card__icon {
+    width: 50px;
+    height: 50px;
+    margin-bottom: 19px;
+    font-size: 21px;
+  }
+
+  .feature-card__title,
+  .feature-card h3 {
+    font-size: 17px;
+  }
+
+  .feature-card__description,
+  .feature-card p {
+    font-size: 14px;
+    line-height: 1.65;
+  }
+
+  .features__empty {
+    min-height: 180px;
+    padding: 30px 20px;
+  }
+}
+
+@media (max-width: 600px) {
+  .features__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .feature-card {
+    min-height: auto;
+    padding: 28px 24px;
+  }
+}
+
+@media (max-width: 420px) {
+  .feature-card {
+    padding: 24px 20px;
+  }
+}
+
+
+/* =========================================================
+   BENEFITS
+   ========================================================= */
+
+@media (max-width: 1000px) {
+  .benefits__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .benefits__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .benefits__grid {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+
+  .benefit-card {
+    min-height: 0;
+    padding: 27px 24px 25px;
+  }
+
+  .benefit-card__icon {
+    width: 50px;
+    height: 50px;
+    margin-bottom: 20px;
+    font-size: 22px;
+  }
+
+  .benefit-card h3 {
+    font-size: 17px;
+  }
+
+  .benefit-card p {
+    font-size: 14px;
+    line-height: 1.7;
+  }
+}
+
+@media (max-width: 600px) {
+  .benefits__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .benefit-card {
+    padding: 28px 24px;
+  }
+}
+
+@media (max-width: 420px) {
+  .benefit-card {
+    padding: 24px 20px;
+  }
+}
+
+
+/* =========================================================
+   PLANS
+   ========================================================= */
+
+@media (max-width: 1100px) {
+  .plans__grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 18px;
+  }
+
+  .plan-card__content {
+    padding: 28px 24px;
+  }
+
+  .plan-card__name {
+    font-size: 22px;
+  }
+
+  .plan-card__amount {
+    font-size: 40px;
+    letter-spacing: -1.8px;
+  }
+
+  .plan-card__period {
+    font-size: 12px;
+  }
+
+  .plan-card__feature {
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 1000px) {
+  .plans__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .plans__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 20px;
   }
 
-  .plan-card--featured,
+  .plan-card--featured {
+    transform: none;
+  }
+
   .plan-card--featured:hover {
+    transform: translateY(-7px);
+  }
+
+  .plan-card__content {
+    padding: 30px 26px;
+  }
+
+  .plan-card__amount {
+    font-size: 46px;
+  }
+}
+
+@media (max-width: 700px) {
+  .plans__grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .plan-card--featured {
     transform: none;
   }
 
@@ -240,143 +821,183 @@
   }
 
   .plan-card__amount {
-    font-size: clamp(36px, 11vw, 46px);
+    font-size: clamp(38px, 11vw, 48px);
   }
 
   .plan-card__divider {
     margin: 24px 0;
   }
+}
 
-  .contact__card {
-    padding: 38px 24px;
+@media (max-width: 640px) {
+  .plans__header {
+    margin-bottom: 26px;
   }
 
-  .contact__title {
-    font-size: 30px;
+  .plans__intro {
+    margin-bottom: 24px;
+    font-size: 10px;
   }
 
-  .contact__description {
-    font-size: 15px;
+  .plans__intro-line {
+    width: 28px;
   }
 
-  .contact__button {
-    width: 100%;
-  }
-
-  .app-footer {
-    padding: 44px 0 22px;
-  }
-
-  .app-footer__container {
+  .plans__grid {
     grid-template-columns: 1fr;
-
-    width: calc(100% - 28px);
-
-    gap: 30px;
+    gap: 18px;
   }
 
-  .app-footer__brand {
-    grid-column: auto;
+  .plan-card,
+  .plan-card--featured {
+    transform: none;
   }
 
-  .app-footer__divider {
-    width: calc(100% - 28px);
-
-    margin: 36px auto 20px;
+  .plan-card:hover,
+  .plan-card--featured:hover {
+    transform: translateY(-4px);
   }
 
-  .app-footer__bottom {
-    flex-direction: column;
-    align-items: flex-start;
-
-    width: calc(100% - 28px);
+  .plan-card__content {
+    padding: 28px 24px;
   }
 
-  .app-footer__legal {
-    flex-wrap: wrap;
-
-    gap: 12px 18px;
-  }
-
-  .admin-layout__title {
-    font-size: 18px;
-  }
-
-  .admin-layout__subtitle {
-    display: none;
-  }
-
-  .admin-card {
-    padding: 20px;
-  }
-
-  .admin-form__grid--2 {
-    grid-template-columns: 1fr;
-  }
-
-  .admin-stat-grid {
-    grid-template-columns:
-      repeat(2, minmax(0, 1fr));
-
-    gap: 12px;
-  }
-
-  .admin-stat-card {
-    padding: 17px;
-  }
-
-  .admin-stat-card__value {
+  .plan-card__name {
     font-size: 23px;
   }
 
-  .admin-plan-list {
-    grid-template-columns: 1fr;
+  .plan-card__description {
+    min-height: 0;
+    font-size: 14px;
   }
 
-  .admin-content-item {
-    flex-direction: column;
+  .plan-card__price {
+    margin-top: 26px;
   }
 
-  .admin-content-item__actions {
+  .plan-card__amount {
+    font-size: 46px;
+  }
+
+  .plan-card__divider {
+    margin: 26px 0;
+  }
+
+  .plan-card__features-list {
+    gap: 13px;
+  }
+
+  .plan-card__feature {
+    font-size: 13px;
+  }
+
+  .plan-card__currency {
+    font-size: 19px;
+  }
+
+  .plan-card__period {
+    font-size: 13px;
+  }
+
+  .plan-card__button {
     width: 100%;
   }
 
-  .admin-section-selector {
+  .plans__status {
+    min-height: 160px;
+    padding: 30px 18px;
+  }
+}
+
+@media (max-width: 480px) {
+  .plans__grid {
+    gap: 16px;
+  }
+
+  .plan-card__content {
+    padding: 24px 18px;
+  }
+
+  .plan-card__name {
+    font-size: 22px;
+  }
+
+  .plan-card__description {
+    min-height: 0;
+  }
+
+  .plan-card__amount {
+    font-size: clamp(34px, 11vw, 42px);
+    letter-spacing: -1px;
+  }
+
+  .plan-card__currency {
+    font-size: 19px;
+  }
+
+  .plan-card__period {
+    font-size: 13px;
+  }
+
+  .plan-card__feature {
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 420px) {
+  .plan-card__content {
+    padding: 24px 20px;
+  }
+
+  .plan-card__title-row {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .plan-card__recommended {
+    margin-top: 0;
+  }
+
+  .plan-card__amount {
+    font-size: 42px;
+  }
+
+  .plan-card__currency {
+    font-size: 19px;
+  }
+
+  .plan-card__period {
+    font-size: 11px;
+  }
+
+  .plan-card__button {
+    min-height: 46px;
+  }
+}
+
+
+/* =========================================================
+   ABOUT
+   ========================================================= */
+
+@media (max-width: 900px) {
+  .about__layout {
     grid-template-columns: 1fr;
+    gap: 50px;
   }
 
-  .admin-login {
-    padding: 18px;
+  .about__content {
+    max-width: 100%;
+    text-align: center;
   }
 
-  .admin-login__card {
-    padding: 30px 22px;
+  .about__title,
+  .about__eyebrow {
+    text-align: center;
   }
 }
 
 @media (max-width: 600px) {
-  .benefits__grid,
-  .features__grid,
-  .solutions__grid {
-    grid-template-columns: 1fr;
-  }
-
-  .benefit-card {
-    padding: 28px 24px;
-  }
-
-  .feature-card {
-    min-height: auto;
-
-    padding: 28px 24px;
-  }
-
-  .solution-card {
-    min-height: auto;
-
-    padding: 28px 24px;
-  }
-
   .about__layout {
     gap: 35px;
   }
@@ -386,7 +1007,6 @@
   }
 
   .about__media,
-  .about__media img,
   .about__visual {
     min-height: 280px;
   }
@@ -394,19 +1014,23 @@
   .about__visual-inner {
     width: 110px;
     height: 110px;
-
     font-size: 24px;
   }
+}
 
+
+/* =========================================================
+   FAQ
+   ========================================================= */
+
+@media (max-width: 600px) {
   .faq__list {
     gap: 10px;
   }
 
   .faq-item__question {
     padding: 19px 18px;
-
     gap: 15px;
-
     font-size: 15px;
   }
 
@@ -421,107 +1045,286 @@
   .faq-item__icon {
     width: 30px;
     height: 30px;
+  }
+}
 
-    flex-basis: 30px;
+
+/* =========================================================
+   CONTACT
+   ========================================================= */
+
+@media (max-width: 800px) {
+  .contact__card {
+    grid-template-columns: 1fr;
+    gap: 30px;
+    padding: 45px 35px;
+    text-align: center;
   }
 
-  .plan-card__description {
-    min-height: auto;
-
-    font-size: 14px;
+  .contact__content {
+    max-width: 100%;
   }
 
-  .plan-card__currency {
-    font-size: 19px;
+  .contact__description {
+    margin-left: auto;
+    margin-right: auto;
   }
 
-  .plan-card__amount {
-    font-size: clamp(34px, 12vw, 42px);
-
-    letter-spacing: -1px;
+  .contact__details {
+    justify-content: center;
   }
 
-  .plan-card__period {
-    font-size: 13px;
+  .contact__action {
+    justify-content: center;
+  }
+}
+
+@media (max-width: 700px) {
+  .contact__card {
+    padding: 38px 24px;
   }
 
-  .plan-card__features li {
-    font-size: 13px;
+  .contact__title {
+    font-size: 30px;
   }
 
-  .btn {
+  .contact__description {
+    font-size: 15px;
+  }
+
+  .contact__submit {
     width: 100%;
+  }
+}
+
+
+/* =========================================================
+   FOOTER
+   ========================================================= */
+
+@media (max-width: 900px) {
+  .app-footer__container {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 36px;
+  }
+
+  .app-footer__brand {
+    grid-column: 1 / -1;
+    max-width: 560px;
+  }
+}
+
+@media (max-width: 700px) {
+  .app-footer {
+    padding: 44px 0 22px;
   }
 
   .app-footer__container {
+    width: calc(100% - 28px);
+    grid-template-columns: 1fr;
+    gap: 30px;
+  }
+
+  .app-footer__brand {
+    max-width: none;
+  }
+
+  .app-footer__divider {
+    width: calc(100% - 28px);
+    margin: 36px auto 20px;
+  }
+
+  .app-footer__bottom {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .app-footer__legal {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 600px) {
+  .app-footer__container {
     gap: 35px;
   }
+}
 
-  .admin-quick-actions {
-    grid-template-columns: 1fr;
+
+/* =========================================================
+   ADMIN LAYOUT
+   ========================================================= */
+
+@media (max-width: 900px) {
+  .admin-layout__menu-button {
+    display: grid;
   }
 
-  .admin-page__title {
-    font-size: 28px;
+  .admin-layout__sidebar {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 1000;
+    transform: translateX(-100%);
+    box-shadow: var(--shadow-lg);
+  }
+
+  .admin-layout__sidebar--open {
+    transform: translateX(0);
+  }
+
+  .admin-layout__overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 999;
+    display: block;
+    background: rgba(15, 23, 42, 0.4);
+  }
+
+  .admin-layout__content {
+    width: 100%;
+  }
+}
+
+@media (max-width: 800px) {
+  .admin-layout__header {
+    padding: 12px 18px;
+  }
+
+  .admin-layout__user {
+    padding: 6px 10px 6px 6px;
+  }
+
+  .admin-layout__user-info,
+  .admin-layout__user-label {
+    display: none;
+  }
+
+  .admin-layout__content {
+    padding: 24px 18px;
+  }
+}
+
+@media (max-width: 700px) {
+  .admin-layout__title {
+    font-size: 18px;
+  }
+
+  .admin-layout__subtitle {
+    display: none;
   }
 }
 
 @media (max-width: 480px) {
-  h1 {
-    letter-spacing: -1.2px;
+  .admin-layout__user {
+    margin-right: 0;
+    padding: 4px;
   }
 
-  h2 {
-    letter-spacing: -0.8px;
-  }
-
-  .section {
-    padding: 56px 0;
-  }
-
-  .app-header__inner {
-    min-height: 68px;
-  }
-
-  .app-header__brand-text small {
-    display: none;
-  }
-
-  .app-header__logo {
-    width: 40px;
-    height: 40px;
-  }
-
-  .plan-card__content {
-    padding: 24px 18px;
-  }
-
-  .plan-card__name {
-    font-size: 22px;
-  }
-
-  .plans__grid {
-    gap: 16px;
-  }
-
-  .admin-stat-grid {
-    grid-template-columns: 1fr;
+  .admin-layout__avatar {
+    width: 30px;
+    height: 30px;
+    flex-basis: 30px;
+    font-size: 12px;
   }
 
   .admin-layout__content {
     padding: 20px 14px;
   }
+}
 
-  .admin-card {
-    padding: 17px;
+
+/* =========================================================
+   ADMIN LOGIN
+   ========================================================= */
+
+@media (max-width: 700px) {
+  .admin-login {
+    padding: 18px;
   }
 
+  .admin-login__card {
+    padding: 30px 22px;
+  }
+}
+
+@media (max-width: 480px) {
+  .admin-login__card {
+    padding: 26px 18px;
+  }
+}
+
+
+/* =========================================================
+   ADMIN FORMS
+   ========================================================= */
+
+@media (max-width: 800px) {
+  .admin-form__grid--3 {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 700px) {
+  .admin-form__grid--2 {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
   .admin-form__actions {
     flex-direction: column;
   }
 
   .admin-form__actions .admin-button {
     width: 100%;
+  }
+}
+
+
+/* =========================================================
+   ADMIN PAGES / TABLE / LIST
+   ========================================================= */
+
+@media (max-width: 800px) {
+  .admin-page__header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .admin-section-selector {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 700px) {
+  .admin-card {
+    padding: 20px;
+  }
+
+  .admin-content-item {
+    flex-direction: column;
+  }
+
+  .admin-content-item__actions {
+    width: 100%;
+  }
+
+  .admin-section-selector {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .admin-page__title {
+    font-size: 28px;
+  }
+}
+
+@media (max-width: 480px) {
+  .admin-card {
+    padding: 17px;
   }
 
   .admin-card__header {
@@ -531,888 +1334,12 @@
   .admin-card__actions {
     width: 100%;
   }
-
-  .admin-login__card {
-    padding: 26px 18px;
-  }
 }
 
-@media (max-width: 768px) {
-  .landing-error {
-    left: 16px;
-    right: 16px;
-    bottom: 16px;
-  }
 
-  .landing-loading {
-    padding: 16px;
-  }
-
-  .landing-loading__content {
-    width: 100%;
-    max-width: 320px;
-
-    padding: 28px 24px;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .landing-loading__spinner {
-    animation: none;
-  }
-
-  .fade-enter-active,
-  .fade-leave-active {
-    transition: none;
-  }
-}
-
-@media (max-width: 1100px) {
-  .app-header__inner {
-    gap: 16px;
-  }
-
-  .app-header__nav {
-    gap: 2px;
-  }
-
-  .app-header__nav a {
-    padding-left: 9px;
-    padding-right: 9px;
-
-    font-size: 13px;
-  }
-
-  .app-header__cta {
-    padding: 0 14px;
-
-    font-size: 13px;
-  }
-}
-
-@media (max-width: 900px) {
-  .app-header__inner {
-    min-height: 68px;
-  }
-
-  .app-header__nav,
-  .app-header__cta {
-    display: none;
-  }
-
-  .app-header__menu-button {
-    display: flex;
-  }
-
-  .app-header__brand-text strong {
-    font-size: 14px;
-  }
-}
-
-@media (max-width: 480px) {
-  .app-header__inner {
-    min-height: 64px;
-  }
-
-  .app-header__logo {
-    width: 40px;
-    height: 40px;
-
-    border-radius: 10px;
-  }
-
-  .app-header__brand-text small {
-    display: none;
-  }
-
-  .app-header__brand-text strong {
-    max-width: 190px;
-
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .app-header__mobile-menu nav {
-    padding-left: 8px;
-    padding-right: 8px;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .app-header,
-  .app-header *,
-  .header-mobile-menu-enter-active,
-  .header-mobile-menu-leave-active {
-    transition: none !important;
-  }
-}
-
-@media (max-width: 1000px) {
-  .hero {
-    min-height: auto;
-  }
-
-  .hero__container {
-    grid-template-columns: 1fr;
-
-    gap: 48px;
-
-    padding-top: 80px;
-    padding-bottom: 80px;
-  }
-
-  .hero__content {
-    max-width: 760px;
-
-    margin: 0 auto;
-
-    text-align: center;
-  }
-
-  .hero__description {
-    margin-left: auto;
-    margin-right: auto;
-  }
-
-  .hero__actions {
-    justify-content: center;
-  }
-
-  .hero__visual {
-    width: 100%;
-  }
-}
-
-@media (max-width: 640px) {
-  .hero__container {
-    gap: 36px;
-
-    padding-top: 64px;
-    padding-bottom: 64px;
-  }
-
-  .hero__eyebrow {
-    margin-bottom: 18px;
-
-    font-size: 11px;
-  }
-
-  .hero__title {
-    font-size:
-      clamp(38px, 11vw, 52px);
-  }
-
-  .hero__description {
-    margin-top: 20px;
-
-    font-size: 16px;
-
-    line-height: 1.65;
-  }
-
-  .hero__actions {
-    width: 100%;
-
-    flex-direction: column;
-
-    margin-top: 28px;
-  }
-
-  .hero__button {
-    width: 100%;
-  }
-
-  .hero__visual-card {
-    border-radius: 18px;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .hero__button {
-    transition: none;
-  }
-}
-
-@media (max-width: 1000px) {
-  .solutions {
-    padding-top: 90px;
-    padding-bottom: 90px;
-  }
-
-  .solutions__grid {
-    grid-template-columns:
-      repeat(2, minmax(0, 1fr));
-
-    gap: 18px;
-
-    margin-top: 46px;
-  }
-}
-
-@media (max-width: 640px) {
-  .solutions {
-    padding-top: 72px;
-    padding-bottom: 72px;
-  }
-
-  .solutions__grid {
-    grid-template-columns: 1fr;
-
-    margin-top: 36px;
-  }
-
-  .solution-card {
-    min-height: 0;
-
-    padding: 24px;
-
-    border-radius: 18px;
-  }
-
-  .solution-card__icon {
-    width: 50px;
-    height: 50px;
-
-    margin-bottom: 20px;
-  }
-
-  .solution-card__title {
-    font-size: 18px;
-  }
-
-  .solution-card__description {
-    font-size: 14px;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .solution-card,
-  .solution-card::before,
-  .solution-card__icon,
-  .solution-card__link-icon {
-    transition: none;
-  }
-}
-
-@media (max-width: 1000px) {
-  .features {
-    padding-top: 90px;
-    padding-bottom: 90px;
-  }
-
-  .features__grid {
-    grid-template-columns:
-      repeat(2, minmax(0, 1fr));
-
-    gap: 18px;
-
-    margin-top: 46px;
-  }
-}
-
-@media (max-width: 640px) {
-  .features {
-    padding-top: 72px;
-    padding-bottom: 72px;
-  }
-
-  .features__grid {
-    grid-template-columns: 1fr;
-
-    gap: 16px;
-
-    margin-top: 36px;
-  }
-
-  .feature-card {
-    min-height: 0;
-
-    padding: 24px;
-
-    border-radius: 17px;
-  }
-
-  .feature-card__icon {
-    width: 48px;
-    height: 48px;
-
-    margin-bottom: 19px;
-  }
-
-  .feature-card__title {
-    font-size: 17px;
-  }
-
-  .feature-card__description {
-    font-size: 14px;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .feature-card,
-  .feature-card::after,
-  .feature-card__icon,
-  .feature-card__link-icon {
-    transition: none;
-  }
-}
-
-@media (max-width: 1000px) {
-  .plans__grid {
-    grid-template-columns:
-      repeat(
-        2,
-        minmax(0, 1fr)
-      );
-  }
-
-  .plan-card__content {
-    padding: 28px 24px 24px;
-  }
-
-  .plan-card__header {
-    min-height: auto;
-  }
-
-  .plan-card__title-row {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-}
-
-@media (max-width: 680px) {
-  .plans__intro {
-    margin-top: 22px;
-    margin-bottom: 28px;
-  }
-
-  .plans__intro-line {
-    width: 28px;
-  }
-
-  .plans__grid {
-    grid-template-columns: 1fr;
-
-    gap: 18px;
-  }
-
-  .plan-card {
-    border-radius: 20px;
-  }
-
-  .plan-card__content {
-    padding: 26px 22px 22px;
-  }
-
-  .plan-card__name {
-    font-size: 22px;
-  }
-
-  .plan-card__amount {
-    font-size: 42px;
-  }
-
-  .plan-card__price {
-    min-height: 68px;
-    margin-top: 20px;
-  }
-
-  .plan-card__divider {
-    margin: 20px 0;
-  }
-
-  .plans__status {
-    min-height: 150px;
-    padding: 22px;
-  }
-}
-
-@media (max-width: 420px) {
-  .plans__intro {
-    gap: 10px;
-
-    font-size: 11px;
-  }
-
-  .plan-card__recommended {
-    display: none;
-  }
-
-  .plan-card__amount {
-    font-size: 38px;
-  }
-
-  .plan-card__feature {
-    font-size: 13px;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .plan-card,
-  .plan-card__button,
-  .plan-card__button-icon {
-    transition: none;
-  }
-
-  .plan-card:hover,
-  .plan-card__button:hover {
-    transform: none;
-  }
-
-  .plans__status-spinner {
-    animation: none;
-  }
-}
-
-@media (max-width: 1000px) {
-  .about__layout {
-    grid-template-columns:
-      minmax(0, 1fr);
-
-    gap: 44px;
-  }
-
-  .about__content {
-    max-width: 760px;
-  }
-
-  .about__media {
-    max-width: 680px;
-    margin-inline: auto;
-  }
-
-  .about__visual {
-    width: min(100%, 680px);
-    min-height: 340px;
-    margin-inline: auto;
-  }
-}
-
-@media (max-width: 640px) {
-  .about__layout {
-    gap: 32px;
-  }
-
-  .about__description {
-    margin-top: 18px;
-
-    font-size: 15px;
-    line-height: 1.7;
-  }
-
-  .about__secondary {
-    font-size: 14px;
-  }
-
-  .about__button {
-    width: 100%;
-  }
-
-  .about__media {
-    padding: 8px;
-  }
-
-  .about__media-frame {
-    border-radius: 18px;
-  }
-
-  .about__image {
-    min-height: 240px;
-  }
-
-  .about__visual {
-    min-height: 280px;
-
-    border-radius: 22px;
-  }
-
-  .about__visual-mark {
-    width: 78px;
-    height: 78px;
-
-    border-radius: 20px;
-
-    font-size: 27px;
-  }
-
-  .about__visual-name {
-    font-size: 19px;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .about__button,
-  .about__button-icon,
-  .about__image {
-    transition: none;
-  }
-
-  .about__button:hover {
-    transform: none;
-  }
-
-  .about__media:hover
-  .about__image {
-    transform: none;
-  }
-}
-
-@media (max-width: 640px) {
-  .faq__list {
-    gap: 10px;
-
-    margin-top: 30px;
-  }
-
-  .faq-item {
-    border-radius: 14px;
-  }
-
-  .faq-item__question {
-    min-height: 64px;
-
-    gap: 14px;
-
-    padding: 17px 16px;
-  }
-
-  .faq-item__question-text {
-    font-size: 14px;
-  }
-
-  .faq-item__icon {
-    flex-basis: 30px;
-
-    width: 30px;
-    height: 30px;
-  }
-
-  .faq-item__answer p {
-    padding:
-      0 16px 18px;
-
-    font-size: 13px;
-    line-height: 1.7;
-  }
-
-  .faq__empty {
-    min-height: 150px;
-
-    margin-top: 30px;
-    padding: 24px 18px;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .faq-item,
-  .faq-item__question,
-  .faq-item__icon,
-  .faq-item__icon span,
-  .faq-item__answer-wrapper {
-    transition: none;
-  }
-
-  .faq-item:hover {
-    transform: none;
-  }
-}
-
-@media (max-width: 900px) {
-  .contact__card {
-    grid-template-columns: 1fr;
-  }
-
-  .contact__content {
-    padding: 42px 36px;
-  }
-
-  .contact__alternatives {
-    margin-top: 34px;
-    padding-top: 0;
-  }
-
-  .contact__form-wrapper {
-    padding: 38px 36px;
-  }
-}
-
-@media (max-width: 640px) {
-  .contact__card {
-    border-radius: 20px;
-  }
-
-  .contact__content {
-    padding: 32px 22px;
-  }
-
-  .contact__title {
-    font-size: 30px;
-  }
-
-  .contact__details {
-    margin-top: 30px;
-  }
-
-  .contact__alternative-buttons {
-    display: grid;
-
-    grid-template-columns:
-      repeat(2, minmax(0, 1fr));
-  }
-
-  .contact__alternative {
-    width: 100%;
-  }
-
-  .contact__form-wrapper {
-    padding: 28px 20px;
-  }
-
-  .contact__fields {
-    grid-template-columns: 1fr;
-
-    gap: 16px;
-  }
-
-  .contact__field--full {
-    grid-column: auto;
-  }
-
-  .contact__form-header {
-    margin-bottom: 22px;
-  }
-
-  .contact__form-header > span {
-    font-size: 18px;
-  }
-
-  .contact__field input {
-    height: 46px;
-  }
-
-  .contact__submit {
-    min-height: 50px;
-  }
-}
-
-@media (max-width: 380px) {
-  .contact__alternative-buttons {
-    grid-template-columns: 1fr;
-  }
-
-  .contact__content {
-    padding-inline: 18px;
-  }
-
-  .contact__form-wrapper {
-    padding-inline: 16px;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .contact__alternative,
-  .contact__submit,
-  .contact__submit-icon,
-  .contact__field input,
-  .contact__field textarea {
-    transition: none;
-  }
-
-  .contact__alternative:hover,
-  .contact__submit:hover {
-    transform: none;
-  }
-
-  .contact__spinner,
-  .contact__submit-spinner {
-    animation: none;
-  }
-}
-
-@media (max-width: 1100px) {
-  .admin-contactos__stats {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .admin-contactos__toolbar {
-    align-items: stretch;
-    flex-direction: column;
-  }
-
-  .admin-contactos__search {
-    width: 100%;
-  }
-}
-
-@media (max-width: 760px) {
-  .admin-contactos {
-    padding: 20px 16px;
-  }
-
-  .admin-contactos__header {
-    flex-direction: column;
-  }
-
-  .admin-contactos__refresh {
-    width: 100%;
-  }
-
-  .admin-contactos__stats {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .admin-contactos__item {
-    flex-direction: column;
-  }
-
-  .admin-contactos__item-actions {
-    justify-content: flex-end;
-    border-top: 1px solid #F1F5F9;
-    border-left: 0;
-  }
-
-  .admin-contactos__item-main {
-    padding-bottom: 14px;
-  }
-
-  .admin-contactos__detail-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .admin-contactos__detail--full {
-    grid-column: auto;
-  }
-
-  .admin-contactos__status-options {
-    grid-template-columns: 1fr;
-  }
-
-  .admin-contactos__modal-header,
-  .admin-contactos__modal-body {
-    padding: 20px;
-  }
-
-  .admin-contactos__modal-footer {
-    padding: 15px 20px;
-  }
-}
-
-@media (max-width: 480px) {
-  .admin-contactos__stats {
-    grid-template-columns: 1fr;
-  }
-
-  .admin-contactos__stat {
-    padding: 15px;
-  }
-
-  .admin-contactos__filters {
-    width: 100%;
-    overflow-x: auto;
-    flex-wrap: nowrap;
-    padding-bottom: 3px;
-  }
-
-  .admin-contactos__filter {
-    flex: 0 0 auto;
-  }
-
-  .admin-contactos__item-main {
-    gap: 11px;
-    padding: 15px;
-  }
-
-  .admin-contactos__avatar {
-    width: 38px;
-    height: 38px;
-    font-size: 11px;
-  }
-
-  .admin-contactos__item-top {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 5px;
-  }
-
-  .admin-contactos__item-meta {
-    flex-direction: column;
-    gap: 3px;
-  }
-
-  .admin-contactos__modal {
-    width: 100%;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .admin-contactos__item,
-  .admin-contactos__refresh,
-  .admin-contactos__contact-action {
-    transition: none;
-  }
-
-  .admin-contactos__refresh-icon.is-spinning,
-  .admin-contactos__spinner {
-    animation: none;
-  }
-
-  .admin-contactos__modal {
-    animation: none;
-  }
-}
-
-@media (max-width: 900px) {
-  .admin-layout__menu-button {
-    display: grid;
-
-    place-items: center;
-  }
-}
-
-@media (max-width: 800px) {
-  .admin-layout__user {
-    padding:
-      6px 10px 6px 6px;
-  }
-
-  .admin-layout__user-info {
-    display: none;
-  }
-
-  .admin-layout__user-label {
-    display: none;
-  }
-}
-
-@media (max-width: 480px) {
-  .admin-layout__user {
-    padding: 4px;
-  }
-
-  .admin-layout__avatar {
-    width: 30px;
-    height: 30px;
-
-    font-size: 12px;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .admin-spinner {
-    animation: none;
-  }
-
-  .admin-sidebar__badge {
-    animation: none;
-  }
-
-  .fade-enter-active,
-  .fade-leave-active,
-  .fade-slide-enter-active,
-  .fade-slide-leave-active {
-    transition: none;
-  }
-}
+/* =========================================================
+   ADMIN DASHBOARD
+   ========================================================= */
 
 @media (max-width: 1100px) {
   .admin-dashboard__stats {
@@ -1421,6 +1348,16 @@
 
   .admin-dashboard__grid {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 900px) {
+  .admin-dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-stat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
@@ -1497,6 +1434,31 @@
     width: 100%;
     margin-left: 54px;
   }
+
+  .admin-stat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .admin-stat-card {
+    padding: 17px;
+  }
+
+  .admin-stat-card__value {
+    font-size: 23px;
+  }
+}
+
+@media (max-width: 600px) {
+  .admin-quick-actions {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .admin-stat-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 420px) {
@@ -1541,15 +1503,147 @@
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .admin-dashboard *,
-  .admin-dashboard *::before,
-  .admin-dashboard *::after {
-    scroll-behavior: auto !important;
-    transition: none !important;
-    animation: none !important;
+
+/* =========================================================
+   ADMIN PLAN
+   ========================================================= */
+
+@media (max-width: 900px) {
+  .admin-plan-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+@media (max-width: 700px) {
+  .admin-plan-list {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* =========================================================
+   ADMIN CONTACTOS
+   ========================================================= */
+
+@media (max-width: 1100px) {
+  .admin-contactos__stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .admin-contactos__toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .admin-contactos__search {
+    width: 100%;
+  }
+}
+
+@media (max-width: 760px) {
+  .admin-contactos {
+    padding: 20px 16px;
+  }
+
+  .admin-contactos__header {
+    flex-direction: column;
+  }
+
+  .admin-contactos__refresh {
+    width: 100%;
+  }
+
+  .admin-contactos__stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .admin-contactos__item {
+    flex-direction: column;
+  }
+
+  .admin-contactos__item-actions {
+    justify-content: flex-end;
+    border-top: 1px solid var(--color-border-light);
+    border-left: 0;
+  }
+
+  .admin-contactos__item-main {
+    padding-bottom: 14px;
+  }
+
+  .admin-contactos__detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-contactos__detail--full {
+    grid-column: auto;
+  }
+
+  .admin-contactos__status-options {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-contactos__modal-header,
+  .admin-contactos__modal-body {
+    padding: 20px;
+  }
+
+  .admin-contactos__modal-footer {
+    padding: 15px 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .admin-contactos__stats {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-contactos__stat {
+    padding: 15px;
+  }
+
+  .admin-contactos__filters {
+    width: 100%;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    padding-bottom: 3px;
+  }
+
+  .admin-contactos__filter {
+    flex: 0 0 auto;
+  }
+
+  .admin-contactos__item-main {
+    gap: 11px;
+    padding: 15px;
+  }
+
+  .admin-contactos__avatar {
+    width: 38px;
+    height: 38px;
+    font-size: 11px;
+  }
+
+  .admin-contactos__item-top {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .admin-contactos__item-meta {
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .admin-contactos__modal {
+    width: 100%;
+  }
+}
+
+
+/* =========================================================
+   ADMIN SECCIONES
+   ========================================================= */
 
 @media (max-width: 800px) {
   .admin-secciones__header {
@@ -1560,9 +1654,7 @@
     grid-template-columns: 1fr;
   }
 
-  .admin-secciones__field:has(
-    .admin-secciones__textarea
-  ) {
+  .admin-secciones__field:has(.admin-secciones__textarea) {
     grid-column: span 1;
   }
 
@@ -1597,644 +1689,30 @@
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .admin-secciones__save,
-  .admin-secciones__select,
-  .admin-secciones__input,
-  .admin-secciones__textarea,
-  .admin-secciones__switch-slider,
-  .admin-secciones__switch-slider::after {
-    transition: none;
-  }
-}
+
+/* =========================================================
+   ADMIN CONFIGURACIÓN
+   ========================================================= */
 
 @media (max-width: 1100px) {
-  .hero__container {
-    grid-template-columns:
-      minmax(0, 1fr)
-      minmax(350px, 0.85fr);
-    gap: 45px;
+  .admin-configuracion {
+    padding: 28px 24px;
   }
 
-  .hero__title {
-    font-size: clamp(
-      46px,
-      6vw,
-      68px
-    );
-  }
-
-  .hero__visual {
-    min-height: 500px;
-  }
-
-  .hero__floating-badge--top {
-    left: -5px;
-  }
-
-  .hero__floating-badge--bottom {
-    right: -5px;
-  }
-}
-
-@media (max-width: 850px) {
-  .hero {
-    min-height: auto;
-  }
-
-  .hero__container {
-    min-height: auto;
-    grid-template-columns: 1fr;
-    gap: 50px;
-    padding-top: 75px;
-    padding-bottom: 80px;
-  }
-
-  .hero__content {
-    max-width: 720px;
-    margin: 0 auto;
-    text-align: center;
-  }
-
-  .hero__eyebrow-wrapper {
-    margin-left: auto;
-    margin-right: auto;
-  }
-
-  .hero__title {
-    margin-left: auto;
-    margin-right: auto;
-  }
-
-  .hero__title-highlight {
-    margin-left: auto;
-    margin-right: auto;
-  }
-
-  .hero__description {
-    margin-left: auto;
-    margin-right: auto;
-  }
-
-  .hero__actions {
-    justify-content: center;
-  }
-
-  .hero__trust {
-    justify-content: center;
-  }
-
-  .hero__visual {
-    width: min(
-      100%,
-      620px
-    );
-    min-height: 500px;
-    margin: 0 auto;
-  }
-
-  .hero__floating-badge--top {
-    left: 0;
-  }
-
-  .hero__floating-badge--bottom {
-    right: 0;
-  }
-
-  .hero__scroll {
+  .admin-configuracion__preview-card {
     display: none;
   }
-}
 
-@media (max-width: 600px) {
-  .hero__container {
-    gap: 35px;
-    padding-top: 55px;
-    padding-bottom: 60px;
-  }
-
-  .hero__eyebrow-wrapper {
-    margin-bottom: 18px;
-  }
-
-  .hero__title {
-    font-size: clamp(
-      39px,
-      11vw,
-      55px
-    );
-    line-height: 1;
-    letter-spacing: -0.045em;
-  }
-
-  .hero__description {
-    margin-top: 23px;
-    font-size: 16px;
-    line-height: 1.65;
-  }
-
-  .hero__actions {
-    flex-direction: column;
-    width: 100%;
-    margin-top: 28px;
-  }
-
-  .hero__button {
-    width: 100%;
-    min-height: 52px;
-  }
-
-  .hero__trust {
-    align-items: flex-start;
-    flex-direction: column;
-    width: fit-content;
-    margin-left: auto;
-    margin-right: auto;
-    margin-top: 26px;
-    gap: 9px;
-  }
-
-  .hero__visual {
-    min-height: 370px;
-  }
-
-  .hero__visual-card {
-    width: calc(100% - 34px);
-    padding: 12px;
-    border-radius: 22px;
-    transform: none;
-  }
-
-  .hero__visual-card:hover {
-    transform: translateY(-3px);
-  }
-
-  .hero__image {
-    max-height: 370px;
-    border-radius: 13px;
-  }
-
-  .hero__floating-badge {
-    min-width: auto;
-    padding: 9px 11px;
-    border-radius: 12px;
-  }
-
-  .hero__floating-badge--top {
-    top: 6%;
-    left: 0;
-  }
-
-  .hero__floating-badge--bottom {
-    right: 0;
-    bottom: 5%;
-  }
-
-  .hero__floating-icon,
-  .hero__floating-check {
-    width: 29px;
-    height: 29px;
-    flex-basis: 29px;
-    border-radius: 9px;
-    font-size: 12px;
-  }
-
-  .hero__floating-badge strong {
-    font-size: 10px;
-  }
-
-  .hero__floating-badge small {
-    font-size: 8px;
-  }
-
-  .hero__visual-decoration--one {
-    width: 70px;
-    height: 70px;
-  }
-
-  .hero__visual-decoration--two {
-    width: 48px;
-    height: 48px;
-  }
-}
-
-@media (max-width: 400px) {
-  .hero__container {
-    padding-top: 45px;
-  }
-
-  .hero__title {
-    font-size: 37px;
-  }
-
-  .hero__description {
-    font-size: 15px;
-  }
-
-  .hero__visual {
-    min-height: 315px;
-  }
-
-  .hero__floating-badge {
-    transform: scale(0.86);
-    transform-origin: center;
-  }
-
-  .hero__floating-badge--top {
-    left: -10px;
-  }
-
-  .hero__floating-badge--bottom {
-    right: -10px;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .hero__eyebrow-wrapper,
-  .hero__title,
-  .hero__description,
-  .hero__actions,
-  .hero__trust,
-  .hero__visual {
-    animation: none;
-  }
-
-  .hero__floating-badge--top,
-  .hero__floating-badge--bottom {
-    animation: none;
-  }
-
-  .hero__button,
-  .hero__button-arrow,
-  .hero__visual-card,
-  .hero__scroll {
-    transition: none;
-  }
-}
-
-
-@media (max-width: 1100px) {
-  .hero__container {
-    grid-template-columns: minmax(0, 1fr) minmax(350px, 0.85fr);
-    gap: 45px;
-  }
-  .hero__title {
-    font-size: clamp(46px, 6vw, 68px);
-  }
-  .hero__visual {
-    min-height: 500px;
-  }
-  .hero__floating-badge--top {
-    left: -5px;
-  }
-  .hero__floating-badge--bottom {
-    right: -5px;
-  }
-}
-
-@media (max-width: 850px) {
-  .hero {
-    min-height: auto;
-  }
-  .hero__container {
-    min-height: auto;
-    grid-template-columns: 1fr;
-    gap: 50px;
-    padding-top: 75px;
-    padding-bottom: 80px;
-  }
-  .hero__content {
-    max-width: 720px;
-    margin: 0 auto;
-    text-align: center;
-  }
-  .hero__eyebrow-wrapper {
-    margin-left: auto;
-    margin-right: auto;
-  }
-  .hero__title {
-    margin-left: auto;
-    margin-right: auto;
-  }
-  .hero__title-highlight {
-    margin-left: auto;
-    margin-right: auto;
-  }
-  .hero__description {
-    margin-left: auto;
-    margin-right: auto;
-  }
-  .hero__actions {
-    justify-content: center;
-  }
-  .hero__trust {
-    justify-content: center;
-  }
-  .hero__visual {
-    width: min(100%, 620px);
-    min-height: 500px;
-    margin: 0 auto;
-  }
-  .hero__floating-badge--top {
-    left: 0;
-  }
-  .hero__floating-badge--bottom {
-    right: 0;
-  }
-  .hero__scroll {
-    display: none;
-  }
-}
-
-@media (max-width: 600px) {
-  .hero__container {
-    gap: 35px;
-    padding-top: 55px;
-    padding-bottom: 60px;
-  }
-  .hero__eyebrow-wrapper {
-    margin-bottom: 18px;
-  }
-  .hero__title {
-    font-size: clamp(39px, 11vw, 55px);
-    line-height: 1;
-    letter-spacing: -0.045em;
-  }
-  .hero__description {
-    margin-top: 23px;
-    font-size: 16px;
-    line-height: 1.65;
-  }
-  .hero__actions {
-    flex-direction: column;
-    width: 100%;
-    margin-top: 28px;
-  }
-  .hero__button {
-    width: 100%;
-    min-height: 52px;
-  }
-  .hero__trust {
-    align-items: flex-start;
-    flex-direction: column;
-    width: fit-content;
-    margin-left: auto;
-    margin-right: auto;
-    margin-top: 26px;
-    gap: 9px;
-  }
-  .hero__visual {
-    min-height: 370px;
-  }
-  .hero__visual-card {
-    width: calc(100% - 34px);
-    padding: 12px;
-    border-radius: 22px;
-    transform: none;
-  }
-  .hero__visual-card:hover {
-    transform: translateY(-3px);
-  }
-  .hero__image {
-    max-height: 370px;
-    border-radius: 13px;
-  }
-  .hero__floating-badge {
-    min-width: auto;
-    padding: 9px 11px;
-    border-radius: 12px;
-  }
-  .hero__floating-badge--top {
-    top: 6%;
-    left: 0;
-  }
-  .hero__floating-badge--bottom {
-    right: 0;
-    bottom: 5%;
-  }
-  .hero__floating-icon,
-  .hero__floating-check {
-    width: 29px;
-    height: 29px;
-    flex-basis: 29px;
-    border-radius: 9px;
-    font-size: 12px;
-  }
-  .hero__floating-badge strong {
-    font-size: 10px;
-  }
-  .hero__floating-badge small {
-    font-size: 8px;
-  }
-  .hero__visual-decoration--one {
-    width: 70px;
-    height: 70px;
-  }
-  .hero__visual-decoration--two {
-    width: 48px;
-    height: 48px;
-  }
-}
-
-
-@media (max-width: 1000px) {
-  .plans__grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-  .plan-card__content {
-    padding: 28px 24px 24px;
-  }
-  .plan-card__header {
-    min-height: auto;
-  }
-  .plan-card__title-row {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-}
-
-
-@media (max-width: 900px) {
-  .app-footer__container {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 36px;
-  }
-  .app-footer__brand {
-    grid-column: 1 / -1;
-    max-width: 560px;
-  }
-}
-
-@media (max-width: 700px) {
-  .app-footer__container {
-    grid-template-columns: 1fr;
-    gap: 30px;
-  }
-  .app-footer__brand {
-    grid-column: auto;
-  }
-  .app-footer__divider {
-    margin: 36px auto 20px;
-  }
-  .app-footer__bottom {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-  .app-footer__legal {
-    flex-wrap: wrap;
-    gap: 12px 18px;
+  .admin-configuracion__preview-content {
+    padding-right: 30px;
   }
 }
 
 @media (max-width: 900px) {
-  .admin-layout__menu-button {
-    display: grid;
-    place-items: center;
-  }
-  .admin-layout__sidebar {
-    position: fixed;
-    top: 0;
-    bottom: 0;
-    left: 0;
-    z-index: 1000;
-    transform: translateX(-100%);
-    box-shadow: var(--shadow-lg);
-  }
-  .admin-layout__sidebar--open {
-    transform: translateX(0);
-  }
-  .admin-layout__overlay {
-    position: fixed;
-    inset: 0;
-    z-index: 999;
-    display: block;
-    background: rgba(15, 23, 42, 0.4);
-  }
-  .admin-layout__content {
-    width: 100%;
-  }
-}
-
-@media (max-width: 800px) {
-  .admin-layout__header {
-    padding: 12px 18px;
-  }
-  .admin-layout__user {
-    padding: 6px 10px 6px 6px;
-  }
-  .admin-layout__user-info {
-    display: none;
-  }
-  .admin-layout__user-label {
-    display: none;
-  }
-  .admin-layout__content {
-    padding: 24px 18px;
-  }
-}
-
-
-@media (max-width: 760px) {
-  .admin-contactos {
-    padding: 20px 16px;
-  }
-  .admin-contactos__header {
-    flex-direction: column;
-  }
-  .admin-contactos__refresh {
-    width: 100%;
-  }
-  .admin-contactos__stats {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-  .admin-contactos__item {
-    flex-direction: column;
-  }
-  .admin-contactos__item-actions {
-    justify-content: flex-end;
-    border-top: 1px solid #f1f5f9;
-    border-left: 0;
-  }
-  .admin-contactos__item-main {
-    padding-bottom: 14px;
-  }
-  .admin-contactos__detail-grid {
-    grid-template-columns: 1fr;
-  }
-  .admin-contactos__detail--full {
-    grid-column: auto;
-  }
-  .admin-contactos__status-options {
-    grid-template-columns: 1fr;
-  }
-  .admin-contactos__modal-header,
-  .admin-contactos__modal-body {
-    padding: 20px;
-  }
-  .admin-contactos__modal-footer {
-    padding: 15px 20px;
-  }
-}
-
-
-@media (max-width: 800px) {
-  .admin-secciones__header {
-    flex-direction: column;
-  }
-  .admin-secciones__fields {
-    grid-template-columns: 1fr;
-  }
-  .admin-secciones__field:has(.admin-secciones__textarea) {
-    grid-column: span 1;
-  }
-  .admin-secciones__form-header {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-}
-
-
-@media (max-width: 1024px) {
-  .container {
-    width: min(calc(100% - 32px), 900px);
+  .admin-configuracion {
+    padding: 24px 20px;
   }
 
-  .section {
-    padding: 80px 0;
-  }
-}
-
-@media (max-width: 700px) {
-  .container {
-    width: calc(100% - 28px);
-  }
-
-  .section {
-    padding: 64px 0;
-  }
-
-  .section-header {
-    margin-bottom: 40px;
-  }
-
-  .section-description {
-    font-size: 15px;
-  }
-}
-
-@media (max-width: 480px) {
-  .section {
-    padding: 56px 0;
-  }
-}
-
-@media (max-width: 900px) {
-  .admin-configuracion__grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 700px) {
   .admin-configuracion__header {
     flex-direction: column;
     gap: 14px;
@@ -2244,9 +1722,57 @@
     align-self: flex-start;
   }
 
-  .admin-configuracion__grid {
-    padding: 17px;
-    gap: 18px;
+  .admin-configuracion__grid,
+  .admin-configuracion__colors,
+  .admin-configuracion__palette-controls {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-configuracion__palette-colors {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .admin-configuracion__section {
+    padding: 24px;
+  }
+}
+
+@media (max-width: 700px) {
+  .admin-configuracion {
+    padding: 20px 16px;
+  }
+
+  .admin-configuracion__title {
+    font-size: 26px;
+  }
+
+  .admin-configuracion__section {
+    padding: 20px;
+    border-radius: 16px;
+  }
+
+  .admin-configuracion__palette-builder {
+    padding: 18px;
+  }
+
+  .admin-configuracion__palette-preview {
+    padding: 14px;
+  }
+
+  .admin-configuracion__preview-header {
+    padding: 0 18px;
+  }
+
+  .admin-configuracion__preview-content {
+    padding: 36px 22px 30px;
+  }
+
+  .admin-configuracion__preview-title {
+    font-size: 32px;
+  }
+
+  .admin-configuracion__preview-footer {
+    padding: 0 18px;
   }
 
   .admin-configuracion__actions {
@@ -2254,12 +1780,113 @@
     align-items: stretch;
   }
 
-  .admin-configuracion__button {
+  .admin-configuracion__actions .admin-configuracion__button {
+    width: 100%;
+  }
+}
+
+@media (max-width: 520px) {
+  .admin-configuracion__section-title {
+    font-size: 19px;
+  }
+
+  .admin-configuracion__color-field {
+    padding: 15px;
+  }
+
+  .admin-configuracion__color-field-header {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .admin-configuracion__color-key {
+    align-self: flex-start;
+  }
+
+  .admin-configuracion__palette-colors {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-configuracion__palette-color {
+    display: grid;
+    grid-template-columns: 72px minmax(0, 1fr);
+  }
+
+  .admin-configuracion__palette-color-swatch {
+    width: 72px;
+    height: 100%;
+    min-height: 70px;
+  }
+
+  .admin-configuracion__palette-color-info {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .admin-configuracion__palette-preview-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .admin-configuracion__palette-base {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .admin-configuracion__palette-base
+    .admin-configuracion__color-picker {
+    width: 100%;
+  }
+
+  .admin-configuracion__preview {
+    min-height: 400px;
+  }
+
+  .admin-configuracion__preview-label {
+    max-width: 130px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .admin-configuracion__preview-content {
+    padding: 30px 18px 26px;
+  }
+
+  .admin-configuracion__preview-title {
+    font-size: 28px;
+  }
+
+  .admin-configuracion__preview-text {
+    font-size: 12px;
+  }
+
+  .admin-configuracion__preview-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .admin-configuracion__preview-button {
     width: 100%;
   }
 }
 
 @media (max-width: 480px) {
+  .admin-configuracion__color {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-configuracion__color-picker {
+    width: 100%;
+    height: 48px;
+  }
+
+  .admin-configuracion__color-preview {
+    width: 34px;
+    height: 34px;
+  }
+
   .admin-configuracion__title {
     font-size: 1.55rem;
   }
@@ -2278,34 +1905,36 @@
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .admin-configuracion__button,
-  .admin-configuracion__toggle-thumb {
-    transition: none;
+@media (max-width: 380px) {
+  .admin-configuracion {
+    padding: 16px 12px;
   }
 
-  .admin-configuracion__realtime-dot,
-  .admin-configuracion__spinner,
-  .admin-configuracion__button-spinner {
-    animation: none;
+  .admin-configuracion__section {
+    padding: 16px;
+  }
+
+  .admin-configuracion__palette-builder {
+    padding: 14px;
+  }
+
+  .admin-configuracion__preview-header {
+    padding: 0 14px;
+  }
+
+  .admin-configuracion__preview-content {
+    padding: 26px 15px 22px;
+  }
+
+  .admin-configuracion__preview-footer {
+    padding: 0 14px;
   }
 }
 
-@media (max-width: 480px) {
-  .admin-configuracion__color {
-    grid-template-columns: 1fr;
-  }
 
-  .admin-configuracion__color-picker {
-    width: 100%;
-    height: 48px;
-  }
-
-  .admin-configuracion__color-preview {
-    width: 34px;
-    height: 34px;
-  }
-}
+/* =========================================================
+   ADMIN USUARIOS
+   ========================================================= */
 
 @media (max-width: 1100px) {
   .admin-usuarios {
@@ -2422,17 +2051,9 @@
     font-size: 0.7rem;
   }
 
-  /*
-   * Ocultamos la tabla en móvil.
-   */
-
   .admin-usuarios__table-wrapper {
     display: none;
   }
-
-  /*
-   * Mostramos la lista de tarjetas.
-   */
 
   .admin-usuarios__mobile-list {
     display: grid;
@@ -2550,17 +2171,11 @@
     padding: 1.5rem 1rem;
   }
 
-  /*
-   * Editor ocupa toda la pantalla.
-   */
-
   .admin-usuarios__editor {
     width: 100%;
     padding: 1rem;
     border-left: 0;
-    box-shadow:
-      0 0 35px
-      rgb(0 0 0 / 12%);
+    box-shadow: 0 0 35px rgb(0 0 0 / 12%);
   }
 
   .admin-usuarios__editor-header {
@@ -2630,14 +2245,12 @@
   }
 
   .admin-usuarios__mobile-header
-    .admin-usuarios__user-info
-    strong {
+    .admin-usuarios__user-info strong {
     font-size: 0.78rem;
   }
 
   .admin-usuarios__mobile-header
-    .admin-usuarios__user-info
-    span {
+    .admin-usuarios__user-info span {
     font-size: 0.68rem;
   }
 
@@ -2651,18 +2264,399 @@
   }
 }
 
+
+/* =========================================================
+   REDUCED MOTION
+   =========================================================
+   Un único bloque global.
+   ========================================================= */
+
 @media (prefers-reduced-motion: reduce) {
-  .admin-usuarios__realtime-dot,
-  .admin-usuarios__spinner,
-  .admin-usuarios__editor {
+
+  /* GLOBAL */
+  html {
+    scroll-behavior: auto;
+  }
+
+  .btn,
+  .state__spinner,
+  .app-header__nav a,
+  .app-header__nav a::after,
+  .app-header__cta,
+  .app-header__cta-icon,
+  .app-header__menu-button,
+  .app-header__menu-button span,
+  .app-header__mobile-menu nav > a,
+  .app-header__mobile-link-icon,
+  .app-header__mobile-cta,
+  .header-mobile-menu-enter-active,
+  .header-mobile-menu-leave-active {
+    transition: none;
+  }
+
+  .btn:hover,
+  .app-header__cta:hover,
+  .app-header__mobile-cta:hover {
+    transform: none;
+  }
+
+  .btn--loading::after,
+  .state__spinner {
     animation: none;
   }
 
-  .admin-usuarios__button,
+
+  /* LANDING - LOADING */
+  .landing-loading *,
+  .landing-loading *::before,
+  .landing-loading *::after {
+    transition: none !important;
+    animation: none !important;
+  }
+
+
+  /* HERO */
+  .hero__eyebrow-wrapper,
+  .hero__title,
+  .hero__description,
+  .hero__actions,
+  .hero__trust,
+  .hero__visual,
+  .hero__floating-badge--top,
+  .hero__floating-badge--bottom {
+    animation: none;
+  }
+
+  .hero__button,
+  .hero__button-arrow,
+  .hero__visual-card,
+  .hero__scroll {
+    transition: none;
+  }
+
+
+  /* SOLUTIONS */
+  .solution-card,
+  .solution-card::before,
+  .solution-card__icon,
+  .solution-card__link,
+  .solution-card__link-icon {
+    transition: none;
+  }
+
+  .solution-card:hover {
+    transform: none;
+  }
+
+  .solution-card__link:hover
+    .solution-card__link-icon {
+    transform: none;
+  }
+
+
+  /* FEATURES */
+  .feature-card,
+  .feature-card::before,
+  .feature-card::after,
+  .feature-card__icon,
+  .feature-card__link,
+  .feature-card__link-icon {
+    transition: none;
+  }
+
+  .feature-card:hover {
+    transform: none;
+  }
+
+  .feature-card__link:hover
+    .feature-card__link-icon {
+    transform: none;
+  }
+
+
+  /* BENEFITS */
+  .benefit-card,
+  .benefit-card::before,
+  .benefit-card__icon {
+    transition: none;
+  }
+
+
+  /* PLANS */
+  .plan-card,
+  .plan-card::before,
+  .plan-card__button,
+  .plan-card__button-icon {
+    transition: none;
+  }
+
+  .plan-card:hover,
+  .plan-card--featured:hover {
+    transform: none;
+  }
+
+  .plan-card__button:hover {
+    transform: none;
+  }
+
+  .plans__status-spinner {
+    animation: none;
+  }
+
+
+  /* ABOUT */
+  .about__button,
+  .about__button-icon,
+  .about__image {
+    transition: none;
+  }
+
+  .about__button:hover {
+    transform: none;
+  }
+
+  .about__media:hover
+    .about__image {
+    transform: none;
+  }
+
+
+  /* FAQ */
+  .faq-item,
+  .faq-item__question,
+  .faq-item__icon,
+  .faq-item__icon span,
+  .faq-item__answer {
+    transition: none;
+  }
+
+  .faq-item:hover {
+    transform: none;
+  }
+
+
+  /* CONTACT */
+  .contact__alternative,
+  .contact__submit,
+  .contact__submit-icon,
+  .contact__input,
+  .contact__textarea {
+    transition: none;
+  }
+
+  .contact__alternative:hover,
+  .contact__submit:hover {
+    transform: none;
+  }
+
+  .contact__spinner,
+  .contact__alternative-spinner {
+    animation: none;
+  }
+
+
+  /* ADMIN BUTTONS */
+  .admin-button {
+    transition: none;
+  }
+
+  .admin-button:hover {
+    transform: none;
+  }
+
+  .admin-button--loading::after {
+    animation: none;
+  }
+
+
+  /* ADMIN FORMS */
+  .admin-form__input,
+  .admin-form__textarea,
+  .admin-form__select {
+    transition: none;
+  }
+
+
+  /* ADMIN LAYOUT */
+  .admin-layout__menu-button,
+  .admin-layout__user,
+  .admin-layout__sidebar,
+  .admin-sidebar__link,
+  .admin-sidebar__logout {
+    transition: none;
+  }
+
+  .admin-layout__menu-button.is-active {
+    transform: none;
+  }
+
+  .admin-sidebar__badge {
+    animation: none;
+  }
+
+
+  /* ADMIN LOGIN */
+  .admin-login__card {
+    animation: none;
+  }
+
+
+  /* ADMIN DASHBOARD */
+  .admin-dashboard__refresh,
+  .admin-dashboard__attention-action,
+  .admin-dashboard__stat,
+  .admin-dashboard__stat-link span,
+  .admin-dashboard__progress-bar,
+  .admin-dashboard__quick-action,
+  .admin-dashboard__quick-arrow,
+  .admin-dashboard__summary-link span,
+  .admin-stat-card,
+  .admin-quick-action {
+    transition: none;
+  }
+
+  .admin-dashboard__refresh:hover:not(:disabled),
+  .admin-dashboard__attention-action:hover,
+  .admin-dashboard__stat:hover,
+  .admin-dashboard__quick-action:hover,
+  .admin-stat-card:hover,
+  .admin-quick-action:hover {
+    transform: none;
+  }
+
+  .admin-dashboard__refresh-icon.is-spinning,
+  .admin-dashboard__spinner {
+    animation: none;
+  }
+
+  .admin-dashboard *,
+  .admin-dashboard *::before,
+  .admin-dashboard *::after {
+    scroll-behavior: auto !important;
+    transition: none !important;
+    animation: none !important;
+  }
+
+
+  /* ADMIN PLAN */
+  .admin-plan-card {
+    transition: none;
+  }
+
+  .admin-plan-card:hover {
+    transform: none;
+  }
+
+
+  /* ADMIN CONTACTOS */
+  .admin-contactos__item,
+  .admin-contactos__refresh,
+  .admin-contactos__search input,
+  .admin-contactos__filter,
+  .admin-contactos__empty-button,
+  .admin-contactos__status-option,
+  .admin-contactos__contact-action {
+    transition: none;
+  }
+
+  .admin-contactos__refresh-icon.is-spinning,
+  .admin-contactos__spinner {
+    animation: none;
+  }
+
+  .admin-contactos__modal {
+    animation: none;
+  }
+
+  .admin-contactos__refresh:hover:not(:disabled),
+  .admin-contactos__item:hover,
+  .admin-contactos__empty-button:hover {
+    transform: none;
+  }
+
+
+  /* ADMIN SECCIONES */
+  .admin-secciones__save,
+  .admin-secciones__select,
+  .admin-secciones__input,
+  .admin-secciones__textarea,
+  .admin-secciones__switch-slider,
+  .admin-secciones__switch-slider::after {
+    transition: none;
+  }
+
+  .admin-secciones__save:hover:not(:disabled) {
+    transform: none;
+  }
+
+
+  /* ADMIN CONFIGURACIÓN */
+  .admin-configuracion__button,
+  .admin-configuracion__toggle-thumb {
+    transition: none;
+  }
+
+  .admin-configuracion__realtime-dot,
+  .admin-configuracion__spinner,
+  .admin-configuracion__button-spinner {
+    animation: none;
+  }
+
+  .admin-configuracion__button:hover,
+  .admin-configuracion__button:active {
+    transform: none;
+  }
+
+  .admin-configuracion__input,
+  .admin-configuracion__textarea,
+  .admin-configuracion__toggle-track,
+  .admin-configuracion__toggle-thumb {
+    transition: none;
+  }
+
+
+  /* ADMIN PAGES */
+  .admin-alert__close,
+  .admin-section-selector__item {
+    transition: none;
+  }
+
+  .admin-spinner {
+    animation: none;
+  }
+
+
+  /* ADMIN USUARIOS */
+  .admin-usuarios__alert button,
+  .admin-usuarios__search input,
   .admin-usuarios__table tbody tr,
+  .admin-usuarios__button,
+  .admin-usuarios__editor,
+  .admin-usuarios__close,
+  .admin-usuarios__field input,
   .admin-usuarios__switch,
   .admin-usuarios__switch-control,
   .admin-usuarios__switch-control::after {
     transition: none;
+  }
+
+  .admin-usuarios__button:hover:not(:disabled),
+  .admin-usuarios__alert button:hover {
+    transform: none;
+  }
+
+  .admin-usuarios__realtime-dot,
+  .admin-usuarios__spinner {
+    animation: none;
+  }
+
+
+  /* ADMIN LAYOUT / TRANSITIONS GENERALES */
+  .admin-layout__fade,
+  .admin-layout__fade-slide,
+  .fade-enter-active,
+  .fade-leave-active {
+    transition: none !important;
+    animation: none !important;
   }
 }

@@ -6,6 +6,7 @@
   background: var(--color-background);
 }
 
+
 /* =========================================================
    GRID
    ========================================================= */
@@ -19,6 +20,7 @@
   gap: 24px;
 }
 
+
 /* =========================================================
    CARD
    ========================================================= */
@@ -30,13 +32,11 @@
   flex-direction: column;
 
   min-height: 230px;
-
   padding: 32px 30px;
 
   overflow: hidden;
 
   border: 1px solid var(--color-border);
-
   border-radius: var(--radius-lg);
 
   background: var(--color-white);
@@ -49,7 +49,10 @@
     border-color var(--transition-normal);
 }
 
-/* Línea superior usando el accent configurado */
+
+/* =========================================================
+   TOP ACCENT
+   ========================================================= */
 
 .benefit-card::before {
   content: "";
@@ -71,6 +74,11 @@
     transform var(--transition-normal);
 }
 
+
+/* =========================================================
+   CARD HOVER
+   ========================================================= */
+
 .benefit-card:hover {
   transform: translateY(-5px);
 
@@ -84,21 +92,22 @@
   box-shadow: var(--shadow-md);
 }
 
+
 .benefit-card:hover::before {
   transform: scaleX(1);
 }
+
 
 /* =========================================================
    ICON
    ========================================================= */
 
 .benefit-card__icon {
+  display: grid;
+  place-items: center;
+
   width: 54px;
   height: 54px;
-
-  display: grid;
-
-  place-items: center;
 
   margin-bottom: 23px;
 
@@ -131,6 +140,7 @@
     border-color var(--transition-normal);
 }
 
+
 .benefit-card:hover .benefit-card__icon {
   transform: translateY(-2px);
 
@@ -140,6 +150,7 @@
 
   color: var(--color-white);
 }
+
 
 /* =========================================================
    CONTENT
@@ -157,6 +168,7 @@
   letter-spacing: -0.15px;
 }
 
+
 .benefit-card p {
   margin: 11px 0 0;
 
@@ -164,66 +176,4 @@
 
   font-size: 14px;
   line-height: 1.75;
-}
-
-/* =========================================================
-   RESPONSIVE
-   ========================================================= */
-
-@media (max-width: 1000px) {
-  .benefits__grid {
-    grid-template-columns:
-      repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 640px) {
-  .benefits__grid {
-    grid-template-columns: 1fr;
-
-    gap: 18px;
-  }
-
-  .benefit-card {
-    min-height: 0;
-
-    padding: 27px 24px 25px;
-  }
-
-  .benefit-card__icon {
-    width: 50px;
-    height: 50px;
-
-    margin-bottom: 20px;
-
-    font-size: 22px;
-  }
-
-  .benefit-card h3 {
-    font-size: 17px;
-  }
-
-  .benefit-card p {
-    font-size: 14px;
-
-    line-height: 1.7;
-  }
-}
-
-@media (max-width: 420px) {
-  .benefit-card {
-    padding: 24px 20px;
-  }
-}
-
-/* =========================================================
-   REDUCED MOTION
-   ========================================================= */
-
-@media (prefers-reduced-motion: reduce) {
-  .benefit-card,
-  .benefit-card::before,
-  .benefit-card__icon {
-    transition: none;
-  }
 }

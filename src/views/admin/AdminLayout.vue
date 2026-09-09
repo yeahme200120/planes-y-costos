@@ -306,39 +306,21 @@ watch(
          HEADER
          =================================================== -->
 
-    <header
-      class="admin-layout__header"
-      role="banner"
-    >
+    <header class="admin-layout__header" role="banner">
 
       <div class="admin-layout__header-left">
 
-        <button
-          type="button"
-          class="admin-layout__menu-button"
-          :aria-label="
-            menuAbierto
-              ? 'Cerrar menú'
-              : 'Abrir menú'
-          "
-          :aria-expanded="menuAbierto"
-          aria-controls="admin-sidebar"
-          :class="{
+        <button type="button" class="admin-layout__menu-button" :aria-label="menuAbierto
+          ? 'Cerrar menú'
+          : 'Abrir menú'
+          " :aria-expanded="menuAbierto" aria-controls="admin-sidebar" :class="{
             'is-active': menuAbierto,
-          }"
-          @click="alternarMenu"
-        >
-          <span
-            v-if="!menuAbierto"
-            aria-hidden="true"
-          >
+          }" @click="alternarMenu">
+          <span v-if="!menuAbierto" aria-hidden="true">
             ☰
           </span>
 
-          <span
-            v-else
-            aria-hidden="true"
-          >
+          <span v-else aria-hidden="true">
             ✕
           </span>
         </button>
@@ -365,16 +347,9 @@ watch(
 
         <!-- Perfil -->
 
-        <div
-          v-if="usuario"
-          class="admin-layout__user"
-          :title="emailUsuario"
-        >
+        <div v-if="usuario" class="admin-layout__user" :title="emailUsuario">
 
-          <div
-            class="admin-layout__avatar"
-            aria-hidden="true"
-          >
+          <div class="admin-layout__avatar" aria-hidden="true">
             {{ inicialUsuario }}
           </div>
 
@@ -394,12 +369,8 @@ watch(
 
         <!-- Landing -->
 
-        <button
-          type="button"
-          class="admin-button admin-button--secondary"
-          title="Abrir la landing page en una nueva pestaña"
-          @click="irALanding"
-        >
+        <button type="button" class="admin-button admin-button--secondary"
+          title="Abrir la landing page en una nueva pestaña" @click="irALanding">
           <span aria-hidden="true">
             🌐
           </span>
@@ -409,16 +380,8 @@ watch(
 
         <!-- Logout -->
 
-        <button
-          type="button"
-          class="admin-button admin-button--danger"
-          :disabled="cerrandoSesion"
-          @click="salir"
-        >
-          <span
-            v-if="cerrandoSesion"
-            aria-hidden="true"
-          >
+        <button type="button" class="admin-button admin-button--danger" :disabled="cerrandoSesion" @click="salir">
+          <span v-if="cerrandoSesion" aria-hidden="true">
             ⏳
           </span>
 
@@ -442,26 +405,17 @@ watch(
 
       <!-- SIDEBAR -->
 
-      <aside
-        id="admin-sidebar"
-        class="admin-layout__sidebar"
-        :class="{
-          'admin-layout__sidebar--open':
-            menuAbierto,
-        }"
-        aria-label="Menú administrativo"
-        role="navigation"
-      >
+      <aside id="admin-sidebar" class="admin-layout__sidebar" :class="{
+        'admin-layout__sidebar--open':
+          menuAbierto,
+      }" aria-label="Menú administrativo" role="navigation">
 
         <!-- BRAND -->
 
         <div class="admin-sidebar__brand">
 
-          <div
-            class="admin-sidebar__logo"
-            aria-hidden="true"
-          >
-            IA
+          <div class="admin-sidebar__logo">
+            <img class="logo-image" src="/img/logo.jpg" alt="Logo">
           </div>
 
           <div>
@@ -478,10 +432,7 @@ watch(
 
         <!-- NAVEGACIÓN -->
 
-        <nav
-          class="admin-sidebar__nav"
-          aria-label="Navegación administrativa"
-        >
+        <nav class="admin-sidebar__nav" aria-label="Navegación administrativa">
 
           <p class="admin-sidebar__label">
             PRINCIPAL
@@ -489,28 +440,18 @@ watch(
 
           <!-- Dashboard -->
 
-          <button
-            type="button"
-            class="admin-sidebar__link"
-            :class="{
-              'admin-sidebar__link--active':
-                route.path === '/admin' ||
-                route.path === '/admin/dashboard',
-            }"
-            :aria-current="
+          <button type="button" class="admin-sidebar__link" :class="{
+            'admin-sidebar__link--active':
               route.path === '/admin' ||
-              route.path === '/admin/dashboard'
-                ? 'page'
-                : undefined
-            "
-            @click="
+              route.path === '/admin/dashboard',
+          }" :aria-current="route.path === '/admin' ||
+            route.path === '/admin/dashboard'
+            ? 'page'
+            : undefined
+            " @click="
               navegar('/admin/dashboard')
-            "
-          >
-            <span
-              class="admin-sidebar__icon"
-              aria-hidden="true"
-            >
+              ">
+            <span class="admin-sidebar__icon" aria-hidden="true">
               ▦
             </span>
 
@@ -525,30 +466,20 @@ watch(
 
           <!-- Planes -->
 
-          <button
-            type="button"
-            class="admin-sidebar__link"
-            :class="{
-              'admin-sidebar__link--active':
-                route.path.startsWith(
-                  '/admin/planes'
-                ),
-            }"
-            :aria-current="
+          <button type="button" class="admin-sidebar__link" :class="{
+            'admin-sidebar__link--active':
               route.path.startsWith(
                 '/admin/planes'
-              )
-                ? 'page'
-                : undefined
-            "
-            @click="
+              ),
+          }" :aria-current="route.path.startsWith(
+            '/admin/planes'
+          )
+            ? 'page'
+            : undefined
+            " @click="
               navegar('/admin/planes')
-            "
-          >
-            <span
-              class="admin-sidebar__icon"
-              aria-hidden="true"
-            >
+              ">
+            <span class="admin-sidebar__icon" aria-hidden="true">
               $
             </span>
 
@@ -559,30 +490,20 @@ watch(
 
           <!-- Secciones -->
 
-          <button
-            type="button"
-            class="admin-sidebar__link"
-            :class="{
-              'admin-sidebar__link--active':
-                route.path.startsWith(
-                  '/admin/secciones'
-                ),
-            }"
-            :aria-current="
+          <button type="button" class="admin-sidebar__link" :class="{
+            'admin-sidebar__link--active':
               route.path.startsWith(
                 '/admin/secciones'
-              )
-                ? 'page'
-                : undefined
-            "
-            @click="
+              ),
+          }" :aria-current="route.path.startsWith(
+            '/admin/secciones'
+          )
+            ? 'page'
+            : undefined
+            " @click="
               navegar('/admin/secciones')
-            "
-          >
-            <span
-              class="admin-sidebar__icon"
-              aria-hidden="true"
-            >
+              ">
+            <span class="admin-sidebar__icon" aria-hidden="true">
               ◫
             </span>
 
@@ -593,30 +514,20 @@ watch(
 
           <!-- Contenido -->
 
-          <button
-            type="button"
-            class="admin-sidebar__link"
-            :class="{
-              'admin-sidebar__link--active':
-                route.path.startsWith(
-                  '/admin/contenido'
-                ),
-            }"
-            :aria-current="
+          <button type="button" class="admin-sidebar__link" :class="{
+            'admin-sidebar__link--active':
               route.path.startsWith(
                 '/admin/contenido'
-              )
-                ? 'page'
-                : undefined
-            "
-            @click="
+              ),
+          }" :aria-current="route.path.startsWith(
+            '/admin/contenido'
+          )
+            ? 'page'
+            : undefined
+            " @click="
               navegar('/admin/contenido')
-            "
-          >
-            <span
-              class="admin-sidebar__icon"
-              aria-hidden="true"
-            >
+              ">
+            <span class="admin-sidebar__icon" aria-hidden="true">
               ◈
             </span>
 
@@ -627,30 +538,20 @@ watch(
 
           <!-- Contactos -->
 
-          <button
-            type="button"
-            class="admin-sidebar__link admin-sidebar__link--contacts"
-            :class="{
-              'admin-sidebar__link--active':
-                route.path.startsWith(
-                  '/admin/contactos'
-                ),
-            }"
-            :aria-current="
+          <button type="button" class="admin-sidebar__link admin-sidebar__link--contacts" :class="{
+            'admin-sidebar__link--active':
               route.path.startsWith(
                 '/admin/contactos'
-              )
-                ? 'page'
-                : undefined
-            "
-            @click="
+              ),
+          }" :aria-current="route.path.startsWith(
+            '/admin/contactos'
+          )
+            ? 'page'
+            : undefined
+            " @click="
               navegar('/admin/contactos')
-            "
-          >
-            <span
-              class="admin-sidebar__icon"
-              aria-hidden="true"
-            >
+              ">
+            <span class="admin-sidebar__icon" aria-hidden="true">
               ✉
             </span>
 
@@ -658,13 +559,8 @@ watch(
               Contactos
             </span>
 
-            <span
-              v-if="contactosNuevos > 0"
-              class="admin-sidebar__badge"
-              :aria-label="
-                `${contactosNuevos} contactos nuevos`
-              "
-            >
+            <span v-if="contactosNuevos > 0" class="admin-sidebar__badge" :aria-label="`${contactosNuevos} contactos nuevos`
+              ">
               {{
                 contactosNuevos > 99
                   ? '99+'
@@ -678,30 +574,20 @@ watch(
           </p>
           <!-- Usuarios -->
 
-          <button
-            type="button"
-            class="admin-sidebar__link"
-            :class="{
-              'admin-sidebar__link--active':
-                route.path.startsWith(
-                  '/admin/usuarios'
-                ),
-            }"
-            :aria-current="
+          <button type="button" class="admin-sidebar__link" :class="{
+            'admin-sidebar__link--active':
               route.path.startsWith(
                 '/admin/usuarios'
-              )
-                ? 'page'
-                : undefined
-            "
-            @click="
+              ),
+          }" :aria-current="route.path.startsWith(
+            '/admin/usuarios'
+          )
+            ? 'page'
+            : undefined
+            " @click="
               navegar('/admin/usuarios')
-            "
-          >
-            <span
-              class="admin-sidebar__icon"
-              aria-hidden="true"
-            >
+              ">
+            <span class="admin-sidebar__icon" aria-hidden="true">
               👥
             </span>
 
@@ -709,33 +595,23 @@ watch(
               Usuarios
             </span>
           </button>
-          
+
           <!-- Configuración -->
 
-          <button
-            type="button"
-            class="admin-sidebar__link"
-            :class="{
-              'admin-sidebar__link--active':
-                route.path.startsWith(
-                  '/admin/configuracion'
-                ),
-            }"
-            :aria-current="
+          <button type="button" class="admin-sidebar__link" :class="{
+            'admin-sidebar__link--active':
               route.path.startsWith(
                 '/admin/configuracion'
-              )
-                ? 'page'
-                : undefined
-            "
-            @click="
+              ),
+          }" :aria-current="route.path.startsWith(
+            '/admin/configuracion'
+          )
+            ? 'page'
+            : undefined
+            " @click="
               navegar('/admin/configuracion')
-            "
-          >
-            <span
-              class="admin-sidebar__icon"
-              aria-hidden="true"
-            >
+              ">
+            <span class="admin-sidebar__icon" aria-hidden="true">
               ⚙
             </span>
 
@@ -750,12 +626,7 @@ watch(
 
         <div class="admin-sidebar__footer">
 
-          <button
-            type="button"
-            class="admin-sidebar__logout"
-            :disabled="cerrandoSesion"
-            @click="salir"
-          >
+          <button type="button" class="admin-sidebar__logout" :disabled="cerrandoSesion" @click="salir">
             <span aria-hidden="true">
               ↪
             </span>
@@ -777,67 +648,35 @@ watch(
 
       <transition name="fade">
 
-        <div
-          v-if="menuAbierto"
-          class="admin-layout__overlay"
-          role="button"
-          tabindex="0"
-          aria-label="Cerrar menú"
-          @click="cerrarMenu"
-          @keydown.enter="cerrarMenu"
-          @keydown.space.prevent="cerrarMenu"
-        ></div>
+        <div v-if="menuAbierto" class="admin-layout__overlay" role="button" tabindex="0" aria-label="Cerrar menú"
+          @click="cerrarMenu" @keydown.enter="cerrarMenu" @keydown.space.prevent="cerrarMenu"></div>
 
       </transition>
 
       <!-- CONTENIDO -->
 
-      <main
-        class="admin-layout__content"
-        tabindex="-1"
-      >
+      <main class="admin-layout__content" tabindex="-1">
 
-        <div
-          v-if="cargandoRuta"
-          class="admin-layout__loading"
-          aria-live="polite"
-        >
-          <span
-            class="admin-spinner"
-            aria-hidden="true"
-          ></span>
+        <div v-if="cargandoRuta" class="admin-layout__loading" aria-live="polite">
+          <span class="admin-spinner" aria-hidden="true"></span>
 
           Cargando...
         </div>
 
-        <div
-          v-if="errorSesion"
-          class="admin-alert admin-alert--error"
-          role="alert"
-        >
+        <div v-if="errorSesion" class="admin-alert admin-alert--error" role="alert">
           <span aria-hidden="true">
             ⚠️
           </span>
 
           {{ errorSesion }}
 
-          <button
-            type="button"
-            class="admin-alert__close"
-            aria-label="Cerrar mensaje"
-            @click="errorSesion = null"
-          >
+          <button type="button" class="admin-alert__close" aria-label="Cerrar mensaje" @click="errorSesion = null">
             ✕
           </button>
         </div>
 
-        <transition
-          name="fade-slide"
-          mode="out-in"
-        >
-          <RouterView
-            :key="route.fullPath"
-          />
+        <transition name="fade-slide" mode="out-in">
+          <RouterView :key="route.fullPath" />
         </transition>
 
       </main>
