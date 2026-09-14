@@ -27,6 +27,7 @@ const actualizandoId = ref('')
 const eliminandoId = ref('')
 
 let cancelarSuscripcion = null
+let componenteActivo = false
 
 const estados = [
     {
@@ -129,44 +130,153 @@ const hayFiltros =
         )
     })
 
+function obtenerMensajeError(
+    err,
+    fallback
+) {
+    if (
+        err instanceof Error &&
+        err.message
+    ) {
+        return err.message
+    }
+
+    if (
+        err &&
+        typeof err === 'object' &&
+        typeof err.message ===
+            'string' &&
+        err.message
+    ) {
+        return err.message
+    }
+
+    return fallback
+}
+
+function detenerSuscripcion() {
+    if (
+        typeof cancelarSuscripcion ===
+        'function'
+    ) {
+        try {
+            cancelarSuscripcion()
+        } catch (err) {
+            console.error(
+                'Error cancelando suscripción de contactos:',
+                err
+            )
+        }
+    }
+
+    cancelarSuscripcion = null
+}
+
 function iniciarSuscripcion() {
+    detenerSuscripcion()
+
+    if (!componenteActivo) {
+        return
+    }
+
     cargando.value = true
     error.value = ''
     mensaje.value = ''
 
-    cancelarSuscripcion =
-        suscribirContactos(
-            (datos) => {
-                contactos.value =
-                    datos
+    try {
+        const cancelar =
+            suscribirContactos(
+                (datos) => {
+                    if (
+                        !componenteActivo
+                    ) {
+                        return
+                    }
 
-                cargando.value =
-                    false
+                    contactos.value =
+                        Array.isArray(datos)
+                            ? datos
+                            : []
 
-                error.value = ''
-            },
-            (err) => {
-                console.error(
-                    'Error recibiendo contactos en tiempo real:',
-                    err
-                )
+                    cargando.value =
+                        false
 
-                error.value =
-                    'No fue posible actualizar los mensajes de contacto.'
+                    error.value = ''
 
-                cargando.value =
-                    false
-            }
+                    if (
+                        contactoSeleccionado
+                            .value
+                    ) {
+                        const actualizado =
+                            contactos.value.find(
+                                (item) =>
+                                    item.id ===
+                                    contactoSeleccionado
+                                        .value.id
+                            )
+
+                        if (actualizado) {
+                            contactoSeleccionado.value =
+                                actualizado
+                        } else {
+                            contactoSeleccionado.value =
+                                null
+                        }
+                    }
+                },
+                (err) => {
+                    if (
+                        !componenteActivo
+                    ) {
+                        return
+                    }
+
+                    console.error(
+                        'Error recibiendo contactos en tiempo real:',
+                        err
+                    )
+
+                    error.value =
+                        'No fue posible actualizar los mensajes de contacto.'
+
+                    cargando.value =
+                        false
+                }
+            )
+
+        if (
+            typeof cancelar ===
+            'function'
+        ) {
+            cancelarSuscripcion =
+                cancelar
+        } else {
+            cancelarSuscripcion =
+                null
+        }
+    } catch (err) {
+        if (!componenteActivo) {
+            return
+        }
+
+        console.error(
+            'Error iniciando suscripción de contactos:',
+            err
         )
+
+        error.value =
+            obtenerMensajeError(
+                err,
+                'No fue posible conectar con los mensajes de contacto.'
+            )
+
+        cargando.value = false
+    }
 }
 
 function actualizarLista() {
-    if (
-        cancelarSuscripcion
-    ) {
-        cancelarSuscripcion()
-        cancelarSuscripcion =
-            null
+    if (!componenteActivo) {
+        return
     }
 
     iniciarSuscripcion()
@@ -175,8 +285,13 @@ function actualizarLista() {
 function seleccionarContacto(
     contacto
 ) {
-    contactoSeleccionado.value =
-        contacto
+    if (!contacto) {
+        return
+    }
+
+    contactoSeleccionado.value = {
+        ...contacto,
+    }
 
     mensaje.value = ''
 }
@@ -384,8 +499,11 @@ async function cambiarEstado(
     nuevoEstado
 ) {
     if (
+        !componenteActivo ||
         !contacto?.id ||
-        contacto.estado === nuevoEstado
+        contacto.estado === nuevoEstado ||
+        actualizandoId.value ===
+            contacto.id
     ) {
         return
     }
@@ -401,6 +519,10 @@ async function cambiarEstado(
             contacto.id,
             nuevoEstado
         )
+
+        if (!componenteActivo) {
+            return
+        }
 
         contactos.value =
             contactos.value.map(
@@ -436,23 +558,37 @@ async function cambiarEstado(
         mensaje.value =
             'Estado actualizado correctamente.'
     } catch (err) {
+        if (!componenteActivo) {
+            return
+        }
+
         console.error(
             'Error actualizando contacto:',
             err
         )
 
         error.value =
-            'No fue posible actualizar el estado del contacto.'
+            obtenerMensajeError(
+                err,
+                'No fue posible actualizar el estado del contacto.'
+            )
     } finally {
-        actualizandoId.value =
-            ''
+        if (componenteActivo) {
+            actualizandoId.value =
+                ''
+        }
     }
 }
 
 async function confirmarEliminar(
     contacto
 ) {
-    if (!contacto?.id) {
+    if (
+        !componenteActivo ||
+        !contacto?.id ||
+        eliminandoId.value ===
+            contacto.id
+    ) {
         return
     }
 
@@ -479,6 +615,10 @@ async function confirmarEliminar(
             contacto.id
         )
 
+        if (!componenteActivo) {
+            return
+        }
+
         contactos.value =
             contactos.value.filter(
                 (item) =>
@@ -497,26 +637,38 @@ async function confirmarEliminar(
         mensaje.value =
             'Contacto eliminado correctamente.'
     } catch (err) {
+        if (!componenteActivo) {
+            return
+        }
+
         console.error(
             'Error eliminando contacto:',
             err
         )
 
         error.value =
-            'No fue posible eliminar el contacto.'
+            obtenerMensajeError(
+                err,
+                'No fue posible eliminar el contacto.'
+            )
     } finally {
-        eliminandoId.value =
-            ''
+        if (componenteActivo) {
+            eliminandoId.value =
+                ''
+        }
     }
 }
 
 onMounted(() => {
+    componenteActivo = true
     iniciarSuscripcion()
 })
 
 onUnmounted(() => {
-    cancelarSuscripcion?.()
-    cancelarSuscripcion = null
+    componenteActivo = false
+    detenerSuscripcion()
+    contactoSeleccionado.value =
+        null
 })
 </script>
 

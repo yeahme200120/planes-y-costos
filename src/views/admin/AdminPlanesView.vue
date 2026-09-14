@@ -30,6 +30,8 @@ const nuevaCaracteristica =
 
 let unsubscribePlanes = null
 
+let componenteActivo = false
+
 const formulario = reactive({
   nombre: '',
   descripcion: '',
@@ -42,14 +44,153 @@ const formulario = reactive({
   caracteristicas: [],
 })
 
+// =========================================================
+// UTILIDADES
+// =========================================================
+
+function obtenerMensajeError(
+  err,
+  fallback
+) {
+  if (
+    err instanceof Error &&
+    err.message
+  ) {
+    return err.message
+  }
+
+  if (
+    err &&
+    typeof err === 'object' &&
+    typeof err.message === 'string' &&
+    err.message
+  ) {
+    return err.message
+  }
+
+  return fallback
+}
+
+function normalizarCaracteristicas(
+  caracteristicas
+) {
+  if (
+    Array.isArray(caracteristicas)
+  ) {
+    return caracteristicas
+      .map((item) => {
+        if (
+          item === null ||
+          item === undefined
+        ) {
+          return ''
+        }
+
+        if (
+          typeof item === 'string'
+        ) {
+          return item.trim()
+        }
+
+        if (
+          typeof item === 'object'
+        ) {
+          return String(
+            item.texto ??
+            item.nombre ??
+            item.descripcion ??
+            ''
+          ).trim()
+        }
+
+        return String(item).trim()
+      })
+      .filter(Boolean)
+  }
+
+  if (
+    typeof caracteristicas ===
+    'string'
+  ) {
+    const texto =
+      caracteristicas.trim()
+
+    if (!texto) {
+      return []
+    }
+
+    try {
+      const parsed =
+        JSON.parse(texto)
+
+      if (
+        Array.isArray(parsed)
+      ) {
+        return normalizarCaracteristicas(
+          parsed
+        )
+      }
+    } catch {
+      // No es JSON; continuar como texto.
+    }
+
+    return texto
+      .split(/\r?\n/)
+      .map(
+        (item) =>
+          item.trim()
+      )
+      .filter(Boolean)
+  }
+
+  return []
+}
+
+function normalizarOrden(valor) {
+  const numero = Number(valor)
+
+  if (
+    !Number.isFinite(numero) ||
+    numero < 1
+  ) {
+    return 1
+  }
+
+  return Math.min(
+    Math.floor(numero),
+    999
+  )
+}
+
+function normalizarPrecio(valor) {
+  const numero = Number(valor)
+
+  if (
+    !Number.isFinite(numero) ||
+    numero < 0
+  ) {
+    return 0
+  }
+
+  return Math.round(
+    numero * 100
+  ) / 100
+}
+
+// =========================================================
+// FORMULARIO
+// =========================================================
+
 function limpiarFormulario() {
   formulario.nombre = ''
   formulario.descripcion = ''
   formulario.precio = 0
   formulario.moneda = 'MXN'
   formulario.periodo = 'mensual'
+
   formulario.orden =
     planes.value.length + 1
+
   formulario.activo = true
   formulario.destacado = false
   formulario.caracteristicas = []
@@ -60,108 +201,164 @@ function limpiarFormulario() {
   planEditandoId.value = null
 }
 
-function iniciarSuscripcionPlanes() {
-  cargando.value = true
-  error.value = ''
+function prepararFormularioDesdePlan(
+  plan
+) {
+  formulario.nombre =
+    String(
+      plan?.nombre ??
+      plan?.titulo ??
+      ''
+    ).trim()
 
-  unsubscribePlanes =
-    suscribirPlanesAdmin(
-      (datos) => {
-        planes.value = datos
-        cargando.value = false
-        error.value = ''
-      },
-      (err) => {
-        console.error(err)
+  formulario.descripcion =
+    String(
+      plan?.descripcion ??
+      ''
+    ).trim()
 
-        error.value =
-          'No fue posible cargar los planes en tiempo real.'
+  formulario.precio =
+    normalizarPrecio(
+      plan?.precio
+    )
 
-        cargando.value = false
-      }
+  formulario.moneda =
+    String(
+      plan?.moneda ??
+      'MXN'
+    ).trim() || 'MXN'
+
+  formulario.periodo =
+    String(
+      plan?.periodo ??
+      'mensual'
+    ).trim() || 'mensual'
+
+  formulario.orden =
+    normalizarOrden(
+      plan?.orden
+    )
+
+  formulario.activo =
+    plan?.activo !== false
+
+  formulario.destacado =
+    plan?.destacado === true
+
+  formulario.caracteristicas =
+    normalizarCaracteristicas(
+      plan?.caracteristicas
     )
 }
 
+// =========================================================
+// SUSCRIPCIÓN FIREBASE
+// =========================================================
+
+function detenerSuscripcionPlanes() {
+  if (
+    typeof unsubscribePlanes ===
+    'function'
+  ) {
+    unsubscribePlanes()
+  }
+
+  unsubscribePlanes = null
+}
+
+function iniciarSuscripcionPlanes() {
+  detenerSuscripcionPlanes()
+
+  cargando.value = true
+  error.value = ''
+
+  try {
+    unsubscribePlanes =
+      suscribirPlanesAdmin(
+        (datos) => {
+          if (!componenteActivo) {
+            return
+          }
+
+          planes.value =
+            Array.isArray(datos)
+              ? datos
+              : []
+
+          cargando.value = false
+          error.value = ''
+        },
+        (err) => {
+          console.error(
+            'Error obteniendo planes:',
+            err
+          )
+
+          if (!componenteActivo) {
+            return
+          }
+
+          error.value =
+            obtenerMensajeError(
+              err,
+              'No fue posible cargar los planes en tiempo real.'
+            )
+
+          cargando.value = false
+        }
+      )
+  } catch (err) {
+    console.error(
+      'Error iniciando suscripción de planes:',
+      err
+    )
+
+    if (componenteActivo) {
+      error.value =
+        obtenerMensajeError(
+          err,
+          'No fue posible conectar con los planes.'
+        )
+
+      cargando.value = false
+    }
+  }
+}
+
+// =========================================================
+// EDICIÓN
+// =========================================================
+
 function editarPlan(plan) {
+  if (
+    !plan ||
+    !plan.id
+  ) {
+    error.value =
+      'No fue posible identificar el plan seleccionado.'
+
+    return
+  }
+
   error.value = ''
   mensaje.value = ''
 
   modoEdicion.value = true
   planEditandoId.value = plan.id
 
-  formulario.nombre =
-    plan.nombre ??
-    plan.titulo ??
-    ''
-
-  formulario.descripcion =
-    plan.descripcion ??
-    ''
-
-  formulario.precio =
-    Number(plan.precio ?? 0)
-
-  formulario.moneda =
-    plan.moneda ??
-    'MXN'
-
-  formulario.periodo =
-    plan.periodo ??
-    'mensual'
-
-  formulario.orden =
-    Number(plan.orden ?? 1)
-
-  formulario.activo =
-    Boolean(plan.activo)
-
-  formulario.destacado =
-    Boolean(plan.destacado)
-
-  if (
-    Array.isArray(
-      plan.caracteristicas
-    )
-  ) {
-    formulario.caracteristicas =
-      [
-        ...plan.caracteristicas,
-      ]
-  } else if (
-    typeof plan.caracteristicas ===
-    'string'
-  ) {
-    try {
-      const parsed =
-        JSON.parse(
-          plan.caracteristicas
-        )
-
-      formulario.caracteristicas =
-        Array.isArray(parsed)
-          ? [...parsed]
-          : [
-              plan.caracteristicas,
-            ]
-    } catch {
-      formulario.caracteristicas =
-        plan.caracteristicas
-          .split('\n')
-          .map(
-            (item) =>
-              item.trim()
-          )
-          .filter(Boolean)
-    }
-  } else {
-    formulario.caracteristicas = []
-  }
+  prepararFormularioDesdePlan(
+    plan
+  )
 
   window.scrollTo({
     top: 0,
     behavior: 'smooth',
   })
 }
+
+// =========================================================
+// CARACTERÍSTICAS
+// =========================================================
 
 function agregarCaracteristica() {
   const valor =
@@ -170,6 +367,24 @@ function agregarCaracteristica() {
   if (!valor) {
     return
   }
+
+  const existe =
+    formulario.caracteristicas.some(
+      (item) =>
+        String(item)
+          .trim()
+          .toLowerCase() ===
+        valor.toLowerCase()
+    )
+
+  if (existe) {
+    error.value =
+      'Esta característica ya fue agregada.'
+
+    return
+  }
+
+  error.value = ''
 
   formulario.caracteristicas.push(
     valor
@@ -181,6 +396,14 @@ function agregarCaracteristica() {
 function eliminarCaracteristica(
   index
 ) {
+  if (
+    index < 0 ||
+    index >=
+      formulario.caracteristicas.length
+  ) {
+    return
+  }
+
   formulario.caracteristicas.splice(
     index,
     1
@@ -197,7 +420,15 @@ function manejarEnterCaracteristica(
   }
 }
 
+// =========================================================
+// GUARDAR PLAN
+// =========================================================
+
 async function guardarPlan() {
+  if (guardando.value) {
+    return
+  }
+
   try {
     error.value = ''
     mensaje.value = ''
@@ -213,7 +444,9 @@ async function guardarPlan() {
     }
 
     const precio =
-      Number(formulario.precio)
+      normalizarPrecio(
+        formulario.precio
+      )
 
     if (
       !Number.isFinite(precio) ||
@@ -225,7 +458,9 @@ async function guardarPlan() {
     }
 
     const orden =
-      Number(formulario.orden)
+      normalizarOrden(
+        formulario.orden
+      )
 
     if (
       !Number.isInteger(orden) ||
@@ -236,73 +471,135 @@ async function guardarPlan() {
       )
     }
 
+    const moneda =
+      String(
+        formulario.moneda
+      ).trim() || 'MXN'
+
+    const periodo =
+      String(
+        formulario.periodo
+      ).trim() || 'mensual'
+
+    const caracteristicas =
+      normalizarCaracteristicas(
+        formulario.caracteristicas
+      )
+
     const datos = {
       nombre,
 
       descripcion:
-        formulario.descripcion.trim(),
+        String(
+          formulario.descripcion
+        ).trim(),
 
       precio,
 
-      moneda:
-        formulario.moneda.trim() ||
-        'MXN',
+      moneda,
 
-      periodo:
-        formulario.periodo,
+      periodo,
 
       orden,
 
       activo:
-        Boolean(
-          formulario.activo
-        ),
+        formulario.activo === true,
 
       destacado:
-        Boolean(
-          formulario.destacado
-        ),
+        formulario.destacado === true,
 
-      caracteristicas:
-        formulario.caracteristicas
-          .map(
-            (item) =>
-              String(item).trim()
-          )
-          .filter(Boolean),
+      caracteristicas,
     }
 
     if (modoEdicion.value) {
+      if (
+        !planEditandoId.value
+      ) {
+        throw new Error(
+          'No se identificó el plan que deseas actualizar.'
+        )
+      }
+
       await actualizarPlan(
         planEditandoId.value,
         datos
       )
 
+      if (!componenteActivo) {
+        return
+      }
+
       mensaje.value =
         'Plan actualizado correctamente.'
     } else {
-      await crearPlan(datos)
+      await crearPlan(
+        datos
+      )
+
+      if (!componenteActivo) {
+        return
+      }
 
       mensaje.value =
         'Plan creado correctamente.'
     }
 
     limpiarFormulario()
-  } catch (err) {
-    console.error(err)
 
-    error.value =
-      err.message ??
-      'No fue posible guardar el plan.'
+    /*
+     * limpiarFormulario() restablece
+     * el formulario, pero no toca
+     * mensaje ni error.
+     *
+     * La lista se actualizará
+     * automáticamente mediante
+     * suscribirPlanesAdmin().
+     */
+  } catch (err) {
+    console.error(
+      'Error guardando plan:',
+      err
+    )
+
+    if (componenteActivo) {
+      error.value =
+        obtenerMensajeError(
+          err,
+          'No fue posible guardar el plan.'
+        )
+    }
   } finally {
-    guardando.value = false
+    if (componenteActivo) {
+      guardando.value = false
+    }
   }
 }
 
+// =========================================================
+// CAMBIAR ESTADO
+// =========================================================
+
 async function cambiarEstado(plan) {
+  if (
+    guardando.value
+  ) {
+    return
+  }
+
+  if (
+    !plan ||
+    !plan.id
+  ) {
+    error.value =
+      'No fue posible identificar el plan.'
+
+    return
+  }
+
   try {
     error.value = ''
     mensaje.value = ''
+    guardando.value = true
 
     const nuevoEstado =
       !Boolean(plan.activo)
@@ -312,19 +609,55 @@ async function cambiarEstado(plan) {
       nuevoEstado
     )
 
+    if (!componenteActivo) {
+      return
+    }
+
     mensaje.value =
       nuevoEstado
         ? 'Plan activado correctamente.'
         : 'Plan desactivado correctamente.'
   } catch (err) {
-    console.error(err)
+    console.error(
+      'Error cambiando estado del plan:',
+      err
+    )
 
-    error.value =
-      'No fue posible actualizar el estado.'
+    if (componenteActivo) {
+      error.value =
+        obtenerMensajeError(
+          err,
+          'No fue posible actualizar el estado.'
+        )
+    }
+  } finally {
+    if (componenteActivo) {
+      guardando.value = false
+    }
   }
 }
 
+// =========================================================
+// ELIMINAR
+// =========================================================
+
 async function eliminar(plan) {
+  if (
+    guardando.value
+  ) {
+    return
+  }
+
+  if (
+    !plan ||
+    !plan.id
+  ) {
+    error.value =
+      'No fue posible identificar el plan.'
+
+    return
+  }
+
   const nombre =
     plan.nombre ??
     plan.titulo ??
@@ -342,10 +675,15 @@ async function eliminar(plan) {
   try {
     error.value = ''
     mensaje.value = ''
+    guardando.value = true
 
     await eliminarPlan(
       plan.id
     )
+
+    if (!componenteActivo) {
+      return
+    }
 
     mensaje.value =
       'Plan eliminado correctamente.'
@@ -357,20 +695,39 @@ async function eliminar(plan) {
       limpiarFormulario()
     }
   } catch (err) {
-    console.error(err)
+    console.error(
+      'Error eliminando plan:',
+      err
+    )
 
-    error.value =
-      'No fue posible eliminar el plan.'
+    if (componenteActivo) {
+      error.value =
+        obtenerMensajeError(
+          err,
+          'No fue posible eliminar el plan.'
+        )
+    }
+  } finally {
+    if (componenteActivo) {
+      guardando.value = false
+    }
   }
 }
 
+// =========================================================
+// CICLO DE VIDA
+// =========================================================
+
 onMounted(() => {
+  componenteActivo = true
+
   iniciarSuscripcionPlanes()
 })
 
 onUnmounted(() => {
-  unsubscribePlanes?.()
-  unsubscribePlanes = null
+  componenteActivo = false
+
+  detenerSuscripcionPlanes()
 })
 </script>
 
@@ -402,6 +759,7 @@ onUnmounted(() => {
     <div
       v-if="error"
       class="admin-alert admin-alert--error"
+      role="alert"
     >
       <span>
         {{ error }}
@@ -420,6 +778,7 @@ onUnmounted(() => {
     <div
       v-if="mensaje"
       class="admin-alert admin-alert--success"
+      role="status"
     >
       <span>
         {{ mensaje }}
@@ -463,6 +822,7 @@ onUnmounted(() => {
           v-if="modoEdicion"
           type="button"
           class="admin-button admin-button--secondary"
+          :disabled="guardando"
           @click="limpiarFormulario"
         >
           Cancelar edición
@@ -499,6 +859,7 @@ onUnmounted(() => {
               type="text"
               maxlength="100"
               placeholder="Ej. Plan Profesional"
+              :disabled="guardando"
               required
             >
 
@@ -524,6 +885,7 @@ onUnmounted(() => {
               type="number"
               min="0"
               step="0.01"
+              :disabled="guardando"
               required
             >
 
@@ -551,6 +913,7 @@ onUnmounted(() => {
             rows="4"
             maxlength="500"
             placeholder="Descripción del plan"
+            :disabled="guardando"
           ></textarea>
 
           <p
@@ -586,6 +949,7 @@ onUnmounted(() => {
               type="text"
               maxlength="10"
               placeholder="MXN"
+              :disabled="guardando"
             >
 
           </div>
@@ -607,6 +971,7 @@ onUnmounted(() => {
                 formulario.periodo
               "
               class="admin-form__select"
+              :disabled="guardando"
             >
               <option
                 value="mensual"
@@ -649,6 +1014,7 @@ onUnmounted(() => {
               type="number"
               min="1"
               step="1"
+              :disabled="guardando"
               required
             >
 
@@ -668,6 +1034,7 @@ onUnmounted(() => {
                 formulario.activo
               "
               type="checkbox"
+              :disabled="guardando"
             >
 
             <span>
@@ -683,6 +1050,7 @@ onUnmounted(() => {
                 formulario.destacado
               "
               type="checkbox"
+              :disabled="guardando"
             >
 
             <span>
@@ -716,6 +1084,7 @@ onUnmounted(() => {
               type="text"
               maxlength="150"
               placeholder="Escribe una característica"
+              :disabled="guardando"
               @keydown="
                 manejarEnterCaracteristica
               "
@@ -724,6 +1093,7 @@ onUnmounted(() => {
             <button
               type="button"
               class="admin-button admin-button--secondary"
+              :disabled="guardando"
               @click="
                 agregarCaracteristica
               "
@@ -758,6 +1128,7 @@ onUnmounted(() => {
               <button
                 type="button"
                 aria-label="Eliminar característica"
+                :disabled="guardando"
                 @click="
                   eliminarCaracteristica(
                     index
@@ -1012,6 +1383,7 @@ onUnmounted(() => {
             <button
               type="button"
               class="admin-button admin-button--secondary"
+              :disabled="guardando"
               @click="
                 editarPlan(plan)
               "
@@ -1027,6 +1399,7 @@ onUnmounted(() => {
                   ? 'admin-button--warning'
                   : 'admin-button--success'
               "
+              :disabled="guardando"
               @click="
                 cambiarEstado(plan)
               "
@@ -1041,6 +1414,7 @@ onUnmounted(() => {
             <button
               type="button"
               class="admin-button admin-button--danger"
+              :disabled="guardando"
               @click="
                 eliminar(plan)
               "

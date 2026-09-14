@@ -1,5 +1,11 @@
 const COLOR_BASE = '#4678EC'
 
+const COLOR_BLANCO = '#FFFFFF'
+const COLOR_NEGRO = '#111827'
+
+const CONTRASTE_TEXTO_NORMAL = 4.5
+const CONTRASTE_TEXTO_GRANDE = 3
+
 export const PALETAS_PREDERMINADAS = {
   primary: '#4678EC',
   secondary: '#F28B82',
@@ -29,19 +35,74 @@ export const PALETAS_PREDERMINADAS = {
   success: '#2E9B6F',
   warning: '#D89432',
   danger: '#D95C5C',
+
+  primaryText: '#FFFFFF',
+  secondaryText: '#FFFFFF',
+  accentText: '#FFFFFF',
 }
+
+/* =========================================================
+   UTILIDADES INTERNAS
+   ========================================================= */
+
+function limitar(valor, minimo, maximo) {
+  const numero = Number(valor)
+
+  if (!Number.isFinite(numero)) {
+    return minimo
+  }
+
+  return Math.max(
+    minimo,
+    Math.min(
+      maximo,
+      numero,
+    ),
+  )
+}
+
+function limitarPorcentaje(valor) {
+  return limitar(valor, 0, 100)
+}
+
+function limitarTono(valor) {
+  let tono = Number(valor)
+
+  if (!Number.isFinite(tono)) {
+    return 0
+  }
+
+  tono %= 360
+
+  if (tono < 0) {
+    tono += 360
+  }
+
+  return tono
+}
+
+/* =========================================================
+   NORMALIZACIÓN HEX
+   ========================================================= */
 
 export function normalizarHex(valor) {
   if (
-    typeof valor !== 'string' ||
+    typeof valor !== 'string'
+  ) {
+    return COLOR_BASE
+  }
+
+  let hex = valor.trim()
+
+  if (
     !/^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(
-      valor.trim()
+      hex,
     )
   ) {
     return COLOR_BASE
   }
 
-  let hex = valor.trim().toUpperCase()
+  hex = hex.toUpperCase()
 
   if (hex.length === 4) {
     hex =
@@ -49,61 +110,101 @@ export function normalizarHex(valor) {
       hex
         .slice(1)
         .split('')
-        .map((caracter) => caracter + caracter)
+        .map(
+          (caracter) =>
+            caracter + caracter,
+        )
         .join('')
   }
 
   return hex
 }
 
+/* =========================================================
+   HEX / RGB
+   ========================================================= */
+
 export function hexToRgb(hex) {
   const color = normalizarHex(hex)
 
   return {
-    r: parseInt(color.slice(1, 3), 16),
-    g: parseInt(color.slice(3, 5), 16),
-    b: parseInt(color.slice(5, 7), 16),
+    r: parseInt(
+      color.slice(1, 3),
+      16,
+    ),
+
+    g: parseInt(
+      color.slice(3, 5),
+      16,
+    ),
+
+    b: parseInt(
+      color.slice(5, 7),
+      16,
+    ),
   }
 }
 
-export function rgbToHex(r, g, b) {
-  const limitar = (valor) =>
+export function rgbToHex(
+  r,
+  g,
+  b,
+) {
+  const limitarCanal = (
+    valor,
+  ) =>
     Math.max(
       0,
       Math.min(
         255,
-        Math.round(valor)
-      )
+        Math.round(
+          Number(valor) || 0,
+        ),
+      ),
     )
 
   return (
     '#' +
     [r, g, b]
-      .map((valor) =>
-        limitar(valor)
-          .toString(16)
-          .padStart(2, '0')
+      .map(
+        (valor) =>
+          limitarCanal(valor)
+            .toString(16)
+            .padStart(2, '0'),
       )
       .join('')
       .toUpperCase()
   )
 }
 
-export function rgbToHsl(r, g, b) {
-  r /= 255
-  g /= 255
-  b /= 255
+/* =========================================================
+   RGB / HSL
+   ========================================================= */
 
-  const max = Math.max(r, g, b)
-  const min = Math.min(r, g, b)
+export function rgbToHsl(
+  r,
+  g,
+  b,
+) {
+  r = limitar(r, 0, 255) / 255
+  g = limitar(g, 0, 255) / 255
+  b = limitar(b, 0, 255) / 255
+
+  const max =
+    Math.max(r, g, b)
+
+  const min =
+    Math.min(r, g, b)
 
   let h = 0
   let s = 0
 
-  const l = (max + min) / 2
+  const l =
+    (max + min) / 2
 
   if (max !== min) {
-    const diferencia = max - min
+    const diferencia =
+      max - min
 
     s =
       l > 0.5
@@ -145,20 +246,44 @@ export function rgbToHsl(r, g, b) {
   }
 }
 
-export function hexToHsl(hex) {
-  const { r, g, b } =
-    hexToRgb(hex)
+export function hexToHsl(
+  hex,
+) {
+  const {
+    r,
+    g,
+    b,
+  } = hexToRgb(hex)
 
-  return rgbToHsl(r, g, b)
+  return rgbToHsl(
+    r,
+    g,
+    b,
+  )
 }
 
-export function hslToRgb(h, s, l) {
-  h /= 360
-  s /= 100
-  l /= 100
+export function hslToRgb(
+  h,
+  s,
+  l,
+) {
+  h =
+    limitarTono(h) /
+    360
+
+  s =
+    limitarPorcentaje(s) /
+    100
+
+  l =
+    limitarPorcentaje(l) /
+    100
 
   if (s === 0) {
-    const valor = Math.round(l * 255)
+    const valor =
+      Math.round(
+        l * 255,
+      )
 
     return {
       r: valor,
@@ -170,10 +295,15 @@ export function hslToRgb(h, s, l) {
   const hue2rgb = (
     p,
     q,
-    t
+    t,
   ) => {
-    if (t < 0) t += 1
-    if (t > 1) t -= 1
+    if (t < 0) {
+      t += 1
+    }
+
+    if (t > 1) {
+      t -= 1
+    }
 
     if (t < 1 / 6) {
       return (
@@ -203,7 +333,9 @@ export function hslToRgb(h, s, l) {
   const q =
     l < 0.5
       ? l * (1 + s)
-      : l + s - l * s
+      : l +
+        s -
+        l * s
 
   const p =
     2 * l - q
@@ -213,21 +345,21 @@ export function hslToRgb(h, s, l) {
       hue2rgb(
         p,
         q,
-        h + 1 / 3
+        h + 1 / 3,
       ) * 255,
 
     g:
       hue2rgb(
         p,
         q,
-        h
+        h,
       ) * 255,
 
     b:
       hue2rgb(
         p,
         q,
-        h - 1 / 3
+        h - 1 / 3,
       ) * 255,
   }
 }
@@ -235,77 +367,69 @@ export function hslToRgb(h, s, l) {
 export function hslToHex(
   h,
   s,
-  l
+  l,
 ) {
   const {
     r,
     g,
     b,
-  } = hslToRgb(
-    h,
-    s,
-    l
-  )
+  } =
+    hslToRgb(
+      h,
+      s,
+      l,
+    )
 
   return rgbToHex(
     r,
     g,
-    b
+    b,
   )
 }
 
+/* =========================================================
+   AJUSTES DE COLOR
+   ========================================================= */
+
 export function ajustarTono(
   hex,
-  grados
+  grados,
 ) {
   const hsl =
     hexToHsl(hex)
 
-  let nuevoTono =
-    hsl.h + grados
-
-  while (
-    nuevoTono < 0
-  ) {
-    nuevoTono += 360
-  }
-
-  while (
-    nuevoTono >= 360
-  ) {
-    nuevoTono -= 360
-  }
+  const nuevoTono =
+    limitarTono(
+      hsl.h +
+        Number(grados || 0),
+    )
 
   return hslToHex(
     nuevoTono,
     hsl.s,
-    hsl.l
+    hsl.l,
   )
 }
 
 export function ajustarSaturacion(
   hex,
-  saturacion
+  saturacion,
 ) {
   const hsl =
     hexToHsl(hex)
 
   return hslToHex(
     hsl.h,
-    Math.max(
-      0,
-      Math.min(
-        100,
-        saturacion
-      )
+    limitarPorcentaje(
+      saturacion,
     ),
-    hsl.l
+    hsl.l,
   )
 }
 
 export function ajustarLuminosidad(
   hex,
-  luminosidad
+  luminosidad,
 ) {
   const hsl =
     hexToHsl(hex)
@@ -313,20 +437,20 @@ export function ajustarLuminosidad(
   return hslToHex(
     hsl.h,
     hsl.s,
-    Math.max(
-      0,
-      Math.min(
-        100,
-        luminosidad
-      )
-    )
+    limitarPorcentaje(
+      luminosidad,
+    ),
   )
 }
+
+/* =========================================================
+   MEZCLA DE COLORES
+   ========================================================= */
 
 export function mezclarColores(
   colorA,
   colorB,
-  porcentaje = 50
+  porcentaje = 50,
 ) {
   const a =
     hexToRgb(colorA)
@@ -335,7 +459,9 @@ export function mezclarColores(
     hexToRgb(colorB)
 
   const factor =
-    porcentaje / 100
+    limitarPorcentaje(
+      porcentaje,
+    ) / 100
 
   return rgbToHex(
     a.r +
@@ -348,11 +474,17 @@ export function mezclarColores(
 
     a.b +
       (b.b - a.b) *
-        factor
+        factor,
   )
 }
 
-function luminanciaRelativa(hex) {
+/* =========================================================
+   CONTRASTE WCAG
+   ========================================================= */
+
+function luminanciaRelativa(
+  hex,
+) {
   const {
     r,
     g,
@@ -360,23 +492,29 @@ function luminanciaRelativa(hex) {
   } = hexToRgb(hex)
 
   const convertir = (
-    valor
+    valor,
   ) => {
     const canal =
       valor / 255
 
-    return canal <= 0.03928
+    return canal <=
+      0.04045
       ? canal / 12.92
       : Math.pow(
           (canal + 0.055) /
             1.055,
-          2.4
+          2.4,
         )
   }
 
-  const R = convertir(r)
-  const G = convertir(g)
-  const B = convertir(b)
+  const R =
+    convertir(r)
+
+  const G =
+    convertir(g)
+
+  const B =
+    convertir(b)
 
   return (
     0.2126 * R +
@@ -387,28 +525,28 @@ function luminanciaRelativa(hex) {
 
 export function contrasteEntre(
   colorA,
-  colorB
+  colorB,
 ) {
   const luminanciaA =
     luminanciaRelativa(
-      colorA
+      colorA,
     )
 
   const luminanciaB =
     luminanciaRelativa(
-      colorB
+      colorB,
     )
 
   const claro =
     Math.max(
       luminanciaA,
-      luminanciaB
+      luminanciaB,
     )
 
   const oscuro =
     Math.min(
       luminanciaA,
-      luminanciaB
+      luminanciaB,
     )
 
   return (
@@ -417,31 +555,336 @@ export function contrasteEntre(
   )
 }
 
+/* =========================================================
+   TEXTO CONTRASTADO
+   ========================================================= */
+
+/**
+ * Devuelve un color neutro para texto.
+ *
+ * IMPORTANTE:
+ * El texto NO se mezcla con el color de marca.
+ * Se mantiene neutro para evitar que un primary azul,
+ * verde, rojo, etc. contamine toda la tipografía.
+ *
+ * Se busca como mínimo WCAG AA 4.5:1 para texto normal.
+ */
 export function obtenerTextoContraste(
-  fondo
+  fondo,
+  opciones = {},
 ) {
-  const contrasteBlanco =
-    contrasteEntre(
-      fondo,
-      '#FFFFFF'
+  const colorFondo =
+    normalizarHex(fondo)
+
+  const contrasteObjetivo =
+    Number(
+      opciones.contrasteObjetivo ??
+        CONTRASTE_TEXTO_NORMAL,
     )
 
-  const contrasteNegro =
+  const blanco =
     contrasteEntre(
-      fondo,
-      '#111827'
+      colorFondo,
+      COLOR_BLANCO,
     )
 
-  return contrasteBlanco >=
-    contrasteNegro
-    ? '#FFFFFF'
-    : '#111827'
+  const negro =
+    contrasteEntre(
+      colorFondo,
+      COLOR_NEGRO,
+    )
+
+  if (
+    blanco >=
+      contrasteObjetivo &&
+    blanco >= negro
+  ) {
+    return COLOR_BLANCO
+  }
+
+  if (
+    negro >=
+      contrasteObjetivo
+  ) {
+    return COLOR_NEGRO
+  }
+
+  /*
+   * En colores intermedios buscamos
+   * el mejor de blanco/negro.
+   */
+  return blanco >= negro
+    ? COLOR_BLANCO
+    : COLOR_NEGRO
 }
+
+/**
+ * Obtiene un gris neutro que conserve buena
+ * legibilidad sobre el fondo.
+ */
+function obtenerTextoNeutro(
+  fondo,
+  opciones = {},
+) {
+  const contrasteObjetivo =
+    Number(
+      opciones.contrasteObjetivo ??
+        CONTRASTE_TEXTO_NORMAL,
+    )
+
+  const colorFondo =
+    normalizarHex(fondo)
+
+  const textoPrincipal =
+    obtenerTextoContraste(
+      colorFondo,
+      {
+        contrasteObjetivo,
+      },
+    )
+
+  /*
+   * Si el texto principal es blanco,
+   * buscamos el gris más claro posible
+   * que todavía tenga contraste.
+   */
+  const base =
+    textoPrincipal ===
+    COLOR_BLANCO
+      ? '#FFFFFF'
+      : '#111827'
+
+  const direccion =
+    textoPrincipal ===
+    COLOR_BLANCO
+      ? -1
+      : 1
+
+  let mejor =
+    base
+
+  let mejorLuminosidad =
+    textoPrincipal ===
+    COLOR_BLANCO
+      ? 100
+      : 0
+
+  for (
+    let luminosidad = 0;
+    luminosidad <= 100;
+    luminosidad += 1
+  ) {
+    const candidato =
+      hslToHex(
+        0,
+        0,
+        luminosidad,
+      )
+
+    const contraste =
+      contrasteEntre(
+        colorFondo,
+        candidato,
+      )
+
+    if (
+      contraste >=
+      contrasteObjetivo
+    ) {
+      if (
+        textoPrincipal ===
+        COLOR_BLANCO
+      ) {
+        if (
+          luminosidad <=
+            mejorLuminosidad
+        ) {
+          mejor =
+            candidato
+
+          mejorLuminosidad =
+            luminosidad
+        }
+      } else if (
+        luminosidad >=
+        mejorLuminosidad
+      ) {
+        mejor =
+          candidato
+
+        mejorLuminosidad =
+          luminosidad
+      }
+    }
+  }
+
+  /*
+   * La búsqueda anterior puede producir un gris
+   * demasiado cercano al extremo. Limitamos los
+   * valores para conservar una apariencia empresarial.
+   */
+  if (
+    direccion < 0
+  ) {
+    return mejor
+  }
+
+  return mejor
+}
+
+/**
+ * Texto secundario.
+ *
+ * Mantiene apariencia neutra y conserva contraste.
+ */
+function obtenerTextoSecundario(
+  fondo,
+) {
+  const colorFondo =
+    normalizarHex(fondo)
+
+  const blanco =
+    contrasteEntre(
+      colorFondo,
+      COLOR_BLANCO,
+    )
+
+  const negro =
+    contrasteEntre(
+      colorFondo,
+      COLOR_NEGRO,
+    )
+
+  /*
+   * Sobre fondos claros utilizamos un gris
+   * oscuro, nunca el color de marca.
+   */
+  if (
+    negro >= blanco
+  ) {
+    const candidatos = [
+      '#334155',
+      '#475569',
+      '#526078',
+      '#64748B',
+    ]
+
+    for (
+      const candidato of
+        candidatos
+    ) {
+      if (
+        contrasteEntre(
+          colorFondo,
+          candidato,
+        ) >=
+        CONTRASTE_TEXTO_NORMAL
+      ) {
+        return candidato
+      }
+    }
+
+    return COLOR_NEGRO
+  }
+
+  /*
+   * Sobre fondos oscuros utilizamos
+   * grises claros.
+   */
+  const candidatos = [
+    '#E5E7EB',
+    '#E2E8F0',
+    '#CBD5E1',
+    '#F1F5F9',
+  ]
+
+  for (
+    const candidato of
+      candidatos
+  ) {
+    if (
+      contrasteEntre(
+        colorFondo,
+        candidato,
+      ) >=
+      CONTRASTE_TEXTO_NORMAL
+    ) {
+      return candidato
+    }
+  }
+
+  return COLOR_BLANCO
+}
+
+/**
+ * Texto muted.
+ *
+ * Aunque sea secundario visualmente,
+ * no se permite caer por debajo del
+ * contraste mínimo definido.
+ */
+function obtenerTextoMuted(
+  fondo,
+) {
+  const colorFondo =
+    normalizarHex(fondo)
+
+  const negro =
+    contrasteEntre(
+      colorFondo,
+      '#64748B',
+    )
+
+  if (
+    negro >=
+    CONTRASTE_TEXTO_NORMAL
+  ) {
+    return '#64748B'
+  }
+
+  const grisOscuro =
+    contrasteEntre(
+      colorFondo,
+      '#475569',
+    )
+
+  if (
+    grisOscuro >=
+    CONTRASTE_TEXTO_NORMAL
+  ) {
+    return '#475569'
+  }
+
+  const grisClaro =
+    contrasteEntre(
+      colorFondo,
+      '#CBD5E1',
+    )
+
+  if (
+    grisClaro >=
+    CONTRASTE_TEXTO_NORMAL
+  ) {
+    return '#CBD5E1'
+  }
+
+  return obtenerTextoContraste(
+    colorFondo,
+    {
+      contrasteObjetivo:
+        CONTRASTE_TEXTO_NORMAL,
+    },
+  )
+}
+
+/* =========================================================
+   COLORES DERIVADOS
+   ========================================================= */
 
 function crearColorSuave(
   hex,
   luminosidad,
-  saturacion = null
+  saturacion = null,
 ) {
   const hsl =
     hexToHsl(hex)
@@ -450,13 +893,13 @@ function crearColorSuave(
     hsl.h,
     saturacion ??
       hsl.s,
-    luminosidad
+    luminosidad,
   )
 }
 
 function crearColorIntenso(
   hex,
-  luminosidad
+  luminosidad,
 ) {
   const hsl =
     hexToHsl(hex)
@@ -465,237 +908,320 @@ function crearColorIntenso(
     hsl.h,
     Math.max(
       hsl.s,
-      55
+      55,
     ),
-    luminosidad
+    luminosidad,
   )
 }
 
-/**
- * Genera una paleta triádica.
- *
- * El color seleccionado por el usuario
- * funciona como color principal.
- *
- * Los otros dos colores se obtienen
- * rotando el tono 120° y 240°.
- */
+/* =========================================================
+   TEXTO DE MARCA
+   ========================================================= */
+
+function obtenerTextosDeMarca(
+  primary,
+  secondary,
+  accent,
+) {
+  return {
+    primaryText:
+      obtenerTextoContraste(
+        primary,
+      ),
+
+    secondaryText:
+      obtenerTextoContraste(
+        secondary,
+      ),
+
+    accentText:
+      obtenerTextoContraste(
+        accent,
+      ),
+  }
+}
+
+/* =========================================================
+   ESTRUCTURA COMÚN DE PALETA
+   ========================================================= */
+
+function completarPaleta(
+  colores,
+) {
+  const primary =
+    normalizarHex(
+      colores.primary ??
+        PALETAS_PREDERMINADAS.primary,
+    )
+
+  const secondary =
+    normalizarHex(
+      colores.secondary ??
+        PALETAS_PREDERMINADAS.secondary,
+    )
+
+  const accent =
+    normalizarHex(
+      colores.accent ??
+        PALETAS_PREDERMINADAS.accent,
+    )
+
+  /*
+   * Los colores principales siempre se calculan
+   * nuevamente. No reutilizamos primaryText /
+   * secondaryText / accentText antiguos.
+   *
+   * Esto evita que una configuración vieja
+   * conserve textos con contraste incorrecto.
+   */
+  const textosMarca =
+    obtenerTextosDeMarca(
+      primary,
+      secondary,
+      accent,
+    )
+
+  const background =
+    normalizarHex(
+      colores.background ??
+        PALETAS_PREDERMINADAS.background,
+    )
+
+  const backgroundAlt =
+    normalizarHex(
+      colores.backgroundAlt ??
+        PALETAS_PREDERMINADAS.backgroundAlt,
+    )
+
+  const surface =
+    normalizarHex(
+      colores.surface ??
+        PALETAS_PREDERMINADAS.surface,
+    )
+
+  const surfaceAlt =
+    normalizarHex(
+      colores.surfaceAlt ??
+        PALETAS_PREDERMINADAS.surfaceAlt,
+    )
+
+  /*
+   * El texto general se calcula contra el
+   * background real.
+   */
+  const text =
+    obtenerTextoContraste(
+      background,
+    )
+
+  /*
+   * El texto secundario y muted son neutros.
+   * No heredan el tono de primary.
+   */
+  const textSecondary =
+    obtenerTextoSecundario(
+      background,
+    )
+
+  const textMuted =
+    obtenerTextoMuted(
+      background,
+    )
+
+  return {
+    ...colores,
+
+    primary,
+    secondary,
+    accent,
+
+    background,
+    backgroundAlt,
+
+    surface,
+    surfaceAlt,
+
+    text,
+    textSecondary,
+    textMuted,
+
+    primaryText:
+      textosMarca.primaryText,
+
+    secondaryText:
+      textosMarca.secondaryText,
+
+    accentText:
+      textosMarca.accentText,
+
+    success:
+      colores.success ??
+      PALETAS_PREDERMINADAS.success,
+
+    warning:
+      colores.warning ??
+      PALETAS_PREDERMINADAS.warning,
+
+    danger:
+      colores.danger ??
+      PALETAS_PREDERMINADAS.danger,
+  }
+}
+
+/* =========================================================
+   PALETA TRIÁDICA
+   ========================================================= */
+
 export function generarPaletaTriadica(
   colorBase,
-  opciones = {}
+  opciones = {},
 ) {
   const {
     suavidad = 35,
-    contraste = 50,
   } = opciones
 
   const base =
     normalizarHex(
-      colorBase
+      colorBase,
     )
 
   const hsl =
     hexToHsl(base)
 
-  /*
-   * Triada:
-   *
-   * Base
-   * Base + 120°
-   * Base + 240°
-   */
+  const saturacionBase =
+    limitar(
+      hsl.s,
+      35,
+      85,
+    )
+
+  const luminosidadBase =
+    limitar(
+      hsl.l,
+      35,
+      62,
+    )
+
   const primary =
     hslToHex(
       hsl.h,
-      Math.max(
-        35,
-        Math.min(
-          85,
-          hsl.s
-        )
-      ),
-      Math.max(
-        35,
-        Math.min(
-          62,
-          hsl.l
-        )
-      )
+      saturacionBase,
+      luminosidadBase,
     )
 
   const secondary =
     hslToHex(
-      (hsl.h + 120) % 360,
-      Math.max(
+      hsl.h + 120,
+      limitar(
+        hsl.s,
         38,
-        Math.min(
-          78,
-          hsl.s
-        )
+        78,
       ),
-      Math.max(
+      limitar(
+        hsl.l,
         42,
-        Math.min(
-          65,
-          hsl.l
-        )
-      )
+        65,
+      ),
     )
 
   const accent =
     hslToHex(
-      (hsl.h + 240) % 360,
-      Math.max(
+      hsl.h + 240,
+      limitar(
+        hsl.s,
         38,
-        Math.min(
-          78,
-          hsl.s
-        )
+        78,
       ),
-      Math.max(
+      limitar(
+        hsl.l,
         42,
-        Math.min(
-          65,
-          hsl.l
-        )
-      )
+        65,
+      ),
     )
 
-  /*
-   * Suavidad:
-   *
-   * 0   = colores más intensos
-   * 100 = colores más suaves
-   */
   const factorSuavidad =
-    Math.max(
-      0,
-      Math.min(
-        100,
-        suavidad
-      )
+    limitarPorcentaje(
+      suavidad,
     ) / 100
+
+  const porcentajeSuave =
+    70 +
+    factorSuavidad * 20
 
   const primaryLight =
     mezclarColores(
       primary,
-      '#FFFFFF',
-      70 +
-        factorSuavidad *
-          20
+      COLOR_BLANCO,
+      porcentajeSuave,
     )
 
   const secondaryLight =
     mezclarColores(
       secondary,
-      '#FFFFFF',
-      70 +
-        factorSuavidad *
-          20
+      COLOR_BLANCO,
+      porcentajeSuave,
     )
 
   const accentLight =
     mezclarColores(
       accent,
-      '#FFFFFF',
-      70 +
-        factorSuavidad *
-          20
+      COLOR_BLANCO,
+      porcentajeSuave,
     )
 
   const primaryDark =
     mezclarColores(
       primary,
       '#000000',
-      25
+      25,
     )
 
   const secondaryDark =
     mezclarColores(
       secondary,
       '#000000',
-      25
+      25,
     )
 
   const accentDark =
     mezclarColores(
       accent,
       '#000000',
-      25
+      25,
     )
 
-  /*
-   * Los fondos no utilizan directamente
-   * los colores triádicos.
-   *
-   * Se crean superficies neutras para
-   * evitar que toda la landing tenga
-   * bloques saturados.
-   */
   const background =
     mezclarColores(
-      '#FFFFFF',
+      COLOR_BLANCO,
       primaryLight,
-      22
+      22,
     )
 
   const backgroundAlt =
     mezclarColores(
-      '#FFFFFF',
+      COLOR_BLANCO,
       accentLight,
-      30
+      30,
     )
 
   const surface =
-    '#FFFFFF'
+    COLOR_BLANCO
 
   const surfaceAlt =
     mezclarColores(
-      '#FFFFFF',
+      COLOR_BLANCO,
       secondaryLight,
-      24
+      24,
     )
-
-  /*
-   * El contraste controla cuánto se
-   * separan los tonos de texto.
-   */
-  const factorContraste =
-    Math.max(
-      0,
-      Math.min(
-        100,
-        contraste
-      )
-    ) / 100
-
-  const text =
-    mezclarColores(
-      '#111827',
-      primaryDark,
-      35 +
-        factorContraste *
-          20
-    )
-
-  const textSecondary =
-    mezclarColores(
-      '#475569',
-      primaryDark,
-      20
-    )
-
-  const textMuted =
-    '#7B879C'
 
   const border =
     mezclarColores(
       '#E2E8F0',
       primaryLight,
-      35
+      35,
     )
 
-  return {
+  return completarPaleta({
     primary,
     secondary,
     accent,
@@ -715,184 +1241,467 @@ export function generarPaletaTriadica(
     surface,
     surfaceAlt,
 
-    text,
-    textSecondary,
-    textMuted,
+    border,
+  })
+}
+
+/* =========================================================
+   PALETA MONOCROMÁTICA
+   ========================================================= */
+
+function generarPaletaMonocromatica(
+  colorBase,
+  opciones = {},
+) {
+  const base =
+    normalizarHex(
+      colorBase,
+    )
+
+  const hsl =
+    hexToHsl(base)
+
+  const primary =
+    hslToHex(
+      hsl.h,
+      limitar(
+        hsl.s,
+        35,
+        85,
+      ),
+      limitar(
+        hsl.l,
+        35,
+        62,
+      ),
+    )
+
+  const secondary =
+    hslToHex(
+      hsl.h,
+      limitar(
+        hsl.s - 15,
+        25,
+        70,
+      ),
+      55,
+    )
+
+  const accent =
+    hslToHex(
+      hsl.h,
+      limitar(
+        hsl.s + 5,
+        40,
+        90,
+      ),
+      45,
+    )
+
+  const primaryLight =
+    crearColorSuave(
+      primary,
+      92,
+    )
+
+  const primaryDark =
+    crearColorIntenso(
+      primary,
+      35,
+    )
+
+  const secondaryLight =
+    crearColorSuave(
+      secondary,
+      90,
+    )
+
+  const secondaryDark =
+    crearColorIntenso(
+      secondary,
+      38,
+    )
+
+  const accentLight =
+    crearColorSuave(
+      accent,
+      90,
+    )
+
+  const accentDark =
+    crearColorIntenso(
+      accent,
+      35,
+    )
+
+  const background =
+    mezclarColores(
+      COLOR_BLANCO,
+      primaryLight,
+      22,
+    )
+
+  const backgroundAlt =
+    mezclarColores(
+      COLOR_BLANCO,
+      accentLight,
+      30,
+    )
+
+  const surface =
+    COLOR_BLANCO
+
+  const surfaceAlt =
+    mezclarColores(
+      COLOR_BLANCO,
+      secondaryLight,
+      24,
+    )
+
+  const border =
+    mezclarColores(
+      '#E2E8F0',
+      primaryLight,
+      35,
+    )
+
+  return completarPaleta({
+    primary,
+    secondary,
+    accent,
+
+    primaryLight,
+    primaryDark,
+
+    secondaryLight,
+    secondaryDark,
+
+    accentLight,
+    accentDark,
+
+    background,
+    backgroundAlt,
+
+    surface,
+    surfaceAlt,
 
     border,
-
-    success: '#2E9B6F',
-    warning: '#D89432',
-    danger: '#D95C5C',
-
-    primaryText:
-      obtenerTextoContraste(
-        primary
-      ),
-
-    secondaryText:
-      obtenerTextoContraste(
-        secondary
-      ),
-
-    accentText:
-      obtenerTextoContraste(
-        accent
-      ),
-  }
+  })
 }
+
+/* =========================================================
+   PALETA COMPLEMENTARIA
+   ========================================================= */
+
+function generarPaletaComplementaria(
+  colorBase,
+  opciones = {},
+) {
+  const base =
+    normalizarHex(
+      colorBase,
+    )
+
+  const hsl =
+    hexToHsl(base)
+
+  const primary =
+    hslToHex(
+      hsl.h,
+      limitar(
+        hsl.s,
+        35,
+        85,
+      ),
+      limitar(
+        hsl.l,
+        35,
+        62,
+      ),
+    )
+
+  const secondary =
+    ajustarTono(
+      primary,
+      180,
+    )
+
+  const accent =
+    ajustarTono(
+      primary,
+      30,
+    )
+
+  const primaryLight =
+    crearColorSuave(
+      primary,
+      90,
+    )
+
+  const primaryDark =
+    crearColorIntenso(
+      primary,
+      35,
+    )
+
+  const secondaryLight =
+    crearColorSuave(
+      secondary,
+      90,
+    )
+
+  const secondaryDark =
+    crearColorIntenso(
+      secondary,
+      38,
+    )
+
+  const accentLight =
+    crearColorSuave(
+      accent,
+      90,
+    )
+
+  const accentDark =
+    crearColorIntenso(
+      accent,
+      38,
+    )
+
+  const background =
+    mezclarColores(
+      COLOR_BLANCO,
+      primaryLight,
+      22,
+    )
+
+  const backgroundAlt =
+    mezclarColores(
+      COLOR_BLANCO,
+      secondaryLight,
+      25,
+    )
+
+  const surface =
+    COLOR_BLANCO
+
+  const surfaceAlt =
+    mezclarColores(
+      COLOR_BLANCO,
+      accentLight,
+      24,
+    )
+
+  const border =
+    mezclarColores(
+      '#E2E8F0',
+      primaryLight,
+      35,
+    )
+
+  return completarPaleta({
+    primary,
+    secondary,
+    accent,
+
+    primaryLight,
+    primaryDark,
+
+    secondaryLight,
+    secondaryDark,
+
+    accentLight,
+    accentDark,
+
+    background,
+    backgroundAlt,
+
+    surface,
+    surfaceAlt,
+
+    border,
+  })
+}
+
+/* =========================================================
+   PALETA ANÁLOGA
+   ========================================================= */
+
+function generarPaletaAnalogica(
+  colorBase,
+  opciones = {},
+) {
+  const base =
+    normalizarHex(
+      colorBase,
+    )
+
+  const hsl =
+    hexToHsl(base)
+
+  const primary =
+    hslToHex(
+      hsl.h,
+      limitar(
+        hsl.s,
+        35,
+        85,
+      ),
+      limitar(
+        hsl.l,
+        35,
+        62,
+      ),
+    )
+
+  const secondary =
+    ajustarTono(
+      primary,
+      30,
+    )
+
+  const accent =
+    ajustarTono(
+      primary,
+      -30,
+    )
+
+  const primaryLight =
+    crearColorSuave(
+      primary,
+      90,
+    )
+
+  const primaryDark =
+    crearColorIntenso(
+      primary,
+      35,
+    )
+
+  const secondaryLight =
+    crearColorSuave(
+      secondary,
+      90,
+    )
+
+  const secondaryDark =
+    crearColorIntenso(
+      secondary,
+      38,
+    )
+
+  const accentLight =
+    crearColorSuave(
+      accent,
+      90,
+    )
+
+  const accentDark =
+    crearColorIntenso(
+      accent,
+      38,
+    )
+
+  const background =
+    mezclarColores(
+      COLOR_BLANCO,
+      primaryLight,
+      22,
+    )
+
+  const backgroundAlt =
+    mezclarColores(
+      COLOR_BLANCO,
+      accentLight,
+      30,
+    )
+
+  const surface =
+    COLOR_BLANCO
+
+  const surfaceAlt =
+    mezclarColores(
+      COLOR_BLANCO,
+      secondaryLight,
+      24,
+    )
+
+  const border =
+    mezclarColores(
+      '#E2E8F0',
+      primaryLight,
+      35,
+    )
+
+  return completarPaleta({
+    primary,
+    secondary,
+    accent,
+
+    primaryLight,
+    primaryDark,
+
+    secondaryLight,
+    secondaryDark,
+
+    accentLight,
+    accentDark,
+
+    background,
+    backgroundAlt,
+
+    surface,
+    surfaceAlt,
+
+    border,
+  })
+}
+
+/* =========================================================
+   GENERADOR PRINCIPAL
+   ========================================================= */
 
 export function generarPaleta(
   colorBase,
-  opciones = {}
+  opciones = {},
 ) {
   const armonia =
-    opciones.armonia ??
-    'triadica'
-
-  if (
-    armonia ===
-    'monocromatica'
-  ) {
-    const base =
-      normalizarHex(
-        colorBase
-      )
-
-    const hsl =
-      hexToHsl(base)
-
-    const primary =
-      hslToHex(
-        hsl.h,
-        hsl.s,
-        Math.max(
-          35,
-          Math.min(
-            62,
-            hsl.l
-          )
-        )
-      )
-
-    const secondary =
-      hslToHex(
-        hsl.h,
-        Math.max(
-          25,
-          hsl.s - 15
-        ),
-        55
-      )
-
-    const accent =
-      hslToHex(
-        hsl.h,
-        Math.min(
-          90,
-          hsl.s + 5
-        ),
-        45
-      )
-
-    return generarPaletaTriadica(
-      primary,
-      opciones
+    String(
+      opciones.armonia ??
+        'triadica',
     )
+      .trim()
+      .toLowerCase()
+
+  switch (armonia) {
+    case 'monocromatica':
+    case 'monocromática':
+      return generarPaletaMonocromatica(
+        colorBase,
+        opciones,
+      )
+
+    case 'complementaria':
+      return generarPaletaComplementaria(
+        colorBase,
+        opciones,
+      )
+
+    case 'analogica':
+    case 'analógica':
+      return generarPaletaAnalogica(
+        colorBase,
+        opciones,
+      )
+
+    case 'triadica':
+    case 'triádica':
+    default:
+      return generarPaletaTriadica(
+        colorBase,
+        opciones,
+      )
   }
-
-  if (
-    armonia ===
-    'complementaria'
-  ) {
-    const base =
-      normalizarHex(
-        colorBase
-      )
-
-    const complemento =
-      ajustarTono(
-        base,
-        180
-      )
-
-    const triadica =
-      generarPaletaTriadica(
-        base,
-        opciones
-      )
-
-    return {
-      ...triadica,
-      secondary:
-        complemento,
-      secondaryLight:
-        crearColorSuave(
-          complemento,
-          90
-        ),
-      secondaryDark:
-        crearColorIntenso(
-          complemento,
-          38
-        ),
-    }
-  }
-
-  if (
-    armonia ===
-    'analogica'
-  ) {
-    const base =
-      normalizarHex(
-        colorBase
-      )
-
-    const secundario =
-      ajustarTono(
-        base,
-        30
-      )
-
-    const acento =
-      ajustarTono(
-        base,
-        -30
-      )
-
-    const triadica =
-      generarPaletaTriadica(
-        base,
-        opciones
-      )
-
-    return {
-      ...triadica,
-
-      secondary:
-        secundario,
-
-      accent:
-        acento,
-
-      secondaryLight:
-        crearColorSuave(
-          secundario,
-          90
-        ),
-
-      accentLight:
-        crearColorSuave(
-          acento,
-          90
-        ),
-    }
-  }
-
-  return generarPaletaTriadica(
-    colorBase,
-    opciones
-  )
 }
 
 export default generarPaleta

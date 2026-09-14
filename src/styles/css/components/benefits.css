@@ -32,6 +32,7 @@
   flex-direction: column;
 
   min-height: 230px;
+
   padding: 32px 30px;
 
   overflow: hidden;
@@ -39,7 +40,7 @@
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
 
-  background: var(--color-white);
+  background: var(--color-surface);
 
   box-shadow: var(--shadow-sm);
 
@@ -58,7 +59,6 @@
   content: "";
 
   position: absolute;
-
   top: 0;
   left: 0;
 
@@ -92,7 +92,6 @@
   box-shadow: var(--shadow-md);
 }
 
-
 .benefit-card:hover::before {
   transform: scaleX(1);
 }
@@ -111,11 +110,12 @@
 
   margin-bottom: 23px;
 
-  border: 1px solid
+  border:
+    1px solid
     color-mix(
       in srgb,
       var(--color-accent) 20%,
-      var(--color-border-light)
+      var(--color-border)
     );
 
   border-radius: var(--radius-md);
@@ -124,7 +124,7 @@
     color-mix(
       in srgb,
       var(--color-accent) 12%,
-      var(--color-white)
+      var(--color-surface)
     );
 
   color: var(--color-accent);
@@ -140,7 +140,6 @@
     border-color var(--transition-normal);
 }
 
-
 .benefit-card:hover .benefit-card__icon {
   transform: translateY(-2px);
 
@@ -148,7 +147,7 @@
 
   background: var(--color-accent);
 
-  color: var(--color-white);
+  color: var(--color-accent-text);
 }
 
 
@@ -164,10 +163,8 @@
   font-size: 18px;
   font-weight: 800;
   line-height: 1.35;
-
   letter-spacing: -0.15px;
 }
-
 
 .benefit-card p {
   margin: 11px 0 0;

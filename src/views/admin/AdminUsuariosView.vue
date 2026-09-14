@@ -37,6 +37,7 @@ const usuarioEditando = ref(null)
 
 let unsubscribeUsuarios = null
 let timeoutMensaje = null
+let componenteActivo = false
 
 const formulario = ref({
   nombre: '',
@@ -53,7 +54,7 @@ const formulario = ref({
  */
 
 const usuarioActualUid = computed(
-  () => auth.currentUser?.uid || null
+  () => auth.currentUser?.uid || null,
 )
 
 function esUsuarioActual(usuario) {
@@ -94,7 +95,7 @@ const usuariosFiltrados = computed(() => {
     return campos.some((campo) =>
       String(campo || '')
         .toLowerCase()
-        .includes(termino)
+        .includes(termino),
     )
   })
 })
@@ -106,23 +107,23 @@ const usuariosFiltrados = computed(() => {
  */
 
 const totalUsuarios = computed(
-  () => usuarios.value.length
+  () => usuarios.value.length,
 )
 
 const usuariosActivos = computed(
   () =>
     usuarios.value.filter(
       (usuario) =>
-        usuario.activo !== false
-    ).length
+        usuario.activo !== false,
+    ).length,
 )
 
 const usuariosInactivos = computed(
   () =>
     usuarios.value.filter(
       (usuario) =>
-        usuario.activo === false
-    ).length
+        usuario.activo === false,
+    ).length,
 )
 
 /*
@@ -133,8 +134,12 @@ const usuariosInactivos = computed(
 
 function mostrarMensaje(
   texto,
-  tipo = 'success'
+  tipo = 'success',
 ) {
+  if (!componenteActivo) {
+    return
+  }
+
   mensaje.value = {
     texto,
     tipo,
@@ -145,9 +150,36 @@ function mostrarMensaje(
   }
 
   timeoutMensaje = setTimeout(() => {
+    if (!componenteActivo) {
+      return
+    }
+
     mensaje.value = null
     timeoutMensaje = null
   }, 4000)
+}
+
+function obtenerMensajeError(
+  err,
+  fallback,
+) {
+  if (
+    err instanceof Error &&
+    err.message
+  ) {
+    return err.message
+  }
+
+  if (
+    err &&
+    typeof err === 'object' &&
+    typeof err.message === 'string' &&
+    err.message
+  ) {
+    return err.message
+  }
+
+  return fallback
 }
 
 /*
@@ -169,7 +201,7 @@ function limpiarFormulario() {
 }
 
 function abrirEditor(usuario) {
-  if (!usuario) {
+  if (!usuario || guardando.value) {
     return
   }
 
@@ -180,18 +212,18 @@ function abrirEditor(usuario) {
 
   formulario.value = {
     nombre: String(
-      usuario.nombre || ''
+      usuario.nombre || '',
     ),
     email: String(
-      usuario.email || ''
+      usuario.email || '',
     ),
     rol: String(
-      usuario.rol || ''
+      usuario.rol || '',
     ),
     activo:
       usuario.activo !== false,
     isUser: String(
-      usuario.isUser || ''
+      usuario.isUser || '',
     ),
   }
 }
@@ -212,7 +244,7 @@ function cerrarEditor() {
 
 function nombreUsuario(usuario) {
   const nombre = String(
-    usuario?.nombre || ''
+    usuario?.nombre || '',
   ).trim()
 
   if (nombre) {
@@ -220,7 +252,7 @@ function nombreUsuario(usuario) {
   }
 
   const email = String(
-    usuario?.email || ''
+    usuario?.email || '',
   ).trim()
 
   if (email) {
@@ -287,14 +319,14 @@ function formatearFecha(valor) {
       'number'
     ) {
       fecha = new Date(
-        valor.seconds * 1000
+        valor.seconds * 1000,
       )
     }
 
     if (
       !fecha ||
       Number.isNaN(
-        fecha.getTime()
+        fecha.getTime(),
       )
     ) {
       return 'Sin fecha'
@@ -305,7 +337,7 @@ function formatearFecha(valor) {
       {
         dateStyle: 'medium',
         timeStyle: 'short',
-      }
+      },
     ).format(fecha)
   } catch {
     return 'Sin fecha'
@@ -319,17 +351,22 @@ function formatearFecha(valor) {
  */
 
 async function guardarUsuario() {
-  if (!usuarioEditando.value) {
+  if (
+    !usuarioEditando.value ||
+    guardando.value
+  ) {
     return
   }
 
   const nombre =
-    formulario.value.nombre
-      .trim()
+    String(
+      formulario.value.nombre || '',
+    ).trim()
 
   const rol =
-    formulario.value.rol
-      .trim()
+    String(
+      formulario.value.rol || '',
+    ).trim()
 
   if (!nombre) {
     error.value =
@@ -345,7 +382,7 @@ async function guardarUsuario() {
 
   if (
     esUsuarioActual(
-      usuarioEditando.value
+      usuarioEditando.value,
     ) &&
     formulario.value.activo === false
   ) {
@@ -354,35 +391,56 @@ async function guardarUsuario() {
     return
   }
 
+  const usuarioId =
+    usuarioEditando.value.id
+
+  if (!usuarioId) {
+    error.value =
+      'El usuario no tiene un identificador válido.'
+    return
+  }
+
   guardando.value = true
   error.value = null
+  mensaje.value = null
 
   try {
     await actualizarUsuarioAdmin(
-      usuarioEditando.value.id,
+      usuarioId,
       {
         nombre,
         rol,
         activo:
           Boolean(
-            formulario.value.activo
+            formulario.value.activo,
           ),
-      }
+      },
     )
+
+    if (!componenteActivo) {
+      return
+    }
 
     limpiarFormulario()
 
     mostrarMensaje(
-      'Usuario actualizado correctamente.'
+      'Usuario actualizado correctamente.',
     )
   } catch (e) {
     console.error(
       'Error actualizando usuario:',
-      e
+      e,
     )
 
+    if (!componenteActivo) {
+      return
+    }
+
     error.value =
-      'No fue posible actualizar el usuario.'
+      obtenerMensajeError(
+        e,
+        'No fue posible actualizar el usuario.',
+      )
   } finally {
     guardando.value = false
   }
@@ -395,16 +453,25 @@ async function guardarUsuario() {
  */
 
 async function cambiarEstado(usuario) {
-  if (!usuario) {
+  if (
+    !usuario ||
+    guardando.value
+  ) {
     return
   }
 
   if (esUsuarioActual(usuario)) {
     mostrarMensaje(
       'No puedes cambiar el estado de tu propio usuario.',
-      'warning'
+      'warning',
     )
 
+    return
+  }
+
+  if (!usuario.id) {
+    error.value =
+      'El usuario no tiene un identificador válido.'
     return
   }
 
@@ -417,7 +484,7 @@ async function cambiarEstado(usuario) {
 
   const confirmado =
     window.confirm(
-      `¿Deseas ${accion} a "${nombreUsuario(usuario)}"?`
+      `¿Deseas ${accion} a "${nombreUsuario(usuario)}"?`,
     )
 
   if (!confirmado) {
@@ -426,26 +493,38 @@ async function cambiarEstado(usuario) {
 
   guardando.value = true
   error.value = null
+  mensaje.value = null
 
   try {
     await cambiarEstadoUsuarioAdmin(
       usuario.id,
-      nuevoEstado
+      nuevoEstado,
     )
+
+    if (!componenteActivo) {
+      return
+    }
 
     mostrarMensaje(
       nuevoEstado
         ? 'Usuario activado correctamente.'
-        : 'Usuario desactivado correctamente.'
+        : 'Usuario desactivado correctamente.',
     )
   } catch (e) {
     console.error(
       'Error cambiando estado del usuario:',
-      e
+      e,
     )
 
+    if (!componenteActivo) {
+      return
+    }
+
     error.value =
-      'No fue posible cambiar el estado del usuario.'
+      obtenerMensajeError(
+        e,
+        'No fue posible cambiar el estado del usuario.',
+      )
   } finally {
     guardando.value = false
   }
@@ -458,24 +537,33 @@ async function cambiarEstado(usuario) {
  */
 
 async function eliminarUsuarioRegistro(
-  usuario
+  usuario,
 ) {
-  if (!usuario) {
+  if (
+    !usuario ||
+    guardando.value
+  ) {
     return
   }
 
   if (esUsuarioActual(usuario)) {
     mostrarMensaje(
       'No puedes eliminar tu propio usuario.',
-      'warning'
+      'warning',
     )
 
     return
   }
 
+  if (!usuario.id) {
+    error.value =
+      'El usuario no tiene un identificador válido.'
+    return
+  }
+
   const confirmado =
     window.confirm(
-      `¿Deseas eliminar a "${nombreUsuario(usuario)}"?\n\nSe eliminará el registro de la colección usuarios.`
+      `¿Deseas eliminar a "${nombreUsuario(usuario)}"?\n\nSe eliminará el registro de la colección usuarios.`,
     )
 
   if (!confirmado) {
@@ -484,11 +572,16 @@ async function eliminarUsuarioRegistro(
 
   guardando.value = true
   error.value = null
+  mensaje.value = null
 
   try {
     await eliminarUsuarioAdmin(
-      usuario.id
+      usuario.id,
     )
+
+    if (!componenteActivo) {
+      return
+    }
 
     if (
       usuarioEditando.value?.id ===
@@ -498,16 +591,23 @@ async function eliminarUsuarioRegistro(
     }
 
     mostrarMensaje(
-      'Usuario eliminado correctamente.'
+      'Usuario eliminado correctamente.',
     )
   } catch (e) {
     console.error(
       'Error eliminando usuario:',
-      e
+      e,
     )
 
+    if (!componenteActivo) {
+      return
+    }
+
     error.value =
-      'No fue posible eliminar el usuario.'
+      obtenerMensajeError(
+        e,
+        'No fue posible eliminar el usuario.',
+      )
   } finally {
     guardando.value = false
   }
@@ -520,6 +620,10 @@ async function eliminarUsuarioRegistro(
  */
 
 function suscribirseUsuarios() {
+  if (!componenteActivo) {
+    return
+  }
+
   cargando.value = true
   error.value = null
 
@@ -528,59 +632,141 @@ function suscribirseUsuarios() {
     unsubscribeUsuarios = null
   }
 
-  unsubscribeUsuarios =
-    suscribirUsuariosAdmin(
-      (lista) => {
-        usuarios.value = [
-          ...lista,
-        ].sort((a, b) => {
-          const nombreA =
-            nombreUsuario(a)
-              .toLowerCase()
+  try {
+    const unsubscribe =
+      suscribirUsuariosAdmin(
+        (lista) => {
+          if (!componenteActivo) {
+            return
+          }
 
-          const nombreB =
-            nombreUsuario(b)
-              .toLowerCase()
+          const usuariosRecibidos =
+            Array.isArray(lista)
+              ? lista
+              : []
 
-          return nombreA.localeCompare(
-            nombreB,
-            'es-MX'
+          usuarios.value = [
+            ...usuariosRecibidos,
+          ].sort((a, b) => {
+            const nombreA =
+              nombreUsuario(a)
+                .toLowerCase()
+
+            const nombreB =
+              nombreUsuario(b)
+                .toLowerCase()
+
+            return nombreA.localeCompare(
+              nombreB,
+              'es-MX',
+            )
+          })
+
+          /*
+           * Si el usuario editado fue
+           * actualizado/eliminado por otro
+           * proceso, mantenemos el editor
+           * coherente.
+           */
+          if (usuarioEditando.value) {
+            const actualizado =
+              usuarios.value.find(
+                (usuario) =>
+                  usuario.id ===
+                  usuarioEditando.value.id,
+              )
+
+            if (!actualizado) {
+              limpiarFormulario()
+            } else if (
+              !guardando.value
+            ) {
+              /*
+               * Actualizamos los datos visibles
+               * del editor cuando otro proceso
+               * modifica el mismo usuario.
+               */
+              usuarioEditando.value =
+                actualizado
+
+              formulario.value = {
+                nombre: String(
+                  actualizado.nombre ||
+                    '',
+                ),
+                email: String(
+                  actualizado.email ||
+                    '',
+                ),
+                rol: String(
+                  actualizado.rol ||
+                    '',
+                ),
+                activo:
+                  actualizado.activo !==
+                  false,
+                isUser: String(
+                  actualizado.isUser ||
+                    '',
+                ),
+              }
+            }
+          }
+
+          cargando.value = false
+        },
+        (e) => {
+          if (!componenteActivo) {
+            return
+          }
+
+          console.error(
+            'Error suscribiéndose a usuarios:',
+            e,
           )
-        })
 
-        /*
-         * Si el usuario editado fue
-         * actualizado/eliminado por otro
-         * proceso, mantenemos el editor
-         * coherente.
-         */
-        if (usuarioEditando.value) {
-          const actualizado =
-            usuarios.value.find(
-              (usuario) =>
-                usuario.id ===
-                usuarioEditando.value.id
+          error.value =
+            obtenerMensajeError(
+              e,
+              'No fue posible cargar los usuarios.',
             )
 
-          if (!actualizado) {
-            limpiarFormulario()
-          }
-        }
+          cargando.value = false
+        },
+      )
 
-        cargando.value = false
-      },
-      (e) => {
-        console.error(
-          'Error suscribiéndose a usuarios:',
-          e
-        )
-
-        error.value =
-          'No fue posible cargar los usuarios.'
-
-        cargando.value = false
-      }
+    if (
+      typeof unsubscribe ===
+      'function'
+    ) {
+      unsubscribeUsuarios =
+        unsubscribe
+    } else {
+      /*
+       * El servicio debe devolver la función
+       * unsubscribe de onSnapshot().
+       */
+      unsubscribeUsuarios = null
+    }
+  } catch (e) {
+    console.error(
+      'Error iniciando suscripción de usuarios:',
+      e,
     )
+
+    if (!componenteActivo) {
+      return
+    }
+
+    error.value =
+      obtenerMensajeError(
+        e,
+        'No fue posible cargar los usuarios.',
+      )
+
+    cargando.value = false
+    unsubscribeUsuarios = null
+  }
 }
 
 /*
@@ -590,10 +776,13 @@ function suscribirseUsuarios() {
  */
 
 onMounted(() => {
+  componenteActivo = true
   suscribirseUsuarios()
 })
 
 onBeforeUnmount(() => {
+  componenteActivo = false
+
   if (unsubscribeUsuarios) {
     unsubscribeUsuarios()
     unsubscribeUsuarios = null
@@ -972,8 +1161,6 @@ onBeforeUnmount(() => {
 
       <!-- =================================================
            MOBILE
-           Las mismas clases permiten que CSS convierta
-           cada registro en una tarjeta.
       ================================================== -->
 
       <div

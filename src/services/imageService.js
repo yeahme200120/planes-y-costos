@@ -18,6 +18,12 @@ import {
 import { db } from '../config/firebaseFirestore.js'
 import { storage } from '../config/firebaseStorage.js'
 
+/*
+|--------------------------------------------------------------------------
+| CONFIGURACIÓN
+|--------------------------------------------------------------------------
+*/
+
 const IMAGENES_COLLECTION = 'imagenes'
 
 const TIPOS_PERMITIDOS = [
@@ -27,20 +33,46 @@ const TIPOS_PERMITIDOS = [
   'image/gif',
 ]
 
-const TAMANO_MAXIMO = 15 * 1024 * 1024
+const TAMANO_MAXIMO =
+  15 * 1024 * 1024
 
-function validarArchivo(archivo) {
-  if (!(archivo instanceof File)) {
-    throw new Error('El archivo seleccionado no es válido.')
+/*
+|--------------------------------------------------------------------------
+| UTILIDADES
+|--------------------------------------------------------------------------
+*/
+
+/**
+ * Valida un archivo antes de subirlo.
+ */
+function validarArchivo(
+  archivo
+) {
+  if (
+    !archivo ||
+    !(
+      archivo instanceof File
+    )
+  ) {
+    throw new Error(
+      'El archivo seleccionado no es válido.'
+    )
   }
 
-  if (!TIPOS_PERMITIDOS.includes(archivo.type)) {
+  if (
+    !TIPOS_PERMITIDOS.includes(
+      archivo.type
+    )
+  ) {
     throw new Error(
       'Formato no permitido. Usa PNG, JPG, JPEG, WebP o GIF.'
     )
   }
 
-  if (archivo.size > TAMANO_MAXIMO) {
+  if (
+    archivo.size >
+    TAMANO_MAXIMO
+  ) {
     throw new Error(
       'La imagen supera el tamaño máximo permitido de 15 MB.'
     )
@@ -49,17 +81,51 @@ function validarArchivo(archivo) {
   return true
 }
 
-function limpiarNombre(nombre = 'imagen') {
-  return nombre
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-zA-Z0-9-_]/g, '-')
-    .replace(/-+/g, '-')
-    .replace(/^-|-$/g, '')
-    .toLowerCase()
+/**
+ * Limpia nombres para utilizarlos
+ * de forma segura dentro de Storage.
+ */
+function limpiarNombre(
+  nombre = 'imagen'
+) {
+  const nombreTexto =
+    String(nombre)
+      .trim()
+
+  const limpio =
+    nombreTexto
+      .normalize('NFD')
+      .replace(
+        /[\u0300-\u036f]/g,
+        ''
+      )
+      .replace(
+        /[^a-zA-Z0-9-_]/g,
+        '-'
+      )
+      .replace(
+        /-+/g,
+        '-'
+      )
+      .replace(
+        /^-|-$/g,
+        ''
+      )
+      .toLowerCase()
+
+  return (
+    limpio ||
+    'imagen'
+  )
 }
 
-function extensionDeMime(mime) {
+/**
+ * Obtiene la extensión correspondiente
+ * al MIME de la imagen.
+ */
+function extensionDeMime(
+  mime
+) {
   const extensiones = {
     'image/png': 'png',
     'image/jpeg': 'jpg',
@@ -68,140 +134,375 @@ function extensionDeMime(mime) {
     'image/x-icon': 'ico',
   }
 
-  return extensiones[mime] || 'bin'
+  return (
+    extensiones[mime] ||
+    'bin'
+  )
 }
 
+/**
+ * Genera un identificador único
+ * para evitar colisiones en Storage.
+ */
 function generarIdArchivo() {
   return `${Date.now()}-${Math.random()
     .toString(36)
     .slice(2, 9)}`
 }
 
+/**
+ * Normaliza una imagen obtenida
+ * desde Firestore.
+ */
+function normalizarImagen(
+  documento
+) {
+  const data =
+    documento.data()
+
+  return {
+    id:
+      documento.id,
+
+    ...data,
+
+    nombre:
+      data.nombre ??
+      'imagen',
+
+    tipo:
+      data.tipo ??
+      'landing',
+
+    urlOriginal:
+      data.urlOriginal ??
+      null,
+
+    rutaOriginal:
+      data.rutaOriginal ??
+      null,
+
+    formatoOriginal:
+      data.formatoOriginal ??
+      null,
+
+    tipoMimeOriginal:
+      data.tipoMimeOriginal ??
+      null,
+
+    tamanoOriginal:
+      Number(
+        data.tamanoOriginal ??
+          0
+      ),
+
+    recursos:
+      Array.isArray(
+        data.recursos
+      )
+        ? data.recursos
+        : [],
+
+    activo:
+      data.activo !== false,
+  }
+}
+
+/**
+ * Normaliza recursos.
+ */
+function normalizarRecursos(
+  recursos
+) {
+  if (
+    !Array.isArray(
+      recursos
+    )
+  ) {
+    return []
+  }
+
+  return recursos.filter(
+    (recurso) =>
+      recurso &&
+      typeof recurso ===
+        'object'
+  )
+}
+
+/*
+|--------------------------------------------------------------------------
+| STORAGE
+|--------------------------------------------------------------------------
+*/
+
+/**
+ * Sube una imagen a Firebase Storage.
+ */
 export async function subirArchivoImagen({
   archivo,
   carpeta = 'landing/originales',
   nombre = 'imagen',
 }) {
-  validarArchivo(archivo)
-
-  const nombreLimpio = limpiarNombre(nombre)
-  const extension = extensionDeMime(archivo.type)
-
-  const ruta = `${carpeta}/${nombreLimpio}-${generarIdArchivo()}.${extension}`
-
-  const referencia = ref(storage, ruta)
-
-  const snapshot = await uploadBytes(
-    referencia,
-    archivo,
-    {
-      contentType: archivo.type,
-      cacheControl: 'public,max-age=31536000',
-    }
+  validarArchivo(
+    archivo
   )
 
-  const url = await getDownloadURL(snapshot.ref)
+  const nombreLimpio =
+    limpiarNombre(
+      nombre
+    )
+
+  const extension =
+    extensionDeMime(
+      archivo.type
+    )
+
+  const ruta =
+    `${carpeta}/${nombreLimpio}-${generarIdArchivo()}.${extension}`
+
+  const referencia =
+    ref(
+      storage,
+      ruta
+    )
+
+  const snapshot =
+    await uploadBytes(
+      referencia,
+      archivo,
+      {
+        contentType:
+          archivo.type,
+
+        cacheControl:
+          'public,max-age=31536000',
+      }
+    )
+
+  const url =
+    await getDownloadURL(
+      snapshot.ref
+    )
 
   return {
     url,
     ruta,
-    nombre: nombreLimpio,
-    tipoMime: archivo.type,
+    nombre:
+      nombreLimpio,
+    tipoMime:
+      archivo.type,
     extension,
-    tamano: archivo.size,
+    tamano:
+      archivo.size,
   }
 }
 
+/*
+|--------------------------------------------------------------------------
+| FIRESTORE — IMÁGENES
+|--------------------------------------------------------------------------
+*/
+
+/**
+ * Crea un registro de imagen
+ * y sube su archivo original.
+ */
 export async function crearImagen({
   nombre,
   tipo = 'landing',
   archivo,
   metadata = {},
 }) {
-  validarArchivo(archivo)
-
-  const subida = await subirArchivoImagen({
-    archivo,
-    carpeta:
-      tipo === 'logo'
-        ? 'branding/logo/originales'
-        : tipo === 'favicon'
-          ? 'branding/favicon/originales'
-          : 'landing/originales',
-    nombre,
-  })
-
-  const imagenRef = await addDoc(
-    collection(db, IMAGENES_COLLECTION),
-    {
-      nombre,
-      tipo,
-      urlOriginal: subida.url,
-      rutaOriginal: subida.ruta,
-      formatoOriginal: subida.extension,
-      tipoMimeOriginal: subida.tipoMime,
-      tamanoOriginal: subida.tamano,
-
-      recursos: [],
-
-      ...metadata,
-
-      activo: true,
-      creadoEn: serverTimestamp(),
-      actualizadoEn: serverTimestamp(),
-    }
+  validarArchivo(
+    archivo
   )
 
-  return {
-    id: imagenRef.id,
-    nombre,
+  const nombreFinal =
+    limpiarNombre(
+      nombre
+    )
+
+  const carpeta =
+    tipo === 'logo'
+      ? 'branding/logo/originales'
+      : tipo === 'favicon'
+        ? 'branding/favicon/originales'
+        : 'landing/originales'
+
+  const subida =
+    await subirArchivoImagen({
+      archivo,
+      carpeta,
+      nombre:
+        nombreFinal,
+    })
+
+  const datosImagen = {
+    nombre:
+      nombreFinal,
+
     tipo,
-    urlOriginal: subida.url,
-    rutaOriginal: subida.ruta,
-    formatoOriginal: subida.extension,
-    tipoMimeOriginal: subida.tipoMime,
-    tamanoOriginal: subida.tamano,
+
+    urlOriginal:
+      subida.url,
+
+    rutaOriginal:
+      subida.ruta,
+
+    formatoOriginal:
+      subida.extension,
+
+    tipoMimeOriginal:
+      subida.tipoMime,
+
+    tamanoOriginal:
+      subida.tamano,
+
     recursos: [],
+
+    ...(
+      metadata &&
+      typeof metadata ===
+        'object'
+        ? metadata
+        : {}
+    ),
+
+    activo: true,
+
+    creadoEn:
+      serverTimestamp(),
+
+    actualizadoEn:
+      serverTimestamp(),
+  }
+
+  const imagenRef =
+    await addDoc(
+      collection(
+        db,
+        IMAGENES_COLLECTION
+      ),
+      datosImagen
+    )
+
+  return {
+    id:
+      imagenRef.id,
+
+    nombre:
+      datosImagen.nombre,
+
+    tipo:
+      datosImagen.tipo,
+
+    urlOriginal:
+      datosImagen.urlOriginal,
+
+    rutaOriginal:
+      datosImagen.rutaOriginal,
+
+    formatoOriginal:
+      datosImagen.formatoOriginal,
+
+    tipoMimeOriginal:
+      datosImagen.tipoMimeOriginal,
+
+    tamanoOriginal:
+      datosImagen.tamanoOriginal,
+
+    recursos: [],
+
     activo: true,
   }
 }
 
+/*
+|--------------------------------------------------------------------------
+| SUSCRIPCIÓN ADMIN
+|--------------------------------------------------------------------------
+*/
+
+/**
+ * Suscripción en tiempo real
+ * a todas las imágenes.
+ */
 export function suscribirImagenesAdmin(
   callback,
-  onError = () => {},
+  onError = () => {}
 ) {
-  const referencia = collection(
-    db,
-    IMAGENES_COLLECTION
-  )
+  if (
+    typeof callback !==
+    'function'
+  ) {
+    throw new Error(
+      'El callback de imágenes es requerido.'
+    )
+  }
+
+  const referencia =
+    collection(
+      db,
+      IMAGENES_COLLECTION
+    )
 
   return onSnapshot(
     referencia,
     (snapshot) => {
-      const imagenes = snapshot.docs
-        .map((item) => ({
-          id: item.id,
-          ...item.data(),
-        }))
-        .sort((a, b) => {
-          const fechaA =
-            a.creadoEn?.seconds || 0
+      const imagenes =
+        snapshot.docs
+          .map(
+            normalizarImagen
+          )
+          .sort(
+            (a, b) => {
+              const fechaA =
+                a.creadoEn
+                  ?.seconds ||
+                0
 
-          const fechaB =
-            b.creadoEn?.seconds || 0
+              const fechaB =
+                b.creadoEn
+                  ?.seconds ||
+                0
 
-          return fechaB - fechaA
-        })
+              return (
+                fechaB -
+                fechaA
+              )
+            }
+          )
 
-      callback(imagenes)
+      callback(
+        imagenes
+      )
     },
-    onError
+    (error) => {
+      console.error(
+        'Error escuchando imágenes:',
+        error
+      )
+
+      onError?.(
+        error
+      )
+    }
   )
 }
 
+/*
+|--------------------------------------------------------------------------
+| ACTUALIZACIÓN
+|--------------------------------------------------------------------------
+*/
+
+/**
+ * Actualiza información de una imagen.
+ */
 export async function actualizarImagen(
   imagenId,
-  datos,
+  datos
 ) {
   if (!imagenId) {
     throw new Error(
@@ -209,27 +510,55 @@ export async function actualizarImagen(
     )
   }
 
-  const referencia = doc(
-    db,
-    IMAGENES_COLLECTION,
-    imagenId
-  )
+  if (
+    !datos ||
+    typeof datos !==
+      'object'
+  ) {
+    throw new Error(
+      'Los datos de la imagen no son válidos.'
+    )
+  }
+
+  const referencia =
+    doc(
+      db,
+      IMAGENES_COLLECTION,
+      imagenId
+    )
 
   await setDoc(
     referencia,
     {
       ...datos,
-      actualizadoEn: serverTimestamp(),
+
+      actualizadoEn:
+        serverTimestamp(),
     },
     {
       merge: true,
     }
   )
+
+  return true
 }
 
+/*
+|--------------------------------------------------------------------------
+| RECURSOS
+|--------------------------------------------------------------------------
+*/
+
+/**
+ * Agrega un recurso a una imagen.
+ *
+ * Se mantiene compatible con el diseño
+ * actual, donde el recurso puede traer
+ * recursosActuales.
+ */
 export async function agregarRecursoImagen(
   imagenId,
-  recurso,
+  recurso
 ) {
   if (!imagenId) {
     throw new Error(
@@ -237,37 +566,87 @@ export async function agregarRecursoImagen(
     )
   }
 
-  const referencia = doc(
-    db,
-    IMAGENES_COLLECTION,
-    imagenId
-  )
+  if (
+    !recurso ||
+    typeof recurso !==
+      'object'
+  ) {
+    throw new Error(
+      'El recurso de imagen no es válido.'
+    )
+  }
+
+  const referencia =
+    doc(
+      db,
+      IMAGENES_COLLECTION,
+      imagenId
+    )
+
+  const recursosActuales =
+    normalizarRecursos(
+      recurso.recursosActuales
+    )
+
+  const nuevoRecurso = {
+    ...recurso,
+  }
+
+  delete nuevoRecurso.recursosActuales
 
   await setDoc(
     referencia,
     {
       recursos: [
-        ...(recurso.recursosActuales || []),
-        recurso,
+        ...recursosActuales,
+        nuevoRecurso,
       ],
-      actualizadoEn: serverTimestamp(),
+
+      actualizadoEn:
+        serverTimestamp(),
     },
     {
       merge: true,
     }
   )
+
+  return true
 }
 
+/*
+|--------------------------------------------------------------------------
+| STORAGE — ELIMINACIÓN
+|--------------------------------------------------------------------------
+*/
+
+/**
+ * Elimina un archivo de Firebase Storage.
+ *
+ * Si el archivo ya no existe, se considera
+ * una eliminación exitosa.
+ */
 export async function eliminarArchivoStorage(
-  ruta,
+  ruta
 ) {
-  if (!ruta) return
+  if (!ruta) {
+    return
+  }
 
   try {
-    const referencia = ref(storage, ruta)
-    await deleteObject(referencia)
+    const referencia =
+      ref(
+        storage,
+        ruta
+      )
+
+    await deleteObject(
+      referencia
+    )
   } catch (error) {
-    if (error?.code === 'storage/object-not-found') {
+    if (
+      error?.code ===
+      'storage/object-not-found'
+    ) {
       return
     }
 
@@ -275,28 +654,52 @@ export async function eliminarArchivoStorage(
   }
 }
 
+/*
+|--------------------------------------------------------------------------
+| ELIMINACIÓN DE IMAGEN
+|--------------------------------------------------------------------------
+*/
+
+/**
+ * Elimina:
+ *
+ * 1. Archivo original de Storage.
+ * 2. Recursos derivados de Storage.
+ * 3. Documento de Firestore.
+ */
 export async function eliminarImagen(
-  imagen,
+  imagen
 ) {
-  if (!imagen?.id) {
+  if (
+    !imagen?.id
+  ) {
     throw new Error(
       'No se recibió el identificador de la imagen.'
     )
   }
 
-  if (imagen.rutaOriginal) {
+  if (
+    imagen.rutaOriginal
+  ) {
     await eliminarArchivoStorage(
       imagen.rutaOriginal
     )
   }
 
-  if (Array.isArray(imagen.recursos)) {
-    for (const recurso of imagen.recursos) {
-      if (recurso.ruta) {
-        await eliminarArchivoStorage(
-          recurso.ruta
-        )
-      }
+  const recursos =
+    normalizarRecursos(
+      imagen.recursos
+    )
+
+  for (
+    const recurso of recursos
+  ) {
+    if (
+      recurso.ruta
+    ) {
+      await eliminarArchivoStorage(
+        recurso.ruta
+      )
     }
   }
 
@@ -307,4 +710,6 @@ export async function eliminarImagen(
       imagen.id
     )
   )
+
+  return true
 }

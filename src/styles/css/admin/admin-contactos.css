@@ -5,9 +5,7 @@
 .admin-contactos {
   width: 100%;
   min-height: 100%;
-
   padding: 32px;
-
   background: var(--color-background);
   color: var(--color-text);
 }
@@ -20,9 +18,7 @@
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-
   gap: 24px;
-
   margin-bottom: 28px;
 }
 
@@ -33,36 +29,26 @@
 .admin-contactos__eyebrow {
   display: inline-flex;
   align-items: center;
-
   margin-bottom: 8px;
-
   color: var(--color-primary);
-
   font-size: 11px;
   font-weight: 800;
-
   letter-spacing: 0.12em;
 }
 
 .admin-contactos__title {
   margin: 0;
-
   color: var(--color-text);
-
   font-size: clamp(28px, 4vw, 38px);
   font-weight: 800;
   line-height: 1.1;
-
   letter-spacing: -0.03em;
 }
 
 .admin-contactos__description {
   max-width: 650px;
-
   margin: 10px 0 0;
-
   color: var(--color-text-secondary);
-
   font-size: 15px;
   line-height: 1.6;
 }
@@ -75,48 +61,38 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-
   gap: 9px;
-
   min-height: 42px;
-
   padding: 0 16px;
-
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-
-  background: var(--color-white);
+  background: var(--color-surface);
   color: var(--color-text-secondary);
-
   font: inherit;
   font-size: 14px;
   font-weight: 700;
-
   cursor: pointer;
-
   transition:
     border-color var(--transition-fast),
     box-shadow var(--transition-fast),
-    transform var(--transition-fast);
+    transform var(--transition-fast),
+    background var(--transition-fast);
 }
 
 .admin-contactos__refresh:hover:not(:disabled) {
   border-color: var(--color-primary);
-
+  background: var(--color-surface-alt);
   box-shadow: var(--shadow-md);
-
   transform: translateY(-1px);
 }
 
 .admin-contactos__refresh:disabled {
   opacity: 0.6;
-
   cursor: not-allowed;
 }
 
 .admin-contactos__refresh-icon {
   display: inline-flex;
-
   font-size: 20px;
   line-height: 1;
 }
@@ -139,28 +115,43 @@
 
 .admin-contactos__notice {
   margin-bottom: 18px;
-
   padding: 13px 16px;
-
   border-radius: var(--radius-md);
-
   font-size: 14px;
   font-weight: 600;
   line-height: 1.5;
 }
 
 .admin-contactos__notice--success {
-  border: 1px solid #bbf7d0;
-
-  background: #f0fdf4;
-  color: #166534;
+  border: 1px solid
+    color-mix(
+      in srgb,
+      var(--color-success) 35%,
+      var(--color-border)
+    );
+  background:
+    color-mix(
+      in srgb,
+      var(--color-success) 8%,
+      var(--color-surface)
+    );
+  color: var(--color-success);
 }
 
 .admin-contactos__notice--error {
-  border: 1px solid #fecaca;
-
-  background: #fef2f2;
-  color: #991b1b;
+  border: 1px solid
+    color-mix(
+      in srgb,
+      var(--color-danger) 35%,
+      var(--color-border)
+    );
+  background:
+    color-mix(
+      in srgb,
+      var(--color-danger) 8%,
+      var(--color-surface)
+    );
+  color: var(--color-danger);
 }
 
 /* =========================================================
@@ -169,30 +160,21 @@
 
 .admin-contactos__stats {
   display: grid;
-
   grid-template-columns:
     repeat(4, minmax(0, 1fr));
-
   gap: 16px;
-
   margin-bottom: 22px;
 }
 
 .admin-contactos__stat {
   display: flex;
   align-items: center;
-
   gap: 14px;
-
   min-width: 0;
-
   padding: 18px;
-
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-
-  background: var(--color-white);
-
+  background: var(--color-surface);
   box-shadow: var(--shadow-sm);
 }
 
@@ -200,30 +182,41 @@
   display: flex;
   align-items: center;
   justify-content: center;
-
   flex: 0 0 auto;
-
   width: 42px;
   height: 42px;
-
   border-radius: 12px;
-
   font-size: 18px;
   font-weight: 800;
 }
 
 .admin-contactos__stat-icon--total {
-  background: var(--color-primary-light);
+  background:
+    color-mix(
+      in srgb,
+      var(--color-primary) 12%,
+      var(--color-surface)
+    );
   color: var(--color-primary);
 }
 
 .admin-contactos__stat-icon--new {
-  background: #fff7ed;
-  color: #ea580c;
+  background:
+    color-mix(
+      in srgb,
+      var(--color-warning) 12%,
+      var(--color-surface)
+    );
+  color: var(--color-warning);
 }
 
 .admin-contactos__stat-icon--attended {
-  background: var(--color-success-light);
+  background:
+    color-mix(
+      in srgb,
+      var(--color-success) 12%,
+      var(--color-surface)
+    );
   color: var(--color-success);
 }
 
@@ -234,20 +227,15 @@
 
 .admin-contactos__stat-label {
   display: block;
-
   margin-bottom: 4px;
-
   color: var(--color-text-secondary);
-
   font-size: 12px;
   font-weight: 600;
 }
 
 .admin-contactos__stat-value {
   display: block;
-
   color: var(--color-text);
-
   font-size: 24px;
   font-weight: 800;
   line-height: 1;
@@ -260,16 +248,12 @@
 .admin-contactos__toolbar {
   display: flex;
   align-items: center;
-
   gap: 18px;
-
   margin-bottom: 18px;
   padding: 14px;
-
   border: 1px solid var(--color-border);
   border-radius: 14px;
-
-  background: var(--color-white);
+  background: var(--color-surface);
 }
 
 /* =========================================================
@@ -278,45 +262,31 @@
 
 .admin-contactos__search {
   position: relative;
-
   display: flex;
   align-items: center;
-
   flex: 1;
-
   min-width: 240px;
 }
 
 .admin-contactos__search-icon {
   position: absolute;
-
   left: 14px;
-
   color: var(--color-text-muted);
-
   font-size: 21px;
-
   pointer-events: none;
 }
 
 .admin-contactos__search input {
   width: 100%;
-
   min-height: 42px;
-
   padding: 0 42px;
-
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-
   outline: none;
-
   background: var(--color-background);
   color: var(--color-text);
-
   font: inherit;
   font-size: 14px;
-
   transition:
     border-color var(--transition-fast),
     box-shadow var(--transition-fast),
@@ -325,9 +295,7 @@
 
 .admin-contactos__search input:focus {
   border-color: var(--color-primary);
-
-  background: var(--color-white);
-
+  background: var(--color-surface);
   box-shadow:
     0 0 0 3px
     color-mix(
@@ -339,29 +307,28 @@
 
 .admin-contactos__search-clear {
   position: absolute;
-
   right: 10px;
-
   display: flex;
   align-items: center;
   justify-content: center;
-
   width: 26px;
   height: 26px;
-
   border: 0;
   border-radius: 7px;
-
   background: var(--color-border);
   color: var(--color-text-secondary);
-
   font-size: 18px;
-
   cursor: pointer;
 }
 
 .admin-contactos__search-clear:hover {
-  background: var(--color-border-light);
+  background:
+    color-mix(
+      in srgb,
+      var(--color-primary) 10%,
+      var(--color-border)
+    );
+  color: var(--color-primary);
 }
 
 /* =========================================================
@@ -371,65 +338,61 @@
 .admin-contactos__filters {
   display: flex;
   flex-wrap: wrap;
-
   gap: 6px;
 }
 
 .admin-contactos__filter {
   display: inline-flex;
   align-items: center;
-
   gap: 7px;
-
   min-height: 36px;
-
   padding: 0 11px;
-
   border: 1px solid transparent;
   border-radius: 8px;
-
   background: transparent;
   color: var(--color-text-secondary);
-
   font: inherit;
   font-size: 13px;
   font-weight: 700;
-
   cursor: pointer;
-
   transition:
     background var(--transition-fast),
-    color var(--transition-fast);
+    color var(--transition-fast),
+    border-color var(--transition-fast);
 }
 
 .admin-contactos__filter span {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-
   min-width: 21px;
   height: 21px;
-
   padding: 0 5px;
-
   border-radius: 999px;
-
   background: var(--color-background-alt);
   color: var(--color-text-secondary);
-
   font-size: 11px;
 }
 
 .admin-contactos__filter:hover {
   background: var(--color-background);
-
   color: var(--color-text);
 }
 
 .admin-contactos__filter.is-active {
-  background: var(--color-primary-light);
-
+  background:
+    color-mix(
+      in srgb,
+      var(--color-primary) 10%,
+      var(--color-surface)
+    );
   color: var(--color-primary-dark);
+  border-color:
+    color-mix(
+      in srgb,
+      var(--color-primary) 18%,
+      var(--color-border)
+    );
 }
 
 .admin-contactos__filter.is-active span {
@@ -437,9 +400,8 @@
     color-mix(
       in srgb,
       var(--color-primary) 14%,
-      var(--color-white)
+      var(--color-surface)
     );
-
   color: var(--color-primary-dark);
 }
 
@@ -450,7 +412,6 @@
 .admin-contactos__list {
   display: flex;
   flex-direction: column;
-
   gap: 10px;
 }
 
@@ -461,14 +422,10 @@
 .admin-contactos__item {
   display: flex;
   align-items: stretch;
-
   overflow: hidden;
-
   border: 1px solid var(--color-border);
   border-radius: 14px;
-
-  background: var(--color-white);
-
+  background: var(--color-surface);
   transition:
     border-color var(--transition-fast),
     box-shadow var(--transition-fast),
@@ -476,10 +433,13 @@
 }
 
 .admin-contactos__item:hover {
-  border-color: var(--color-border);
-
+  border-color:
+    color-mix(
+      in srgb,
+      var(--color-primary) 20%,
+      var(--color-border)
+    );
   box-shadow: var(--shadow-md);
-
   transform: translateY(-1px);
 }
 
@@ -494,24 +454,15 @@
 .admin-contactos__item-main {
   display: flex;
   align-items: flex-start;
-
   flex: 1;
-
   min-width: 0;
-
   gap: 16px;
-
   padding: 18px;
-
   border: 0;
-
   background: transparent;
   color: inherit;
-
   font: inherit;
-
   text-align: left;
-
   cursor: pointer;
 }
 
@@ -524,27 +475,21 @@
   display: flex;
   align-items: center;
   justify-content: center;
-
   flex: 0 0 auto;
-
   border-radius: 50%;
-
   background:
     color-mix(
       in srgb,
       var(--color-primary) 12%,
-      var(--color-white)
+      var(--color-surface)
     );
-
   color: var(--color-primary-dark);
-
   font-weight: 800;
 }
 
 .admin-contactos__avatar {
   width: 44px;
   height: 44px;
-
   font-size: 13px;
 }
 
@@ -554,31 +499,23 @@
 
 .admin-contactos__item-content {
   min-width: 0;
-
   flex: 1;
 }
 
 .admin-contactos__item-top {
   display: flex;
   align-items: center;
-
   gap: 10px;
-
   min-width: 0;
 }
 
 .admin-contactos__item-top h2 {
   min-width: 0;
-
   margin: 0;
-
   overflow: hidden;
-
   color: var(--color-text);
-
   font-size: 15px;
   font-weight: 750;
-
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -586,27 +523,32 @@
 .admin-contactos__status {
   display: inline-flex;
   align-items: center;
-
   flex: 0 0 auto;
-
   min-height: 24px;
-
   padding: 0 8px;
-
   border-radius: 999px;
-
   font-size: 11px;
   font-weight: 800;
 }
 
 .admin-contactos__status--nuevo {
-  background: #fff7ed;
-  color: #c2410c;
+  background:
+    color-mix(
+      in srgb,
+      var(--color-warning) 12%,
+      var(--color-surface)
+    );
+  color: var(--color-warning);
 }
 
 .admin-contactos__status--atendido {
-  background: #f0fdf4;
-  color: #15803d;
+  background:
+    color-mix(
+      in srgb,
+      var(--color-success) 10%,
+      var(--color-surface)
+    );
+  color: var(--color-success);
 }
 
 .admin-contactos__status--cerrado {
@@ -617,37 +559,28 @@
 .admin-contactos__item-meta {
   display: flex;
   flex-wrap: wrap;
-
   gap: 8px 16px;
-
   margin-top: 5px;
-
   color: var(--color-text-muted);
-
   font-size: 12px;
 }
 
 .admin-contactos__item-meta span {
   overflow: hidden;
-
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .admin-contactos__item-content h3 {
   margin: 10px 0 4px;
-
   color: var(--color-text-secondary);
-
   font-size: 14px;
   font-weight: 700;
 }
 
 .admin-contactos__item-content p {
   margin: 0;
-
   color: var(--color-text-secondary);
-
   font-size: 13px;
   line-height: 1.55;
 }
@@ -659,36 +592,33 @@
 .admin-contactos__item-actions {
   display: flex;
   align-items: center;
-
   gap: 8px;
-
   padding: 12px;
-
-  border-left: 1px solid var(--color-border-light);
+  border-left: 1px solid var(--color-border);
 }
 
 .admin-contactos__action {
   min-height: 34px;
-
   padding: 0 10px;
-
   border: 1px solid var(--color-border);
   border-radius: 8px;
-
-  background: var(--color-white);
+  background: var(--color-surface);
   color: var(--color-text-secondary);
-
   font: inherit;
   font-size: 12px;
   font-weight: 700;
-
   cursor: pointer;
 }
 
 .admin-contactos__action:hover {
-  border-color: var(--color-border);
-
+  border-color:
+    color-mix(
+      in srgb,
+      var(--color-primary) 20%,
+      var(--color-border)
+    );
   background: var(--color-background);
+  color: var(--color-primary);
 }
 
 .admin-contactos__action--danger {
@@ -696,14 +626,23 @@
 }
 
 .admin-contactos__action--danger:hover {
-  border-color: #fecaca;
-
-  background: #fef2f2;
+  border-color:
+    color-mix(
+      in srgb,
+      var(--color-danger) 30%,
+      var(--color-border)
+    );
+  background:
+    color-mix(
+      in srgb,
+      var(--color-danger) 8%,
+      var(--color-surface)
+    );
+  color: var(--color-danger);
 }
 
 .admin-contactos__action:disabled {
   opacity: 0.5;
-
   cursor: not-allowed;
 }
 
@@ -717,16 +656,11 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-
   min-height: 320px;
-
   padding: 40px;
-
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-
-  background: var(--color-white);
-
+  background: var(--color-surface);
   text-align: center;
 }
 
@@ -736,27 +670,26 @@
 
 .admin-contactos__state strong {
   margin-top: 16px;
-
   color: var(--color-text-secondary);
-
   font-size: 15px;
 }
 
 .admin-contactos__state span {
   margin-top: 6px;
-
   font-size: 13px;
 }
 
 .admin-contactos__spinner {
   width: 36px;
   height: 36px;
-
-  border: 3px solid var(--color-primary-light);
+  border: 3px solid
+    color-mix(
+      in srgb,
+      var(--color-primary) 18%,
+      var(--color-border)
+    );
   border-top-color: var(--color-primary);
-
   border-radius: 50%;
-
   animation:
     admin-contactos-spin
     0.8s linear infinite;
@@ -766,58 +699,41 @@
   display: flex;
   align-items: center;
   justify-content: center;
-
   width: 58px;
   height: 58px;
-
   margin-bottom: 16px;
-
   border-radius: 16px;
-
   background: var(--color-background-alt);
   color: var(--color-text-secondary);
-
   font-size: 24px;
 }
 
 .admin-contactos__empty h2 {
   margin: 0;
-
   color: var(--color-text);
-
   font-size: 18px;
 }
 
 .admin-contactos__empty p {
   max-width: 420px;
-
   margin: 8px 0 0;
-
   color: var(--color-text-secondary);
-
   font-size: 14px;
   line-height: 1.6;
 }
 
 .admin-contactos__empty-button {
   margin-top: 20px;
-
   min-height: 38px;
-
   padding: 0 15px;
-
   border: 0;
   border-radius: 9px;
-
   background: var(--color-primary);
   color: var(--color-primary-text);
-
   font: inherit;
   font-size: 13px;
   font-weight: 700;
-
   cursor: pointer;
-
   transition:
     background var(--transition-fast),
     transform var(--transition-fast);
@@ -825,7 +741,6 @@
 
 .admin-contactos__empty-button:hover {
   background: var(--color-primary-dark);
-
   transform: translateY(-1px);
 }
 
@@ -837,15 +752,16 @@
   position: fixed;
   inset: 0;
   z-index: 1000;
-
   display: flex;
   align-items: stretch;
   justify-content: flex-end;
-
   padding: 0;
-
-  background: rgba(15, 23, 42, 0.48);
-
+  background:
+    color-mix(
+      in srgb,
+      var(--color-primary) 48%,
+      transparent
+    );
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
 }
@@ -857,16 +773,16 @@
 .admin-contactos__modal {
   display: flex;
   flex-direction: column;
-
   width: min(100%, 620px);
   height: 100%;
-
-  background: var(--color-white);
-
+  background: var(--color-surface);
   box-shadow:
     -20px 0 60px
-    rgba(15, 23, 42, 0.18);
-
+    color-mix(
+      in srgb,
+      var(--color-primary) 18%,
+      transparent
+    );
   animation:
     admin-contactos-modal-in
     0.25s ease both;
@@ -875,13 +791,11 @@
 @keyframes admin-contactos-modal-in {
   from {
     opacity: 0;
-
     transform: translateX(30px);
   }
 
   to {
     opacity: 1;
-
     transform: translateX(0);
   }
 }
@@ -894,19 +808,14 @@
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-
   gap: 20px;
-
   padding: 26px;
-
   border-bottom: 1px solid var(--color-border);
 }
 
 .admin-contactos__modal-header h2 {
   margin: 0;
-
   color: var(--color-text);
-
   font-size: 23px;
   line-height: 1.2;
 }
@@ -915,26 +824,21 @@
   display: flex;
   align-items: center;
   justify-content: center;
-
   flex: 0 0 auto;
-
   width: 36px;
   height: 36px;
-
   border: 1px solid var(--color-border);
   border-radius: 9px;
-
-  background: var(--color-white);
+  background: var(--color-surface);
   color: var(--color-text-secondary);
-
   font-size: 24px;
   line-height: 1;
-
   cursor: pointer;
 }
 
 .admin-contactos__modal-close:hover {
   background: var(--color-background);
+  color: var(--color-primary);
 }
 
 /* =========================================================
@@ -943,9 +847,7 @@
 
 .admin-contactos__modal-body {
   flex: 1;
-
   overflow-y: auto;
-
   padding: 26px;
 }
 
@@ -956,34 +858,26 @@
 .admin-contactos__profile {
   display: flex;
   align-items: center;
-
   gap: 13px;
-
   margin-bottom: 24px;
 }
 
 .admin-contactos__profile-avatar {
   width: 48px;
   height: 48px;
-
   font-size: 14px;
 }
 
 .admin-contactos__profile strong {
   display: block;
-
   color: var(--color-text);
-
   font-size: 15px;
 }
 
 .admin-contactos__profile span {
   display: block;
-
   margin-top: 3px;
-
   color: var(--color-text-muted);
-
   font-size: 12px;
 }
 
@@ -993,21 +887,16 @@
 
 .admin-contactos__detail-grid {
   display: grid;
-
   grid-template-columns:
     repeat(2, minmax(0, 1fr));
-
   gap: 12px;
 }
 
 .admin-contactos__detail {
   min-width: 0;
-
   padding: 14px;
-
   border: 1px solid var(--color-border);
   border-radius: 11px;
-
   background: var(--color-background);
 }
 
@@ -1017,36 +906,26 @@
 
 .admin-contactos__detail > span {
   display: block;
-
   margin-bottom: 6px;
-
   color: var(--color-text-muted);
-
   font-size: 11px;
   font-weight: 800;
-
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
 
 .admin-contactos__detail strong {
   display: block;
-
   overflow-wrap: anywhere;
-
   color: var(--color-text-secondary);
-
   font-size: 14px;
 }
 
 .admin-contactos__detail p {
   margin: 0;
-
   color: var(--color-text-secondary);
-
   font-size: 14px;
   line-height: 1.7;
-
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
@@ -1061,11 +940,8 @@
 
 .admin-contactos__modal-label {
   display: block;
-
   margin-bottom: 10px;
-
   color: var(--color-text-secondary);
-
   font-size: 13px;
   font-weight: 800;
 }
@@ -1076,28 +952,21 @@
 
 .admin-contactos__status-options {
   display: grid;
-
   grid-template-columns:
     repeat(3, minmax(0, 1fr));
-
   gap: 8px;
 }
 
 .admin-contactos__status-option {
   min-height: 42px;
-
   border: 1px solid var(--color-border);
   border-radius: 9px;
-
-  background: var(--color-white);
+  background: var(--color-surface);
   color: var(--color-text-secondary);
-
   font: inherit;
   font-size: 13px;
   font-weight: 700;
-
   cursor: pointer;
-
   transition:
     border-color var(--transition-fast),
     background var(--transition-fast),
@@ -1105,35 +974,55 @@
 }
 
 .admin-contactos__status-option:hover:not(:disabled) {
-  border-color: var(--color-border);
-
+  border-color:
+    color-mix(
+      in srgb,
+      var(--color-primary) 20%,
+      var(--color-border)
+    );
   background: var(--color-background);
 }
 
 .admin-contactos__status-option.is-active.is-nuevo {
-  border-color: #fdba74;
-
-  background: #fff7ed;
-  color: #c2410c;
+  border-color:
+    color-mix(
+      in srgb,
+      var(--color-warning) 45%,
+      var(--color-border)
+    );
+  background:
+    color-mix(
+      in srgb,
+      var(--color-warning) 10%,
+      var(--color-surface)
+    );
+  color: var(--color-warning);
 }
 
 .admin-contactos__status-option.is-active.is-atendido {
-  border-color: #86efac;
-
-  background: #f0fdf4;
-  color: #15803d;
+  border-color:
+    color-mix(
+      in srgb,
+      var(--color-success) 45%,
+      var(--color-border)
+    );
+  background:
+    color-mix(
+      in srgb,
+      var(--color-success) 10%,
+      var(--color-surface)
+    );
+  color: var(--color-success);
 }
 
 .admin-contactos__status-option.is-active.is-cerrado {
   border-color: var(--color-border);
-
   background: var(--color-background-alt);
   color: var(--color-text-secondary);
 }
 
 .admin-contactos__status-option:disabled {
   opacity: 0.6;
-
   cursor: not-allowed;
 }
 
@@ -1144,7 +1033,6 @@
 .admin-contactos__contact-actions {
   display: flex;
   flex-wrap: wrap;
-
   gap: 8px;
 }
 
@@ -1152,27 +1040,18 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-
   gap: 7px;
-
   min-height: 40px;
-
   padding: 0 13px;
-
   border: 1px solid var(--color-border);
   border-radius: 9px;
-
-  background: var(--color-white);
+  background: var(--color-surface);
   color: var(--color-text-secondary);
-
   font: inherit;
   font-size: 13px;
   font-weight: 700;
-
   text-decoration: none;
-
   cursor: pointer;
-
   transition:
     border-color var(--transition-fast),
     background var(--transition-fast),
@@ -1180,10 +1059,19 @@
 }
 
 .admin-contactos__contact-action:hover {
-  border-color: #bfdbfe;
-
-  background: #eff6ff;
-  color: #1d4ed8;
+  border-color:
+    color-mix(
+      in srgb,
+      var(--color-accent) 35%,
+      var(--color-border)
+    );
+  background:
+    color-mix(
+      in srgb,
+      var(--color-accent) 8%,
+      var(--color-surface)
+    );
+  color: var(--color-accent-dark);
 }
 
 /* =========================================================
@@ -1193,55 +1081,166 @@
 .admin-contactos__modal-footer {
   display: flex;
   justify-content: space-between;
-
   gap: 10px;
-
   padding: 18px 26px;
-
   border-top: 1px solid var(--color-border);
-
-  background: var(--color-white);
+  background: var(--color-surface);
 }
 
 .admin-contactos__delete-button,
 .admin-contactos__close-button {
   min-height: 40px;
-
   padding: 0 14px;
-
   border-radius: 9px;
-
   font: inherit;
   font-size: 13px;
   font-weight: 700;
-
   cursor: pointer;
 }
 
 .admin-contactos__delete-button {
-  border: 1px solid #fecaca;
-
-  background: var(--color-white);
+  border: 1px solid
+    color-mix(
+      in srgb,
+      var(--color-danger) 35%,
+      var(--color-border)
+    );
+  background: var(--color-surface);
   color: var(--color-danger);
 }
 
 .admin-contactos__delete-button:hover:not(:disabled) {
-  background: #fef2f2;
+  background:
+    color-mix(
+      in srgb,
+      var(--color-danger) 8%,
+      var(--color-surface)
+    );
 }
 
 .admin-contactos__close-button {
-  border: 1px solid var(--color-text);
-
-  background: var(--color-text);
-  color: var(--color-white);
+  border: 1px solid var(--color-primary);
+  background: var(--color-primary);
+  color: var(--color-primary-text);
 }
 
 .admin-contactos__close-button:hover {
-  background: #1e293b;
+  background: var(--color-primary-dark);
+  border-color: var(--color-primary-dark);
 }
 
 .admin-contactos__delete-button:disabled {
   opacity: 0.5;
-
   cursor: not-allowed;
+}
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 1100px) {
+  .admin-contactos__stats {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+
+  .admin-contactos__toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .admin-contactos__search {
+    min-width: 0;
+  }
+}
+
+@media (max-width: 768px) {
+  .admin-contactos {
+    padding: 22px;
+  }
+
+  .admin-contactos__header {
+    flex-direction: column;
+  }
+
+  .admin-contactos__refresh {
+    width: 100%;
+  }
+
+  .admin-contactos__stats {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-contactos__item {
+    flex-direction: column;
+  }
+
+  .admin-contactos__item-actions {
+    border-top: 1px solid var(--color-border);
+    border-left: 0;
+  }
+
+  .admin-contactos__detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-contactos__detail--full {
+    grid-column: auto;
+  }
+
+  .admin-contactos__modal {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .admin-contactos {
+    padding: 16px;
+  }
+
+  .admin-contactos__title {
+    font-size: 28px;
+  }
+
+  .admin-contactos__toolbar {
+    padding: 10px;
+  }
+
+  .admin-contactos__filters {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .admin-contactos__filter {
+    justify-content: center;
+  }
+
+  .admin-contactos__item-main {
+    gap: 12px;
+    padding: 14px;
+  }
+
+  .admin-contactos__avatar {
+    width: 38px;
+    height: 38px;
+  }
+
+  .admin-contactos__item-top {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .admin-contactos__status-options {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-contactos__modal-header,
+  .admin-contactos__modal-body {
+    padding: 20px;
+  }
+
+  .admin-contactos__modal-footer {
+    padding: 16px 20px;
+  }
 }

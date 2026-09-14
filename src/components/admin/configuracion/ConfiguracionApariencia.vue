@@ -10,6 +10,10 @@ import {
   normalizarHex,
 } from '../../../services/colorPalette'
 
+/* =========================================================
+   PROPS
+   ========================================================= */
+
 const props = defineProps({
   configuracion: {
     type: Object,
@@ -26,11 +30,19 @@ const props = defineProps({
     default: () => [],
   },
 
+  /*
+   * Este prop se conserva para mantener
+   * compatibilidad con el componente padre.
+   */
   colorBase: {
     type: String,
-    default: '#0F172A',
+    default: '',
   },
 })
+
+/* =========================================================
+   EMITS
+   ========================================================= */
 
 const emit = defineEmits([
   'actualizar-color',
@@ -38,68 +50,305 @@ const emit = defineEmits([
 ])
 
 /* =========================================================
+   CONSTANTES
+   ========================================================= */
+
+/*
+ * Ya no utilizamos un color visual fijo como respaldo
+ * principal de la interfaz.
+ *
+ * Este valor solamente sirve como último recurso técnico
+ * para el generador de paletas cuando no existe ningún
+ * color configurado.
+ */
+const COLOR_RESPALDO = '#4678EC'
+
+const camposPaleta = [
+  'primary',
+  'primaryLight',
+  'primaryDark',
+  'primaryText',
+
+  'secondary',
+  'secondaryLight',
+  'secondaryDark',
+  'secondaryText',
+
+  'accent',
+  'accentLight',
+  'accentDark',
+  'accentText',
+
+  'background',
+  'backgroundAlt',
+
+  'surface',
+  'surfaceAlt',
+
+  'text',
+  'textSecondary',
+  'textMuted',
+
+  'border',
+
+  'success',
+  'danger',
+  'warning',
+]
+
+const armoniasPermitidas = [
+  'complementaria',
+  'analogica',
+  'triadica',
+  'monocromatica',
+]
+
+/* =========================================================
+   UTILIDADES
+   ========================================================= */
+
+function esHexValido(valor) {
+  return /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/.test(
+    String(valor || '').trim(),
+  )
+}
+
+function normalizarColor(valor) {
+  if (!esHexValido(valor)) {
+    return null
+  }
+
+  try {
+    const color = normalizarHex(
+      String(valor).trim(),
+    )
+
+    return esHexValido(color)
+      ? color
+      : null
+  } catch (error) {
+    console.error(
+      'Error normalizando color:',
+      error,
+    )
+
+    return null
+  }
+}
+
+function obtenerColorValido(...valores) {
+  for (const valor of valores) {
+    const color =
+      normalizarColor(valor)
+
+    if (color) {
+      return color
+    }
+  }
+
+  return null
+}
+
+function obtenerNumero(valor, respaldo) {
+  const numero = Number(valor)
+
+  if (!Number.isFinite(numero)) {
+    return respaldo
+  }
+
+  return Math.min(
+    100,
+    Math.max(0, numero),
+  )
+}
+
+function obtenerArmonia(valor) {
+  if (
+    armoniasPermitidas.includes(valor)
+  ) {
+    return valor
+  }
+
+  return 'triadica'
+}
+
+/* =========================================================
+   OBTENER VALOR PREDETERMINADO
+   ========================================================= */
+
+function obtenerValorPredeterminado(campo) {
+  return obtenerColorValido(
+    props.coloresPredeterminados?.[campo],
+  )
+}
+
+/* =========================================================
+   OBTENER VALOR DE COLOR
+   ========================================================= */
+
+/*
+ * Prioridad:
+ *
+ * 1. configuración directa
+ * 2. configuración.paleta
+ * 3. color predeterminado
+ *
+ * IMPORTANTE:
+ *
+ * Ya no utilizamos un color azul de respaldo para todos
+ * los campos. Eso provocaba que background, text, border,
+ * surface, etc. pudieran terminar mostrando el mismo color.
+ */
+
+function obtenerValorCampo(campo) {
+  const valorConfiguracion =
+    props.configuracion?.[campo]
+
+  const valorPaleta =
+    props.configuracion?.paleta?.[campo]
+
+  const valorPredeterminado =
+    obtenerValorPredeterminado(campo)
+
+  return (
+    obtenerColorValido(
+      valorConfiguracion,
+      valorPaleta,
+      valorPredeterminado,
+    ) ||
+    ''
+  )
+}
+
+/* =========================================================
    COLOR BASE
    ========================================================= */
 
+/*
+ * Prioridad:
+ *
+ * 1. primary guardado en configuración
+ * 2. paleta.base guardado en Firebase
+ * 3. colorBase recibido por prop
+ * 4. primary predeterminado
+ * 5. respaldo técnico
+ *
+ * La configuración guardada debe tener prioridad sobre
+ * un prop que solamente se utiliza como compatibilidad.
+ */
+
 const colorBase = ref(
-  props.colorBase ||
-  props.configuracion?.primary ||
-  props.coloresPredeterminados?.primary ||
-  '#0F172A',
+  obtenerColorValido(
+    props.configuracion?.primary,
+    props.configuracion?.paleta?.base,
+    props.colorBase,
+    props.coloresPredeterminados?.primary,
+    COLOR_RESPALDO,
+  ) || COLOR_RESPALDO,
 )
 
 /* =========================================================
-   CONFIGURACIÓN DE ARMONÍA
+   CONFIGURACIÓN DE PALETA
    ========================================================= */
 
 const armoniaSeleccionada = ref(
-  props.configuracion?.paleta?.armonia ||
-  'triadica',
+  obtenerArmonia(
+    props.configuracion?.paleta?.armonia,
+  ),
 )
 
 const suavidad = ref(
-  Number(
-    props.configuracion?.paleta?.suavidad ??
+  obtenerNumero(
+    props.configuracion?.paleta?.suavidad,
     45,
   ),
 )
 
 const contraste = ref(
-  Number(
-    props.configuracion?.paleta?.contraste ??
+  obtenerNumero(
+    props.configuracion?.paleta?.contraste,
     55,
   ),
 )
 
 /* =========================================================
-   ESTADO
+   ESTADO DE LA VISTA
    ========================================================= */
 
 const coloresGenerados = ref({})
 
-const mostrarColoresManuales = ref(false)
+const mostrarColoresManuales =
+  ref(false)
 
 /* =========================================================
    PALETA GENERADA
    ========================================================= */
 
 const paletaGenerada = computed(() => {
-  try {
-    const resultado = generarPaleta(
+  const base =
+    obtenerColorValido(
       colorBase.value,
-      {
-        armonia:
-          armoniaSeleccionada.value,
+      props.configuracion?.primary,
+      props.coloresPredeterminados?.primary,
+      COLOR_RESPALDO,
+    ) || COLOR_RESPALDO
 
-        suavidad:
-          Number(suavidad.value),
+  try {
+    const resultado =
+      generarPaleta(
+        base,
+        {
+          armonia:
+            armoniaSeleccionada.value,
 
-        contraste:
-          Number(contraste.value),
+          suavidad:
+            obtenerNumero(
+              suavidad.value,
+              45,
+            ),
+
+          contraste:
+            obtenerNumero(
+              contraste.value,
+              55,
+            ),
+        },
+      )
+
+    if (
+      !resultado ||
+      typeof resultado !== 'object'
+    ) {
+      return {}
+    }
+
+    const paletaValida = {}
+
+    Object.entries(resultado).forEach(
+      ([campo, valor]) => {
+        /*
+         * Solo aceptamos campos reconocidos.
+         * Así evitamos introducir propiedades
+         * desconocidas en la configuración.
+         */
+
+        if (
+          !camposPaleta.includes(campo)
+        ) {
+          return
+        }
+
+        const color =
+          normalizarColor(valor)
+
+        if (color) {
+          paletaValida[campo] =
+            color
+        }
       },
     )
 
-    return resultado || {}
+    return paletaValida
   } catch (error) {
     console.error(
       'Error al generar paleta:',
@@ -111,17 +360,7 @@ const paletaGenerada = computed(() => {
 })
 
 /* =========================================================
-   VALIDACIÓN
-   ========================================================= */
-
-function esHexValido(valor) {
-  return /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/.test(
-    String(valor || '').trim(),
-  )
-}
-
-/* =========================================================
-   GENERAR / REGENERAR
+   GENERAR / REGENERAR PALETA
    ========================================================= */
 
 function regenerarPaleta() {
@@ -135,18 +374,23 @@ function regenerarPaleta() {
    ========================================================= */
 
 function cambiarColorBase(valor) {
-  if (!esHexValido(valor)) {
+  const nuevoColor =
+    normalizarColor(valor)
+
+  if (!nuevoColor) {
     return
   }
 
-  const nuevoColor = normalizarHex(valor)
+  colorBase.value =
+    nuevoColor
 
-  colorBase.value = nuevoColor
-
-  emit('actualizar-color', {
-    campo: 'primary',
-    valor: nuevoColor,
-  })
+  emit(
+    'actualizar-color',
+    {
+      campo: 'primary',
+      valor: nuevoColor,
+    },
+  )
 
   regenerarPaleta()
 }
@@ -160,71 +404,113 @@ function aplicarPaletaGenerada() {
     ...paletaGenerada.value,
   }
 
-  const campos = [
-    'primary',
-    'primaryLight',
-    'primaryDark',
-    'primaryText',
-
-    'secondary',
-    'secondaryLight',
-    'secondaryDark',
-    'secondaryText',
-
-    'accent',
-    'accentLight',
-    'accentDark',
-    'accentText',
-
-    'background',
-    'backgroundAlt',
-
-    'surface',
-    'surfaceAlt',
-
-    'text',
-    'textSecondary',
-    'textMuted',
-
-    'border',
-
-    'success',
-    'danger',
-    'warning',
-  ]
-
   const cambios = {}
 
-  campos.forEach((campo) => {
-    if (esHexValido(paleta[campo])) {
+  camposPaleta.forEach(
+    (campo) => {
+      const color =
+        normalizarColor(
+          paleta[campo],
+        )
+
+      if (!color) {
+        return
+      }
+
       cambios[campo] =
-        normalizarHex(paleta[campo])
-    }
-  })
+        color
+    },
+  )
+
+  const base =
+    normalizarColor(
+      colorBase.value,
+    ) ||
+    obtenerColorValido(
+      props.configuracion?.primary,
+      props.coloresPredeterminados?.primary,
+      COLOR_RESPALDO,
+    ) ||
+    COLOR_RESPALDO
 
   /*
-   * El color base siempre tiene prioridad
-   * sobre cualquier valor generado.
+   * PRIMARY siempre representa
+   * el color base de la marca.
    */
+
   cambios.primary =
-    normalizarHex(colorBase.value)
+    base
 
   /*
-   * Guardamos también la configuración
-   * utilizada para generar la paleta.
+   * Si el generador no devuelve textos
+   * de contraste, conservamos los existentes
+   * o los predeterminados.
+   *
+   * No forzamos #FFFFFF porque el texto debe
+   * poder configurarse globalmente.
    */
+
+  const textosContraste = [
+    'primaryText',
+    'secondaryText',
+    'accentText',
+  ]
+
+  textosContraste.forEach(
+    (campo) => {
+      if (
+        normalizarColor(
+          cambios[campo],
+        )
+      ) {
+        return
+      }
+
+      const existente =
+        obtenerColorValido(
+          props.configuracion?.[campo],
+          props.configuracion?.paleta?.[campo],
+          props.coloresPredeterminados?.[campo],
+        )
+
+      if (existente) {
+        cambios[campo] =
+          existente
+      }
+    },
+  )
+
+  /*
+   * Guardar también los parámetros
+   * utilizados para generar la paleta.
+   */
+
   cambios.paleta = {
-    base:
-      normalizarHex(colorBase.value),
+    ...(
+      props.configuracion?.paleta &&
+      typeof props.configuracion.paleta === 'object'
+        ? props.configuracion.paleta
+        : {}
+    ),
+
+    base,
 
     armonia:
-      armoniaSeleccionada.value,
+      obtenerArmonia(
+        armoniaSeleccionada.value,
+      ),
 
     suavidad:
-      Number(suavidad.value),
+      obtenerNumero(
+        suavidad.value,
+        45,
+      ),
 
     contraste:
-      Number(contraste.value),
+      obtenerNumero(
+        contraste.value,
+        55,
+      ),
   }
 
   emit(
@@ -241,158 +527,305 @@ function actualizarCampoColor(
   campo,
   valor,
 ) {
-  if (!esHexValido(valor)) {
+  if (
+    !camposPaleta.includes(campo)
+  ) {
     return
   }
 
-  const color = normalizarHex(valor)
+  const nuevoColor =
+    normalizarColor(valor)
 
-  emit('actualizar-color', {
-    campo,
-    valor: color,
-  })
+  if (!nuevoColor) {
+    return
+  }
+
+  emit(
+    'actualizar-color',
+    {
+      campo,
+      valor: nuevoColor,
+    },
+  )
 
   /*
-   * Si se modifica PRIMARY manualmente,
-   * también se actualiza el color base.
+   * Si se modifica PRIMARY,
+   * también se modifica el color base
+   * utilizado para generar la paleta.
    */
+
   if (campo === 'primary') {
-    colorBase.value = color
+    colorBase.value =
+      nuevoColor
 
     regenerarPaleta()
   }
 }
 
 /* =========================================================
-   RESTABLECER COLORES PREDETERMINADOS
+   RESTABLECER COLORES
    ========================================================= */
 
 function restablecerColores() {
-  /*
-   * IMPORTANTE:
-   *
-   * Restaurar identidad NO utiliza la paleta
-   * generada ni los valores actuales.
-   *
-   * Siempre vuelve a coloresPredeterminados.
-   */
-  const valores = {
+  const defaults = {
     ...props.coloresPredeterminados,
   }
 
-  Object.entries(valores).forEach(
-    ([campo, valor]) => {
-      if (!esHexValido(valor)) {
+  const coloresRestaurados = {}
+
+  camposPaleta.forEach(
+    (campo) => {
+      const color =
+        normalizarColor(
+          defaults[campo],
+        )
+
+      if (!color) {
         return
       }
 
-      emit('actualizar-color', {
-        campo,
-        valor: normalizarHex(valor),
-      })
+      coloresRestaurados[campo] =
+        color
     },
   )
 
-  /*
-   * Restaurar también el color base.
-   */
-  const primaryPredeterminado =
-    valores.primary ||
-    '#0F172A'
+  const primary =
+    obtenerColorValido(
+      defaults.primary,
+      COLOR_RESPALDO,
+    ) || COLOR_RESPALDO
 
   colorBase.value =
-    normalizarHex(primaryPredeterminado)
+    primary
 
-  /*
-   * Recuperar la configuración inicial
-   * de armonía si existe.
-   */
   armoniaSeleccionada.value =
-    props.configuracion?.paleta?.armonia ||
     'triadica'
 
-  suavidad.value =
-    Number(
-      props.configuracion?.paleta?.suavidad ??
-      45,
-    )
+  suavidad.value = 45
+  contraste.value = 55
 
-  contraste.value =
-    Number(
-      props.configuracion?.paleta?.contraste ??
-      55,
-    )
+  const cambios = {
+    ...coloresRestaurados,
+
+    primary,
+
+    paleta: {
+      ...(
+        props.configuracion?.paleta &&
+        typeof props.configuracion.paleta === 'object'
+          ? props.configuracion.paleta
+          : {}
+      ),
+
+      base: primary,
+      armonia: 'triadica',
+      suavidad: 45,
+      contraste: 55,
+    },
+  }
+
+  emit(
+    'actualizar-paleta',
+    cambios,
+  )
 
   regenerarPaleta()
 }
 
 /* =========================================================
-   SINCRONIZACIÓN CON EL PADRE
+   SINCRONIZACIÓN DEL COLOR BASE DESDE EL PADRE
    ========================================================= */
 
 watch(
   () => props.colorBase,
   (nuevoValor) => {
-    if (!esHexValido(nuevoValor)) {
+    const nuevoColor =
+      normalizarColor(nuevoValor)
+
+    if (!nuevoColor) {
       return
     }
 
-    const color =
-      normalizarHex(nuevoValor)
+    /*
+     * Si existe una configuración real en Firebase,
+     * ésta tiene prioridad.
+     */
+
+    const primaryConfigurado =
+      normalizarColor(
+        props.configuracion?.primary,
+      )
+
+    const baseConfigurada =
+      normalizarColor(
+        props.configuracion?.paleta?.base,
+      )
 
     if (
-      color !== colorBase.value
+      primaryConfigurado ||
+      baseConfigurada
     ) {
-      colorBase.value = color
+      return
+    }
+
+    if (
+      nuevoColor !== colorBase.value
+    ) {
+      colorBase.value =
+        nuevoColor
+
       regenerarPaleta()
     }
   },
 )
 
 /* =========================================================
-   SINCRONIZAR CONFIGURACIÓN DE PALETA
+   SINCRONIZACIÓN DE CONFIGURACIÓN DE PALETA
    ========================================================= */
 
 watch(
   () => props.configuracion?.paleta,
-  (paleta) => {
-    if (!paleta) {
+  (nuevaPaleta) => {
+    if (
+      !nuevaPaleta ||
+      typeof nuevaPaleta !== 'object'
+    ) {
       return
     }
 
-    if (
-      paleta.armonia
-    ) {
-      armoniaSeleccionada.value =
-        paleta.armonia
-    }
+    armoniaSeleccionada.value =
+      obtenerArmonia(
+        nuevaPaleta.armonia,
+      )
+
+    suavidad.value =
+      obtenerNumero(
+        nuevaPaleta.suavidad,
+        45,
+      )
+
+    contraste.value =
+      obtenerNumero(
+        nuevaPaleta.contraste,
+        55,
+      )
+
+    const nuevaBase =
+      obtenerColorValido(
+        nuevaPaleta.base,
+        props.configuracion?.primary,
+        props.colorBase,
+        props.coloresPredeterminados?.primary,
+        COLOR_RESPALDO,
+      )
 
     if (
-      paleta.suavidad !== undefined
-    ) {
-      suavidad.value =
-        Number(paleta.suavidad)
-    }
-
-    if (
-      paleta.contraste !== undefined
-    ) {
-      contraste.value =
-        Number(paleta.contraste)
-    }
-
-    if (
-      paleta.base &&
-      esHexValido(paleta.base)
+      nuevaBase &&
+      nuevaBase !== colorBase.value
     ) {
       colorBase.value =
-        normalizarHex(paleta.base)
+        nuevaBase
     }
 
     regenerarPaleta()
   },
   {
     deep: true,
+  },
+)
+
+/* =========================================================
+   SINCRONIZACIÓN DE PRIMARY DESDE FIREBASE
+   ========================================================= */
+
+watch(
+  () => props.configuracion?.primary,
+  (nuevoValor) => {
+    const nuevoColor =
+      normalizarColor(nuevoValor)
+
+    if (!nuevoColor) {
+      return
+    }
+
+    /*
+     * Si existe una base explícita dentro de paleta,
+     * esa base mantiene la configuración del generador.
+     */
+
+    const baseConfigurada =
+      normalizarColor(
+        props.configuracion?.paleta?.base,
+      )
+
+    if (
+      baseConfigurada &&
+      baseConfigurada === nuevoColor
+    ) {
+      if (
+        colorBase.value !== nuevoColor
+      ) {
+        colorBase.value =
+          nuevoColor
+
+        regenerarPaleta()
+      }
+
+      return
+    }
+
+    /*
+     * Si no existe base explícita,
+     * primary se convierte en el color base.
+     */
+
+    if (!baseConfigurada) {
+      if (
+        nuevoColor !== colorBase.value
+      ) {
+        colorBase.value =
+          nuevoColor
+
+        regenerarPaleta()
+      }
+    }
+  },
+)
+
+/* =========================================================
+   SINCRONIZACIÓN DE COLORES PREDETERMINADOS
+   ========================================================= */
+
+watch(
+  () => props.coloresPredeterminados?.primary,
+  (nuevoValor) => {
+    const existeColorConfigurado =
+      normalizarColor(
+        props.configuracion?.primary,
+      ) ||
+      normalizarColor(
+        props.configuracion?.paleta?.base,
+      )
+
+    if (existeColorConfigurado) {
+      return
+    }
+
+    const nuevoColor =
+      normalizarColor(nuevoValor)
+
+    if (!nuevoColor) {
+      return
+    }
+
+    if (
+      nuevoColor !== colorBase.value
+    ) {
+      colorBase.value =
+        nuevoColor
+
+      regenerarPaleta()
+    }
   },
 )
 
@@ -412,6 +845,51 @@ watch(
 )
 
 /* =========================================================
+   SINCRONIZACIÓN GENERAL
+   ========================================================= */
+
+/*
+ * La configuración puede actualizarse desde Firebase
+ * mientras el administrador está viendo esta pantalla.
+ *
+ * Este watcher garantiza que cualquier cambio externo
+ * de la configuración actualice la vista de la paleta.
+ */
+
+watch(
+  () => [
+    props.configuracion?.primary,
+    props.configuracion?.paleta?.base,
+    props.configuracion?.paleta?.armonia,
+    props.configuracion?.paleta?.suavidad,
+    props.configuracion?.paleta?.contraste,
+  ],
+  () => {
+    const nuevoBase =
+      obtenerColorValido(
+        props.configuracion?.primary,
+        props.configuracion?.paleta?.base,
+        props.colorBase,
+        props.coloresPredeterminados?.primary,
+        COLOR_RESPALDO,
+      )
+
+    if (
+      nuevoBase &&
+      nuevoBase !== colorBase.value
+    ) {
+      colorBase.value =
+        nuevoBase
+    }
+
+    regenerarPaleta()
+  },
+  {
+    immediate: true,
+  },
+)
+
+/* =========================================================
    INICIALIZACIÓN
    ========================================================= */
 
@@ -419,14 +897,16 @@ regenerarPaleta()
 </script>
 
 <template>
-  <div class="admin-configuracion__palette-layout">
-
+  <div
+    class="admin-configuracion__palette-layout"
+  >
     <!-- ===================================================
          COLOR BASE + ARMONÍA
          =================================================== -->
 
-    <article class="admin-configuracion__card">
-
+    <article
+      class="admin-configuracion__card"
+    >
       <div
         class="admin-configuracion__card-heading"
       >
@@ -441,6 +921,14 @@ regenerarPaleta()
             armonías de la identidad visual.
           </p>
         </div>
+
+        <div
+          class="admin-configuracion__color-swatch"
+          :style="{
+            backgroundColor: colorBase,
+          }"
+          aria-hidden="true"
+        ></div>
       </div>
 
       <!-- COLOR BASE -->
@@ -448,10 +936,10 @@ regenerarPaleta()
       <div
         class="admin-configuracion__primary-color"
       >
-
         <input
           :value="colorBase"
           type="color"
+          aria-label="Seleccionar color base"
           @input="
             cambiarColorBase(
               $event.target.value,
@@ -473,14 +961,14 @@ regenerarPaleta()
           :value="colorBase"
           type="text"
           maxlength="7"
-          placeholder="#0F172A"
+          placeholder="#4678EC"
+          aria-label="Código hexadecimal del color base"
           @change="
             cambiarColorBase(
               $event.target.value,
             )
           "
         />
-
       </div>
 
       <!-- EXPLICACIÓN -->
@@ -507,7 +995,6 @@ regenerarPaleta()
       <div
         class="admin-configuracion__palette-options"
       >
-
         <label>
           <span>
             Armonía
@@ -567,7 +1054,6 @@ regenerarPaleta()
             max="100"
           />
         </label>
-
       </div>
 
       <!-- ACCIONES -->
@@ -575,7 +1061,6 @@ regenerarPaleta()
       <div
         class="admin-configuracion__palette-actions"
       >
-
         <button
           type="button"
           class="admin-configuracion__button admin-configuracion__button--secondary"
@@ -591,19 +1076,16 @@ regenerarPaleta()
         >
           Aplicar paleta
         </button>
-
       </div>
-
     </article>
 
     <!-- ===================================================
-         PALETA GENERADA / ARMONÍAS
+         PALETA GENERADA
          =================================================== -->
 
     <article
       class="admin-configuracion__card"
     >
-
       <div
         class="admin-configuracion__card-heading"
       >
@@ -627,9 +1109,11 @@ regenerarPaleta()
       </div>
 
       <div
+        v-if="
+          Object.keys(coloresGenerados).length > 0
+        "
         class="admin-configuracion__generated-palette"
       >
-
         <div
           v-for="(
             color,
@@ -638,12 +1122,13 @@ regenerarPaleta()
           :key="nombre"
           class="admin-configuracion__generated-color"
         >
-
           <div
             class="admin-configuracion__generated-color-swatch"
             :style="{
               backgroundColor: color,
             }"
+            :title="color"
+            aria-hidden="true"
           ></div>
 
           <div>
@@ -655,11 +1140,16 @@ regenerarPaleta()
               {{ color }}
             </span>
           </div>
-
         </div>
-
       </div>
 
+      <div
+        v-else
+        class="admin-configuracion__empty-palette"
+      >
+        No se pudo generar una paleta válida.
+        Revisa el color principal.
+      </div>
     </article>
 
     <!-- ===================================================
@@ -669,11 +1159,9 @@ regenerarPaleta()
     <article
       class="admin-configuracion__card admin-configuracion__manual-colors"
     >
-
       <div
         class="admin-configuracion__card-heading"
       >
-
         <div>
           <h3>
             Colores del sistema
@@ -688,7 +1176,6 @@ regenerarPaleta()
         <div
           class="admin-configuracion__manual-actions"
         >
-
           <button
             type="button"
             class="admin-configuracion__text-button"
@@ -711,22 +1198,18 @@ regenerarPaleta()
           >
             Restaurar identidad
           </button>
-
         </div>
-
       </div>
 
       <div
         v-if="mostrarColoresManuales"
         class="admin-configuracion__manual-colors-content"
       >
-
         <div
           v-for="grupo in camposColores"
           :key="grupo.grupo"
           class="admin-configuracion__color-group"
         >
-
           <div
             class="admin-configuracion__color-group-title"
           >
@@ -736,7 +1219,6 @@ regenerarPaleta()
           <div
             class="admin-configuracion__color-grid"
           >
-
             <label
               v-for="[
                 campo,
@@ -745,19 +1227,21 @@ regenerarPaleta()
               :key="campo"
               class="admin-configuracion__color-field"
             >
-
               <span>
                 {{ etiqueta }}
               </span>
 
               <div>
-
                 <input
                   :value="
-                    configuracion[campo] ||
-                    coloresPredeterminados[campo]
+                    obtenerValorCampo(
+                      campo,
+                    )
                   "
                   type="color"
+                  :aria-label="
+                    `Seleccionar ${etiqueta}`
+                  "
                   @input="
                     actualizarCampoColor(
                       campo,
@@ -768,11 +1252,15 @@ regenerarPaleta()
 
                 <input
                   :value="
-                    configuracion[campo] ||
-                    coloresPredeterminados[campo]
+                    obtenerValorCampo(
+                      campo,
+                    )
                   "
                   type="text"
                   maxlength="7"
+                  :aria-label="
+                    `Código hexadecimal de ${etiqueta}`
+                  "
                   @change="
                     actualizarCampoColor(
                       campo,
@@ -780,18 +1268,11 @@ regenerarPaleta()
                     )
                   "
                 />
-
               </div>
-
             </label>
-
           </div>
-
         </div>
-
       </div>
-
     </article>
-
   </div>
 </template>

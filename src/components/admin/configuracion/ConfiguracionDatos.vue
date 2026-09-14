@@ -19,53 +19,113 @@ const emit = defineEmits([
   'actualizar',
 ])
 
+/* =========================================================
+   CAMPOS EXCLUIDOS
+   ========================================================= */
+
 const camposExcluidos = computed(() => [
   ...props.camposColor,
+
+  /*
+   * La paleta se administra mediante
+   * el componente especializado.
+   */
   'paleta',
+
+  /*
+   * Recursos visuales administrados
+   * por sus respectivos controles.
+   */
   'logoUrl',
   'logoPngUrl',
   'logoIcoUrl',
   'faviconUrl',
   'logoVersion',
+
+  /*
+   * Identificador interno de Firebase.
+   */
   'id',
 ])
 
+/* =========================================================
+   CAMPOS VISIBLES
+   ========================================================= */
+
 const campos = computed(() => {
-  return Object.keys(props.configuracion)
+  return Object.keys(
+    props.configuracion || {},
+  )
     .filter(
       (campo) =>
-        !camposExcluidos.value.includes(campo),
+        !camposExcluidos.value.includes(
+          campo,
+        ),
     )
     .sort((a, b) =>
       a.localeCompare(b),
     )
 })
 
+/* =========================================================
+   ETIQUETAS
+   ========================================================= */
+
 function etiqueta(campo) {
   const textos = {
-    nombreEmpresa: 'Nombre de la empresa',
-    descripcionEmpresa: 'Descripción de la empresa',
-    email: 'Correo electrónico',
-    telefono: 'Teléfono',
-    whatsapp: 'WhatsApp',
-    direccion: 'Dirección',
-    ciudad: 'Ciudad',
-    estado: 'Estado',
-    pais: 'País',
-    sitioWeb: 'Sitio web',
-    copyright: 'Copyright',
+    nombreEmpresa:
+      'Nombre de la empresa',
+
+    descripcionEmpresa:
+      'Descripción de la empresa',
+
+    email:
+      'Correo electrónico',
+
+    telefono:
+      'Teléfono',
+
+    whatsapp:
+      'WhatsApp',
+
+    direccion:
+      'Dirección',
+
+    ciudad:
+      'Ciudad',
+
+    estado:
+      'Estado',
+
+    pais:
+      'País',
+
+    sitioWeb:
+      'Sitio web',
+
+    copyright:
+      'Copyright',
   }
 
   if (textos[campo]) {
     return textos[campo]
   }
 
-  return campo
-    .replace(/([A-Z])/g, ' $1')
-    .replace(/^./, (letra) =>
-      letra.toUpperCase(),
+  return String(campo || '')
+    .replace(
+      /([A-Z])/g,
+      ' $1',
+    )
+    .replace(
+      /^./,
+      (letra) =>
+        letra.toUpperCase(),
     )
 }
+
+/* =========================================================
+   TIPO DE VALOR
+   ========================================================= */
 
 function esObjeto(valor) {
   return (
@@ -76,15 +136,23 @@ function esObjeto(valor) {
 }
 
 function tipoCampo(valor) {
-  if (typeof valor === 'boolean') {
+  if (
+    typeof valor ===
+    'boolean'
+  ) {
     return 'boolean'
   }
 
-  if (typeof valor === 'number') {
+  if (
+    typeof valor ===
+    'number'
+  ) {
     return 'number'
   }
 
-  if (Array.isArray(valor)) {
+  if (
+    Array.isArray(valor)
+  ) {
     return 'array'
   }
 
@@ -102,6 +170,10 @@ function tipoCampo(valor) {
   return 'text'
 }
 
+/* =========================================================
+   VALORES
+   ========================================================= */
+
 function valorTexto(valor) {
   if (
     valor === null ||
@@ -113,20 +185,44 @@ function valorTexto(valor) {
   return String(valor)
 }
 
-function actualizar(campo, valor) {
-  emit('actualizar', {
-    [campo]: valor,
-  })
+/* =========================================================
+   ACTUALIZAR CAMPO
+   ========================================================= */
+
+function actualizar(
+  campo,
+  valor,
+) {
+  if (!campo) {
+    return
+  }
+
+  emit(
+    'actualizar',
+    {
+      [campo]: valor,
+    },
+  )
 }
 
-function actualizarArray(campo, event) {
+/* =========================================================
+   ACTUALIZAR ARRAY
+   ========================================================= */
+
+function actualizarArray(
+  campo,
+  event,
+) {
   const texto =
-    event.target.value || ''
+    event?.target?.value || ''
 
   const valores =
     texto
       .split('\n')
-      .map((item) => item.trim())
+      .map(
+        (item) =>
+          item.trim(),
+      )
       .filter(Boolean)
 
   actualizar(
@@ -135,9 +231,16 @@ function actualizarArray(campo, event) {
   )
 }
 
-function actualizarObjeto(campo, event) {
+/* =========================================================
+   ACTUALIZAR OBJETO
+   ========================================================= */
+
+function actualizarObjeto(
+  campo,
+  event,
+) {
   const texto =
-    event.target.value || ''
+    event?.target?.value || ''
 
   try {
     const valor =
@@ -149,10 +252,24 @@ function actualizarObjeto(campo, event) {
       campo,
       valor,
     )
-  } catch {
-    // Se conserva el texto hasta que sea JSON válido.
+  } catch (error) {
+    /*
+     * No se actualiza Firebase mientras
+     * el JSON sea inválido.
+     *
+     * El usuario puede seguir editando
+     * hasta introducir un JSON válido.
+     */
+    console.warn(
+      `JSON inválido para el campo "${campo}".`,
+      error,
+    )
   }
 }
+
+/* =========================================================
+   SERIALIZAR JSON
+   ========================================================= */
 
 function obtenerJson(valor) {
   try {
@@ -161,13 +278,24 @@ function obtenerJson(valor) {
       null,
       2,
     )
-  } catch {
+  } catch (error) {
+    console.warn(
+      'No fue posible serializar el objeto:',
+      error,
+    )
+
     return '{}'
   }
 }
 
+/* =========================================================
+   SERIALIZAR ARRAY
+   ========================================================= */
+
 function obtenerArray(valor) {
-  if (!Array.isArray(valor)) {
+  if (
+    !Array.isArray(valor)
+  ) {
     return ''
   }
 
@@ -176,24 +304,46 @@ function obtenerArray(valor) {
 </script>
 
 <template>
-  <section class="admin-configuracion__panel">
+  <section
+    class="admin-configuracion__panel"
+  >
 
-    <div class="admin-configuracion__panel-heading">
+    <!-- ===================================================
+         ENCABEZADO
+         =================================================== -->
+
+    <div
+      class="admin-configuracion__panel-heading"
+    >
+
       <div>
-        <span class="admin-configuracion__section-kicker">
+
+        <span
+          class="admin-configuracion__section-kicker"
+        >
           INFORMACIÓN
         </span>
 
-        <h2>Datos generales</h2>
+        <h2>
+          Datos generales
+        </h2>
 
         <p>
           Información empresarial almacenada
           directamente en Firebase.
         </p>
+
       </div>
+
     </div>
 
-    <div class="admin-configuracion__data-grid">
+    <!-- ===================================================
+         DATOS GENERALES
+         =================================================== -->
+
+    <div
+      class="admin-configuracion__data-grid"
+    >
 
       <article
         v-for="campo in campos"
@@ -201,7 +351,14 @@ function obtenerArray(valor) {
         class="admin-configuracion__data-card"
       >
 
-        <div class="admin-configuracion__data-heading">
+        <!-- =================================================
+             ENCABEZADO DEL CAMPO
+             ================================================= -->
+
+        <div
+          class="admin-configuracion__data-heading"
+        >
+
           <strong>
             {{ etiqueta(campo) }}
           </strong>
@@ -209,15 +366,28 @@ function obtenerArray(valor) {
           <span>
             {{ campo }}
           </span>
+
         </div>
 
-        <!-- BOOLEAN -->
+        <!-- =================================================
+             BOOLEAN
+             ================================================= -->
+
         <label
-          v-if="tipoCampo(configuracion[campo]) === 'boolean'"
+          v-if="
+            tipoCampo(
+              configuracion[campo],
+            ) === 'boolean'
+          "
           class="admin-configuracion__switch"
         >
+
           <input
-            :checked="configuracion[campo]"
+            :checked="
+              Boolean(
+                configuracion[campo],
+              )
+            "
             type="checkbox"
             @change="
               actualizar(
@@ -227,7 +397,9 @@ function obtenerArray(valor) {
             "
           />
 
-          <span class="admin-configuracion__switch-ui" />
+          <span
+            class="admin-configuracion__switch-ui"
+          ></span>
 
           <span>
             {{
@@ -236,31 +408,50 @@ function obtenerArray(valor) {
                 : 'Desactivado'
             }}
           </span>
+
         </label>
 
-        <!-- NUMBER -->
+        <!-- =================================================
+             NUMBER
+             ================================================= -->
+
         <input
           v-else-if="
-            tipoCampo(configuracion[campo]) === 'number'
+            tipoCampo(
+              configuracion[campo],
+            ) === 'number'
           "
-          :value="configuracion[campo]"
+          :value="
+            configuracion[campo]
+          "
           type="number"
           class="admin-configuracion__field"
           @change="
             actualizar(
               campo,
-              Number($event.target.value),
+              Number(
+                $event.target.value,
+              ),
             )
           "
         />
 
-        <!-- ARRAY -->
+        <!-- =================================================
+             ARRAY
+             ================================================= -->
+
         <textarea
           v-else-if="
-            tipoCampo(configuracion[campo]) === 'array'
+            tipoCampo(
+              configuracion[campo],
+            ) === 'array'
           "
           class="admin-configuracion__field admin-configuracion__field--textarea"
-          :value="obtenerArray(configuracion[campo])"
+          :value="
+            obtenerArray(
+              configuracion[campo],
+            )
+          "
           placeholder="Un elemento por línea"
           @change="
             actualizarArray(
@@ -268,42 +459,67 @@ function obtenerArray(valor) {
               $event,
             )
           "
-        />
+        ></textarea>
 
-        <!-- OBJECT -->
+        <!-- =================================================
+             OBJECT
+             ================================================= -->
+
         <textarea
           v-else-if="
-            tipoCampo(configuracion[campo]) === 'object'
+            tipoCampo(
+              configuracion[campo],
+            ) === 'object'
           "
           class="admin-configuracion__field admin-configuracion__field--code"
-          :value="obtenerJson(configuracion[campo])"
+          :value="
+            obtenerJson(
+              configuracion[campo],
+            )
+          "
           @change="
             actualizarObjeto(
               campo,
               $event,
             )
           "
-        />
+        ></textarea>
 
-        <!-- TEXTAREA -->
+        <!-- =================================================
+             TEXTAREA
+             ================================================= -->
+
         <textarea
           v-else-if="
-            tipoCampo(configuracion[campo]) === 'textarea'
+            tipoCampo(
+              configuracion[campo],
+            ) === 'textarea'
           "
           class="admin-configuracion__field admin-configuracion__field--textarea"
-          :value="valorTexto(configuracion[campo])"
+          :value="
+            valorTexto(
+              configuracion[campo],
+            )
+          "
           @input="
             actualizar(
               campo,
               $event.target.value,
             )
           "
-        />
+        ></textarea>
 
-        <!-- TEXT -->
+        <!-- =================================================
+             TEXT
+             ================================================= -->
+
         <input
           v-else
-          :value="valorTexto(configuracion[campo])"
+          :value="
+            valorTexto(
+              configuracion[campo],
+            )
+          "
           type="text"
           class="admin-configuracion__field"
           @input="

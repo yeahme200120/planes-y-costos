@@ -4,6 +4,10 @@ import {
   ref,
 } from 'vue'
 
+/* =========================================================
+   CONFIGURACIÓN
+   ========================================================= */
+
 const SECCIONES = [
   'header',
   'hero',
@@ -23,7 +27,17 @@ const COLECCIONES = [
   'faq',
 ]
 
+const ORDEN_POR_DEFECTO = 999
+
+/* =========================================================
+   COMPOSABLE
+   ========================================================= */
+
 export function useLandingContent() {
+  /* -------------------------------------------------------
+     SECCIONES
+     ------------------------------------------------------- */
+
   const header = ref(null)
   const hero = ref(null)
   const soluciones = ref(null)
@@ -34,297 +48,679 @@ export function useLandingContent() {
   const contacto = ref(null)
   const footer = ref(null)
 
+  /* -------------------------------------------------------
+     CONFIGURACIÓN
+     ------------------------------------------------------- */
+
   const configuracion = ref(null)
+
+  /* -------------------------------------------------------
+     COLECCIONES
+     ------------------------------------------------------- */
 
   const planes = ref([])
   const solucionesItems = ref([])
   const caracteristicasItems = ref([])
   const faqItems = ref([])
 
+  /* -------------------------------------------------------
+     ESTADO
+     ------------------------------------------------------- */
+
   const cargando = ref(true)
   const error = ref('')
 
-  const cargasIniciales = new Set()
-  const unsubscribers = []
+  /* -------------------------------------------------------
+     CONTROL DE CARGAS
+     ------------------------------------------------------- */
+
+  const cargasIniciales =
+    new Set()
+
+  const unsubscribers =
+    []
+
+  let desmontado = false
+
+  /* -------------------------------------------------------
+     REFERENCIAS DE SECCIONES
+     ------------------------------------------------------- */
 
   const referenciasSecciones = {
     header,
     hero,
     soluciones,
     caracteristicas,
-    planes: planesContenido,
+    planes:
+      planesContenido,
     nosotros,
     faq,
     contacto,
     footer,
   }
 
+  /* -------------------------------------------------------
+     TOTAL DE CARGAS INICIALES
+     ------------------------------------------------------- */
+
   const totalCargasIniciales =
     SECCIONES.length +
     COLECCIONES.length +
     1
 
-  function registrarCarga(id) {
-    if (cargasIniciales.has(id)) {
-      return
-    }
+  /* =======================================================
+     UTILIDADES
+     ======================================================= */
 
-    cargasIniciales.add(id)
+  /**
+   * Convierte un valor a número seguro.
+   */
+  function numeroSeguro(
+    valor,
+    valorDefecto =
+      ORDEN_POR_DEFECTO,
+  ) {
+    const numero =
+      Number(valor)
 
-    if (
-      cargasIniciales.size >=
-      totalCargasIniciales
-    ) {
-      cargando.value = false
-    }
-  }
-
-  function manejarErrorFirebase(errorFirebase) {
-    console.error(
-      'Error sincronizando Landing:',
-      errorFirebase
+    return Number.isFinite(
+      numero,
     )
-
-    error.value =
-      'No fue posible cargar correctamente el contenido de la página.'
-
-    cargando.value = false
+      ? numero
+      : valorDefecto
   }
 
-  function ordenarItems(items) {
-    if (!Array.isArray(items)) {
+  /**
+   * Ordena cualquier colección
+   * por el campo "orden".
+   *
+   * Nunca modifica el array original.
+   */
+  function ordenarItems(
+    items,
+  ) {
+    if (
+      !Array.isArray(items)
+    ) {
       return []
     }
 
     return [...items].sort(
       (a, b) =>
-        Number(a?.orden ?? 999) -
-        Number(b?.orden ?? 999)
+        numeroSeguro(
+          a?.orden,
+        ) -
+        numeroSeguro(
+          b?.orden,
+        ),
     )
   }
 
+  /**
+   * Registra que una fuente inicial
+   * ya respondió.
+   */
+  function registrarCarga(
+    id,
+  ) {
+    if (
+      cargasIniciales.has(
+        id,
+      )
+    ) {
+      return
+    }
+
+    cargasIniciales.add(
+      id,
+    )
+
+    if (
+      cargasIniciales.size >=
+      totalCargasIniciales
+    ) {
+      cargando.value =
+        false
+    }
+  }
+
+  /**
+   * Si una suscripción falla no debemos
+   * dejar indefinidamente la pantalla
+   * en estado de carga.
+   */
+  function registrarCargaConError(
+    id,
+  ) {
+    registrarCarga(id)
+  }
+
+  /* =======================================================
+     ERRORES
+     ======================================================= */
+
+  function manejarErrorFirebase(
+    errorFirebase,
+  ) {
+    console.error(
+      'Error sincronizando Landing:',
+      errorFirebase,
+    )
+
+    error.value =
+      'No fue posible cargar correctamente el contenido de la página.'
+
+    /*
+     * Una suscripción que falla ya no debe
+     * bloquear el estado de carga.
+     *
+     * No sabemos exactamente qué fuente
+     * produjo el error, por lo que además
+     * liberamos la pantalla de carga.
+     */
+    cargando.value =
+      false
+  }
+
+  /* =======================================================
+     SECCIONES + COLECCIONES
+     ======================================================= */
+
+  /**
+   * Inserta los elementos dinámicos
+   * dentro de una sección.
+   */
   function actualizarItemsEnSeccion(
     seccionRef,
-    items
+    items,
   ) {
-    if (!seccionRef?.value) {
+    if (
+      !seccionRef ||
+      !seccionRef.value
+    ) {
       return
     }
 
     seccionRef.value = {
       ...seccionRef.value,
-      items: ordenarItems(items),
+      items:
+        ordenarItems(
+          items,
+        ),
     }
   }
 
-  function procesarColeccion(nombre, data) {
-    const items = ordenarItems(data)
-
+  /**
+   * Obtiene la referencia de items
+   * correspondiente a una colección.
+   */
+  function obtenerRefColeccion(
+    nombre,
+  ) {
     switch (nombre) {
       case 'planes':
-        planes.value = items
-        break
+        return planes
 
       case 'soluciones':
-        solucionesItems.value = items
+        return solucionesItems
 
+      case 'caracteristicas':
+        return caracteristicasItems
+
+      case 'faq':
+        return faqItems
+
+      default:
+        return null
+    }
+  }
+
+  /**
+   * Actualiza los elementos de una
+   * colección y sincroniza su sección
+   * correspondiente.
+   */
+  function procesarColeccion(
+    nombre,
+    data,
+  ) {
+    const items =
+      ordenarItems(data)
+
+    const coleccionRef =
+      obtenerRefColeccion(
+        nombre,
+      )
+
+    if (
+      coleccionRef
+    ) {
+      coleccionRef.value =
+        items
+    }
+
+    switch (nombre) {
+      case 'soluciones':
         actualizarItemsEnSeccion(
           soluciones,
-          items
+          items,
         )
         break
 
       case 'caracteristicas':
-        caracteristicasItems.value = items
-
         actualizarItemsEnSeccion(
           caracteristicas,
-          items
+          items,
         )
         break
 
       case 'faq':
-        faqItems.value = items
-
         actualizarItemsEnSeccion(
           faq,
-          items
+          items,
+        )
+        break
+
+      case 'planes':
+        actualizarItemsEnSeccion(
+          planesContenido,
+          items,
         )
         break
     }
   }
 
-  function suscribirSecciones({
-    subscribeToSection,
-  }) {
-    SECCIONES.forEach((nombre) => {
-      const seccionRef =
-        referenciasSecciones[nombre]
+  /* =======================================================
+     SUSCRIBIR SECCIONES
+     ======================================================= */
 
-      if (!seccionRef) {
-        console.warn(
-          `Sección no registrada: ${nombre}`
-        )
-
-        registrarCarga(
-          `seccion:${nombre}`
-        )
-
-        return
-      }
-
-      const unsubscribe =
-        subscribeToSection(
-          nombre,
-          (data) => {
-            seccionRef.value = data
-
-            /*
-             * Las secciones que utilizan
-             * colecciones dinámicas reciben
-             * también sus elementos.
-             */
-            if (nombre === 'soluciones') {
-              actualizarItemsEnSeccion(
-                soluciones,
-                solucionesItems.value
-              )
-            }
-
-            if (
-              nombre ===
-              'caracteristicas'
-            ) {
-              actualizarItemsEnSeccion(
-                caracteristicas,
-                caracteristicasItems.value
-              )
-            }
-
-            if (nombre === 'faq') {
-              actualizarItemsEnSeccion(
-                faq,
-                faqItems.value
-              )
-            }
-
-            registrarCarga(
-              `seccion:${nombre}`
-            )
-          },
-          manejarErrorFirebase,
-        )
-
-      if (
-        typeof unsubscribe ===
-        'function'
-      ) {
-        unsubscribers.push(
-          unsubscribe
-        )
-      }
-    })
-  }
-
-  function suscribirColecciones({
-    subscribeToActiveCollection,
-  }) {
-    COLECCIONES.forEach((nombre) => {
-      const unsubscribe =
-        subscribeToActiveCollection(
-          nombre,
-          (data) => {
-            procesarColeccion(
-              nombre,
-              data
-            )
-
-            registrarCarga(
-              `coleccion:${nombre}`
-            )
-          },
-          manejarErrorFirebase,
-        )
-
-      if (
-        typeof unsubscribe ===
-        'function'
-      ) {
-        unsubscribers.push(
-          unsubscribe
-        )
-      }
-    })
-  }
-
-  function suscribirConfiguracion({
-    subscribeToConfiguration,
-  }) {
-    const unsubscribe =
-      subscribeToConfiguration(
-        'general',
-        (data) => {
-          configuracion.value = data
-
-          registrarCarga(
-            'configuracion:general'
-          )
-        },
-        manejarErrorFirebase,
-      )
+  function suscribirSecciones(
+    contentService,
+  ) {
+    const {
+      subscribeToSection,
+    } = contentService
 
     if (
-      typeof unsubscribe ===
+      typeof subscribeToSection !==
       'function'
     ) {
-      unsubscribers.push(
-        unsubscribe
+      const errorServicio =
+        new Error(
+          'subscribeToSection no está disponible en contentService.',
+        )
+
+      console.error(
+        errorServicio,
+      )
+
+      error.value =
+        'El servicio de contenido de la Landing no está disponible.'
+
+      cargando.value =
+        false
+
+      return
+    }
+
+    SECCIONES.forEach(
+      (nombre) => {
+        const seccionRef =
+          referenciasSecciones[
+            nombre
+          ]
+
+        if (
+          !seccionRef
+        ) {
+          console.warn(
+            `Sección no registrada: ${nombre}`,
+          )
+
+          registrarCargaConError(
+            `seccion:${nombre}`,
+          )
+
+          return
+        }
+
+        try {
+          const unsubscribe =
+            subscribeToSection(
+              nombre,
+
+              (data) => {
+                if (
+                  desmontado
+                ) {
+                  return
+                }
+
+                seccionRef.value =
+                  data
+
+                /*
+                 * Las secciones que tienen
+                 * colecciones dinámicas deben
+                 * combinar ambos streams.
+                 */
+                switch (
+                  nombre
+                ) {
+                  case 'soluciones':
+                    actualizarItemsEnSeccion(
+                      soluciones,
+                      solucionesItems.value,
+                    )
+                    break
+
+                  case 'caracteristicas':
+                    actualizarItemsEnSeccion(
+                      caracteristicas,
+                      caracteristicasItems.value,
+                    )
+                    break
+
+                  case 'planes':
+                    actualizarItemsEnSeccion(
+                      planesContenido,
+                      planes.value,
+                    )
+                    break
+
+                  case 'faq':
+                    actualizarItemsEnSeccion(
+                      faq,
+                      faqItems.value,
+                    )
+                    break
+                }
+
+                registrarCarga(
+                  `seccion:${nombre}`,
+                )
+              },
+
+              (errorFirebase) => {
+                registrarCargaConError(
+                  `seccion:${nombre}`,
+                )
+
+                manejarErrorFirebase(
+                  errorFirebase,
+                )
+              },
+            )
+
+          if (
+            typeof unsubscribe ===
+            'function'
+          ) {
+            unsubscribers.push(
+              unsubscribe,
+            )
+          }
+        } catch (
+          errorFirebase
+        ) {
+          registrarCargaConError(
+            `seccion:${nombre}`,
+          )
+
+          manejarErrorFirebase(
+            errorFirebase,
+          )
+        }
+      },
+    )
+  }
+
+  /* =======================================================
+     SUSCRIBIR COLECCIONES
+     ======================================================= */
+
+  function suscribirColecciones(
+    contentService,
+  ) {
+    const {
+      subscribeToActiveCollection,
+    } = contentService
+
+    if (
+      typeof subscribeToActiveCollection !==
+      'function'
+    ) {
+      const errorServicio =
+        new Error(
+          'subscribeToActiveCollection no está disponible en contentService.',
+        )
+
+      console.error(
+        errorServicio,
+      )
+
+      error.value =
+        'El servicio de contenido de la Landing no está disponible.'
+
+      cargando.value =
+        false
+
+      return
+    }
+
+    COLECCIONES.forEach(
+      (nombre) => {
+        try {
+          const unsubscribe =
+            subscribeToActiveCollection(
+              nombre,
+
+              (data) => {
+                if (
+                  desmontado
+                ) {
+                  return
+                }
+
+                procesarColeccion(
+                  nombre,
+                  data,
+                )
+
+                registrarCarga(
+                  `coleccion:${nombre}`,
+                )
+              },
+
+              (errorFirebase) => {
+                registrarCargaConError(
+                  `coleccion:${nombre}`,
+                )
+
+                manejarErrorFirebase(
+                  errorFirebase,
+                )
+              },
+            )
+
+          if (
+            typeof unsubscribe ===
+            'function'
+          ) {
+            unsubscribers.push(
+              unsubscribe,
+            )
+          }
+        } catch (
+          errorFirebase
+        ) {
+          registrarCargaConError(
+            `coleccion:${nombre}`,
+          )
+
+          manejarErrorFirebase(
+            errorFirebase,
+          )
+        }
+      },
+    )
+  }
+
+  /* =======================================================
+     SUSCRIBIR CONFIGURACIÓN
+     ======================================================= */
+
+  function suscribirConfiguracion(
+    contentService,
+  ) {
+    const {
+      subscribeToConfiguration,
+    } = contentService
+
+    if (
+      typeof subscribeToConfiguration !==
+      'function'
+    ) {
+      const errorServicio =
+        new Error(
+          'subscribeToConfiguration no está disponible en contentService.',
+        )
+
+      console.error(
+        errorServicio,
+      )
+
+      error.value =
+        'El servicio de configuración de la Landing no está disponible.'
+
+      cargando.value =
+        false
+
+      return
+    }
+
+    try {
+      const unsubscribe =
+        subscribeToConfiguration(
+          'general',
+
+          (data) => {
+            if (
+              desmontado
+            ) {
+              return
+            }
+
+            configuracion.value =
+              data
+
+            registrarCarga(
+              'configuracion:general',
+            )
+          },
+
+          (errorFirebase) => {
+            registrarCargaConError(
+              'configuracion:general',
+            )
+
+            manejarErrorFirebase(
+              errorFirebase,
+            )
+          },
+        )
+
+      if (
+        typeof unsubscribe ===
+        'function'
+      ) {
+        unsubscribers.push(
+          unsubscribe,
+        )
+      }
+    } catch (
+      errorFirebase
+    ) {
+      registrarCargaConError(
+        'configuracion:general',
+      )
+
+      manejarErrorFirebase(
+        errorFirebase,
       )
     }
   }
 
-  onMounted(async () => {
-    try {
-      const contentService =
-        await import(
-          '../services/contentService.js'
+  /* =======================================================
+     INICIALIZACIÓN
+     ======================================================= */
+
+  onMounted(
+    async () => {
+      try {
+        const contentService =
+          await import(
+            '../services/contentService.js'
+          )
+
+        if (
+          desmontado
+        ) {
+          return
+        }
+
+        suscribirSecciones(
+          contentService,
         )
 
-      suscribirSecciones(
-        contentService
-      )
+        suscribirColecciones(
+          contentService,
+        )
 
-      suscribirColecciones(
-        contentService
-      )
-
-      suscribirConfiguracion(
-        contentService
-      )
-    } catch (errorFirebase) {
-      manejarErrorFirebase(
+        suscribirConfiguracion(
+          contentService,
+        )
+      } catch (
         errorFirebase
-      )
-    }
-  })
-
-  onUnmounted(() => {
-    unsubscribers.forEach(
-      (unsubscribe) => {
-        try {
-          unsubscribe()
-        } catch (errorUnsubscribe) {
-          console.error(
-            'Error cerrando suscripción de Landing:',
-            errorUnsubscribe
-          )
-        }
+      ) {
+        manejarErrorFirebase(
+          errorFirebase,
+        )
       }
-    )
+    },
+  )
 
-    unsubscribers.length = 0
-    cargasIniciales.clear()
-  })
+  /* =======================================================
+     LIMPIEZA
+     ======================================================= */
+
+  onUnmounted(
+    () => {
+      desmontado = true
+
+      unsubscribers.forEach(
+        (unsubscribe) => {
+          try {
+            unsubscribe()
+          } catch (
+            errorUnsubscribe
+          ) {
+            console.error(
+              'Error cerrando suscripción de Landing:',
+              errorUnsubscribe,
+            )
+          }
+        },
+      )
+
+      unsubscribers.length = 0
+      cargasIniciales.clear()
+    },
+  )
+
+  /* =======================================================
+     API DEL COMPOSABLE
+     ======================================================= */
 
   return {
     header,

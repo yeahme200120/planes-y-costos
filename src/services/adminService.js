@@ -8,9 +8,134 @@ import {
   onSnapshot,
   setDoc,
   updateDoc,
+  serverTimestamp,
 } from 'firebase/firestore'
 
 import { db } from '../config/firebaseFirestore.js'
+
+/*
+|--------------------------------------------------------------------------
+| UTILIDADES
+|--------------------------------------------------------------------------
+*/
+
+/**
+ * Convierte un valor a número seguro.
+ *
+ * Evita guardar NaN o Infinity en Firestore.
+ */
+function numeroSeguro(
+  valor,
+  valorDefecto = 0
+) {
+  const numero =
+    Number(valor)
+
+  return Number.isFinite(
+    numero
+  )
+    ? numero
+    : valorDefecto
+}
+
+/**
+ * Convierte un valor a orden seguro.
+ */
+function ordenarSeguro(
+  valor,
+  valorDefecto = 999
+) {
+  return numeroSeguro(
+    valor,
+    valorDefecto
+  )
+}
+
+/**
+ * Convierte correctamente
+ * diferentes representaciones
+ * a boolean.
+ */
+function booleanoSeguro(
+  valor,
+  valorDefecto = false
+) {
+  if (
+    typeof valor ===
+    'boolean'
+  ) {
+    return valor
+  }
+
+  if (
+    typeof valor ===
+    'number'
+  ) {
+    return valor !== 0
+  }
+
+  if (
+    typeof valor ===
+    'string'
+  ) {
+    const normalizado =
+      valor
+        .trim()
+        .toLowerCase()
+
+    if (
+      [
+        'true',
+        '1',
+        'si',
+        'sí',
+        'yes',
+        'activo',
+        'on',
+      ].includes(
+        normalizado
+      )
+    ) {
+      return true
+    }
+
+    if (
+      [
+        'false',
+        '0',
+        'no',
+        'inactivo',
+        'off',
+        '',
+      ].includes(
+        normalizado
+      )
+    ) {
+      return false
+    }
+  }
+
+  return valor ??
+    valorDefecto
+}
+
+/**
+ * Normaliza un texto.
+ */
+function textoSeguro(
+  valor,
+  valorDefecto = ''
+) {
+  if (
+    valor ===
+      undefined ||
+    valor === null
+  ) {
+    return valorDefecto
+  }
+
+  return String(valor)
+}
 
 /*
 |--------------------------------------------------------------------------
@@ -33,7 +158,9 @@ export async function obtenerSeccionAdmin(
   const snapshot =
     await getDoc(ref)
 
-  if (!snapshot.exists()) {
+  if (
+    !snapshot.exists()
+  ) {
     return null
   }
 
@@ -44,14 +171,14 @@ export async function obtenerSeccionAdmin(
 }
 
 /**
- * Suscripción en tiempo real a una sección.
+ * Suscripción en tiempo real
+ * a una sección.
  *
- * Escucha directamente:
+ * Escucha:
  *
  * secciones/{sectionId}
  *
- * Devuelve la función unsubscribe
- * proporcionada por Firestore.
+ * Devuelve unsubscribe.
  */
 export function suscribirSeccionAdmin(
   sectionId,
@@ -67,7 +194,9 @@ export function suscribirSeccionAdmin(
   return onSnapshot(
     ref,
     (snapshot) => {
-      if (!snapshot.exists()) {
+      if (
+        !snapshot.exists()
+      ) {
         callback(null)
         return
       }
@@ -116,9 +245,8 @@ export async function actualizarSeccion(
 /**
  * Crea o actualiza una sección.
  *
- * Utiliza merge para no eliminar
- * campos existentes que no formen
- * parte de los datos enviados.
+ * merge evita eliminar campos
+ * existentes que no fueron enviados.
  */
 export async function guardarSeccion(
   sectionId,
@@ -166,7 +294,9 @@ export async function obtenerConfiguracionAdmin(
   const snapshot =
     await getDoc(ref)
 
-  if (!snapshot.exists()) {
+  if (
+    !snapshot.exists()
+  ) {
     return null
   }
 
@@ -178,6 +308,9 @@ export async function obtenerConfiguracionAdmin(
 
 /**
  * Actualiza la configuración.
+ *
+ * Usa merge para conservar
+ * configuraciones existentes.
  */
 export async function actualizarConfiguracion(
   configId = 'general',
@@ -205,13 +338,8 @@ export async function actualizarConfiguracion(
 }
 
 /**
- * Suscripción en tiempo real a una configuración.
- *
- * Escucha:
- *
- * configuracion/{configId}
- *
- * Devuelve la función unsubscribe.
+ * Suscripción en tiempo real
+ * a la configuración.
  */
 export function suscribirConfiguracionAdmin(
   configId = 'general',
@@ -227,7 +355,9 @@ export function suscribirConfiguracionAdmin(
   return onSnapshot(
     ref,
     (snapshot) => {
-      if (!snapshot.exists()) {
+      if (
+        !snapshot.exists()
+      ) {
         callback(null)
         return
       }
@@ -255,9 +385,9 @@ export function suscribirConfiguracionAdmin(
 */
 
 /**
- * Normaliza el campo características
- * de un plan para garantizar que
- * siempre se almacene como array.
+ * Normaliza características
+ * para garantizar que siempre
+ * sean un array de strings.
  */
 function normalizarCaracteristicas(
   caracteristicas
@@ -268,66 +398,127 @@ function normalizarCaracteristicas(
     )
   ) {
     return caracteristicas
+      .map((item) => {
+        if (
+          item ===
+            null ||
+          item ===
+            undefined
+        ) {
+          return ''
+        }
+
+        if (
+          typeof item ===
+          'object'
+        ) {
+          if (
+            item.texto !==
+              undefined
+          ) {
+            return String(
+              item.texto
+            ).trim()
+          }
+
+          if (
+            item.nombre !==
+              undefined
+          ) {
+            return String(
+              item.nombre
+            ).trim()
+          }
+
+          return JSON.stringify(
+            item
+          )
+        }
+
+        return String(
+          item
+        ).trim()
+      })
+      .filter(Boolean)
   }
 
   if (
     typeof caracteristicas ===
     'string'
   ) {
+    const texto =
+      caracteristicas.trim()
+
+    if (!texto) {
+      return []
+    }
+
     try {
       const parsed =
-        JSON.parse(
-          caracteristicas
-        )
+        JSON.parse(texto)
 
       if (
-        Array.isArray(parsed)
-      ) {
-        return parsed
-      }
-
-      return [
-        caracteristicas,
-      ]
-    } catch {
-      return caracteristicas
-        .split('\n')
-        .map(
-          (item) =>
-            item.trim()
+        Array.isArray(
+          parsed
         )
-        .filter(Boolean)
+      ) {
+        return normalizarCaracteristicas(
+          parsed
+        )
+      }
+    } catch {
+      // Continúa con el formato
+      // de texto por líneas.
     }
+
+    return texto
+      .split(/\r?\n/)
+      .map(
+        (item) =>
+          item.trim()
+      )
+      .filter(Boolean)
   }
 
   if (
-    caracteristicas !== null &&
+    caracteristicas !==
+      null &&
     typeof caracteristicas ===
       'object'
   ) {
     return Object.values(
       caracteristicas
     )
+      .map((item) =>
+        typeof item ===
+          'string'
+          ? item.trim()
+          : String(
+              item
+            ).trim()
+      )
+      .filter(Boolean)
   }
 
   if (
     caracteristicas !==
       undefined &&
-    caracteristicas !== null
+    caracteristicas !==
+      null
   ) {
     return [
       String(
         caracteristicas
-      ),
-    ]
+      ).trim(),
+    ].filter(Boolean)
   }
 
   return []
 }
 
 /**
- * Prepara los datos de un plan
- * antes de guardarlos en Firestore.
+ * Prepara datos de un plan
+ * para creación.
  */
 function prepararPlan(
   datos
@@ -340,48 +531,135 @@ function prepararPlan(
         datos.caracteristicas
       ),
 
-    precio: Number(
-      datos.precio ?? 0
-    ),
+    precio:
+      numeroSeguro(
+        datos.precio,
+        0
+      ),
 
-    orden: Number(
-      datos.orden ?? 999
-    ),
+    orden:
+      ordenarSeguro(
+        datos.orden,
+        999
+      ),
 
-    activo: Boolean(
-      datos.activo
-    ),
+    activo:
+      booleanoSeguro(
+        datos.activo,
+        true
+      ),
 
-    destacado: Boolean(
-      datos.destacado
-    ),
+    destacado:
+      booleanoSeguro(
+        datos.destacado,
+        false
+      ),
   }
 }
 
 /**
- * Ordena planes por el campo orden.
+ * Prepara únicamente los campos
+ * enviados para actualización.
  *
- * Se hace en JavaScript para evitar
- * depender de índices compuestos
- * de Firestore.
+ * Esto evita que actualizarPlan()
+ * sobrescriba accidentalmente
+ * campos no incluidos.
+ */
+function prepararPlanActualizacion(
+  datos
+) {
+  const resultado = {
+    ...datos,
+  }
+
+  if (
+    Object.prototype.hasOwnProperty.call(
+      datos,
+      'caracteristicas'
+    )
+  ) {
+    resultado.caracteristicas =
+      normalizarCaracteristicas(
+        datos.caracteristicas
+      )
+  }
+
+  if (
+    Object.prototype.hasOwnProperty.call(
+      datos,
+      'precio'
+    )
+  ) {
+    resultado.precio =
+      numeroSeguro(
+        datos.precio,
+        0
+      )
+  }
+
+  if (
+    Object.prototype.hasOwnProperty.call(
+      datos,
+      'orden'
+    )
+  ) {
+    resultado.orden =
+      ordenarSeguro(
+        datos.orden,
+        999
+      )
+  }
+
+  if (
+    Object.prototype.hasOwnProperty.call(
+      datos,
+      'activo'
+    )
+  ) {
+    resultado.activo =
+      booleanoSeguro(
+        datos.activo
+      )
+  }
+
+  if (
+    Object.prototype.hasOwnProperty.call(
+      datos,
+      'destacado'
+    )
+  ) {
+    resultado.destacado =
+      booleanoSeguro(
+        datos.destacado
+      )
+  }
+
+  return resultado
+}
+
+/**
+ * Ordena planes por "orden".
  */
 function ordenarPlanes(
   planes
 ) {
-  return [...planes].sort(
+  return [
+    ...planes,
+  ].sort(
     (a, b) =>
-      Number(
-        a.orden ?? 999
+      ordenarSeguro(
+        a.orden,
+        999
       ) -
-      Number(
-        b.orden ?? 999
+      ordenarSeguro(
+        b.orden,
+        999
       )
   )
 }
 
 /**
- * Obtiene todos los planes
- * una sola vez.
+ * Obtiene todos los planes.
  */
 export async function obtenerPlanesAdmin() {
   const ref =
@@ -395,9 +673,10 @@ export async function obtenerPlanesAdmin() {
 
   const planes =
     snapshot.docs.map(
-      (document) => ({
-        id: document.id,
-        ...document.data(),
+      (documento) => ({
+        id:
+          documento.id,
+        ...documento.data(),
       })
     )
 
@@ -409,8 +688,6 @@ export async function obtenerPlanesAdmin() {
 /**
  * Suscripción en tiempo real
  * a todos los planes.
- *
- * Devuelve unsubscribe.
  */
 export function suscribirPlanesAdmin(
   callback,
@@ -427,9 +704,10 @@ export function suscribirPlanesAdmin(
     (snapshot) => {
       const planes =
         snapshot.docs.map(
-          (document) => ({
-            id: document.id,
-            ...document.data(),
+          (documento) => ({
+            id:
+              documento.id,
+            ...documento.data(),
           })
         )
 
@@ -517,7 +795,7 @@ export async function actualizarPlan(
 
   await updateDoc(
     ref,
-    prepararPlan(
+    prepararPlanActualizacion(
       datos
     )
   )
@@ -563,9 +841,10 @@ export async function cambiarEstadoPlan(
   await updateDoc(
     ref,
     {
-      activo: Boolean(
-        activo
-      ),
+      activo:
+        booleanoSeguro(
+          activo
+        ),
     }
   )
 
@@ -598,63 +877,73 @@ export async function obtenerElementosAdmin(
 
   return snapshot.docs
     .map(
-      (document) => ({
-        id: document.id,
-        ...document.data(),
+      (documento) => ({
+        id:
+          documento.id,
+        ...documento.data(),
       })
     )
     .sort(
       (a, b) =>
-        Number(
-          a.orden ?? 999
+        ordenarSeguro(
+          a.orden,
+          999
         ) -
-        Number(
-          b.orden ?? 999
+        ordenarSeguro(
+          b.orden,
+          999
         )
     )
 }
 
 /**
- * Suscripción en tiempo real a todos los elementos
- * de una colección.
+ * Suscripción en tiempo real
+ * a todos los elementos.
  *
- * Escucha:
+ * Colecciones:
  *
  * soluciones
  * caracteristicas
  * faq
- *
- * Los elementos se ordenan localmente por "orden"
- * para evitar depender de índices compuestos
- * de Firestore.
- *
- * Devuelve la función unsubscribe.
  */
 export function suscribirElementosAdmin(
   coleccion,
   callback,
   onError
 ) {
-  const ref = collection(
-    db,
-    coleccion
-  )
+  const ref =
+    collection(
+      db,
+      coleccion
+    )
 
   return onSnapshot(
     ref,
     (snapshot) => {
-      const elementos = snapshot.docs
-        .map((document) => ({
-          id: document.id,
-          ...document.data(),
-        }))
-        .sort(
-          (a, b) =>
-            Number(a.orden ?? 999) -
-            Number(b.orden ?? 999)
-        )
+      const elementos =
+        snapshot.docs
+          .map(
+            (documento) => ({
+              id:
+                documento.id,
+              ...documento.data(),
+            })
+          )
+          .sort(
+            (a, b) =>
+              ordenarSeguro(
+                a.orden,
+                999
+              ) -
+              ordenarSeguro(
+                b.orden,
+                999
+              )
+          )
 
-      callback(elementos)
+      callback(
+        elementos
+      )
     },
     (error) => {
       console.error(
@@ -696,8 +985,7 @@ export async function obtenerElementoAdmin(
 }
 
 /**
- * Normaliza datos genéricos
- * antes de guardarlos.
+ * Normaliza datos genéricos.
  */
 function prepararElemento(
   datos
@@ -711,7 +999,7 @@ function prepararElemento(
     undefined
   ) {
     resultado.orden =
-      Number(
+      ordenarSeguro(
         resultado.orden
       )
   }
@@ -721,7 +1009,7 @@ function prepararElemento(
     undefined
   ) {
     resultado.activo =
-      Boolean(
+      booleanoSeguro(
         resultado.activo
       )
   }
@@ -821,9 +1109,10 @@ export async function cambiarEstadoElementoAdmin(
   await updateDoc(
     ref,
     {
-      activo: Boolean(
-        activo
-      ),
+      activo:
+        booleanoSeguro(
+          activo
+        ),
     }
   )
 
@@ -850,16 +1139,15 @@ export async function cambiarEstadoElementoAdmin(
 | nombre
 | rol
 |
-| El documentId es generado por Firebase.
-|
-| isUser contiene el UID relacionado
-| con Firebase Authentication.
+| isUser contiene el UID
+| relacionado con Firebase
+| Authentication.
 |
 |--------------------------------------------------------------------------
 */
 
 /**
- * Obtiene todos los usuarios una sola vez.
+ * Obtiene todos los usuarios.
  */
 export async function obtenerUsuariosAdmin() {
   const ref =
@@ -873,7 +1161,8 @@ export async function obtenerUsuariosAdmin() {
 
   return snapshot.docs.map(
     (documento) => ({
-      id: documento.id,
+      id:
+        documento.id,
       ...documento.data(),
     })
   )
@@ -881,7 +1170,7 @@ export async function obtenerUsuariosAdmin() {
 
 /**
  * Suscripción en tiempo real
- * a la colección usuarios.
+ * a usuarios.
  */
 export function suscribirUsuariosAdmin(
   callback,
@@ -899,12 +1188,15 @@ export function suscribirUsuariosAdmin(
       const usuarios =
         snapshot.docs.map(
           (documento) => ({
-            id: documento.id,
+            id:
+              documento.id,
             ...documento.data(),
           })
         )
 
-      callback(usuarios)
+      callback(
+        usuarios
+      )
     },
     (error) => {
       console.error(
@@ -918,8 +1210,7 @@ export function suscribirUsuariosAdmin(
 }
 
 /**
- * Obtiene un usuario por el ID
- * del documento de Firestore.
+ * Obtiene un usuario.
  */
 export async function obtenerUsuarioAdmin(
   usuarioId
@@ -968,22 +1259,30 @@ export async function crearUsuarioAdmin(
           datos.activo !== false,
 
         email:
-          datos.email || '',
+          textoSeguro(
+            datos.email
+          ),
 
         isUser:
-          datos.isUser || '',
+          textoSeguro(
+            datos.isUser
+          ),
 
         nombre:
-          datos.nombre || '',
+          textoSeguro(
+            datos.nombre
+          ),
 
         rol:
-          datos.rol || '',
+          textoSeguro(
+            datos.rol
+          ),
 
         creadoEn:
-          new Date(),
+          serverTimestamp(),
 
         actualizadoEn:
-          new Date(),
+          serverTimestamp(),
       }
     )
 
@@ -995,8 +1294,8 @@ export async function crearUsuarioAdmin(
 /**
  * Actualiza un usuario.
  *
- * No modifica isUser ni email
- * a menos que se envíen explícitamente.
+ * No modifica campos que no
+ * sean enviados explícitamente.
  */
 export async function actualizarUsuarioAdmin(
   usuarioId,
@@ -1008,14 +1307,75 @@ export async function actualizarUsuarioAdmin(
     usuarioId
   )
 
+  const datosActualizados = {
+    ...datos,
+    actualizadoEn:
+      serverTimestamp(),
+  }
+
+  if (
+    Object.prototype.hasOwnProperty.call(
+      datos,
+      'activo'
+    )
+  ) {
+    datosActualizados.activo =
+      booleanoSeguro(
+        datos.activo
+      )
+  }
+
+  if (
+    Object.prototype.hasOwnProperty.call(
+      datos,
+      'email'
+    )
+  ) {
+    datosActualizados.email =
+      textoSeguro(
+        datos.email
+      )
+  }
+
+  if (
+    Object.prototype.hasOwnProperty.call(
+      datos,
+      'isUser'
+    )
+  ) {
+    datosActualizados.isUser =
+      textoSeguro(
+        datos.isUser
+      )
+  }
+
+  if (
+    Object.prototype.hasOwnProperty.call(
+      datos,
+      'nombre'
+    )
+  ) {
+    datosActualizados.nombre =
+      textoSeguro(
+        datos.nombre
+      )
+  }
+
+  if (
+    Object.prototype.hasOwnProperty.call(
+      datos,
+      'rol'
+    )
+  ) {
+    datosActualizados.rol =
+      textoSeguro(
+        datos.rol
+      )
+  }
+
   await updateDoc(
     ref,
-    {
-      ...datos,
-
-      actualizadoEn:
-        new Date(),
-    }
+    datosActualizados
   )
 
   return obtenerUsuarioAdmin(
@@ -1024,13 +1384,12 @@ export async function actualizarUsuarioAdmin(
 }
 
 /**
- * Elimina el documento del usuario
- * de la colección usuarios.
+ * Elimina el documento del usuario.
  *
  * IMPORTANTE:
  *
- * Esto NO elimina la cuenta de
- * Firebase Authentication.
+ * Esto NO elimina la cuenta
+ * de Firebase Authentication.
  */
 export async function eliminarUsuarioAdmin(
   usuarioId
@@ -1066,10 +1425,12 @@ export async function cambiarEstadoUsuarioAdmin(
     ref,
     {
       activo:
-        Boolean(activo),
+        booleanoSeguro(
+          activo
+        ),
 
       actualizadoEn:
-        new Date(),
+        serverTimestamp(),
     }
   )
 

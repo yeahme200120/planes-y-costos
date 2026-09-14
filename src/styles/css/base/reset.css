@@ -8,7 +8,6 @@
   box-sizing: border-box;
 }
 
-
 /* =========================================================
    HTML
    ========================================================= */
@@ -18,7 +17,6 @@ html {
   scroll-padding-top: 80px;
   font-size: 16px;
 }
-
 
 /* =========================================================
    BODY
@@ -39,11 +37,9 @@ body {
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
-
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
-
 
 /* =========================================================
    FORMULARIOS
@@ -63,7 +59,6 @@ select {
   width: 100%;
 }
 
-
 /* =========================================================
    ENLACES
    ========================================================= */
@@ -73,7 +68,6 @@ a {
   text-decoration: none;
 }
 
-
 /* =========================================================
    BOTONES
    ========================================================= */
@@ -81,9 +75,7 @@ a {
 button {
   border: 0;
   padding: 0;
-
   font: inherit;
-
   cursor: pointer;
 }
 
@@ -96,7 +88,6 @@ button:disabled {
   cursor: not-allowed;
 }
 
-
 /* =========================================================
    IMÁGENES
    ========================================================= */
@@ -105,7 +96,6 @@ img {
   display: block;
   max-width: 100%;
 }
-
 
 /* =========================================================
    ENCABEZADOS
@@ -118,14 +108,12 @@ h4,
 h5,
 h6 {
   margin-top: 0;
-
   font-family: var(--heading);
   color: var(--color-primary);
 }
 
 h1 {
   margin-bottom: 24px;
-
   font-size: clamp(38px, 5vw, 64px);
   line-height: 1.05;
   letter-spacing: -2px;
@@ -133,7 +121,6 @@ h1 {
 
 h2 {
   margin-bottom: 16px;
-
   font-size: clamp(30px, 4vw, 46px);
   line-height: 1.1;
   letter-spacing: -1.2px;
@@ -144,7 +131,6 @@ h3 {
   line-height: 1.25;
 }
 
-
 /* =========================================================
    PÁRRAFOS
    ========================================================= */
@@ -153,16 +139,18 @@ p {
   margin: 0;
 }
 
-
 /* =========================================================
    FOCUS ACCESIBLE
    ========================================================= */
 
 :focus-visible {
-  outline: 3px solid rgba(47, 128, 237, 0.25);
+  outline: 3px solid color-mix(
+    in srgb,
+    var(--color-accent) 28%,
+    transparent
+  );
   outline-offset: 3px;
 }
-
 
 /* =========================================================
    VUE APP

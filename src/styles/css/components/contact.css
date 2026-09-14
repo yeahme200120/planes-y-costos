@@ -6,6 +6,7 @@
   background: var(--color-background);
 }
 
+
 /* =========================================================
    MAIN CARD
    ========================================================= */
@@ -76,7 +77,8 @@
   bottom: -190px;
   left: -130px;
 
-  border: 1px solid
+  border:
+    1px solid
     color-mix(
       in srgb,
       var(--color-primary-text) 10%,
@@ -87,6 +89,7 @@
 
   pointer-events: none;
 }
+
 
 /* =========================================================
    CONTENT
@@ -119,7 +122,6 @@
   font-size: clamp(32px, 4vw, 48px);
   font-weight: 900;
   line-height: 1.08;
-
   letter-spacing: -1.2px;
 }
 
@@ -135,6 +137,7 @@
   font-size: 16px;
   line-height: 1.8;
 }
+
 
 /* =========================================================
    CONTACT DETAILS
@@ -181,7 +184,6 @@
 
 .contact__detail a:hover {
   color: var(--color-accent-light);
-
   opacity: 1;
 }
 
@@ -194,7 +196,8 @@
   display: grid;
   place-items: center;
 
-  border: 1px solid
+  border:
+    1px solid
     color-mix(
       in srgb,
       var(--color-primary-text) 18%,
@@ -228,11 +231,11 @@
   font-size: 11px;
   font-weight: 800;
   line-height: 1.3;
-
   letter-spacing: 0.6px;
 
   text-transform: uppercase;
 }
+
 
 /* =========================================================
    ALTERNATIVE CONTACT
@@ -244,7 +247,8 @@
   margin-top: 30px;
   padding-top: 24px;
 
-  border-top: 1px solid
+  border-top:
+    1px solid
     color-mix(
       in srgb,
       var(--color-primary-text) 18%,
@@ -262,7 +266,6 @@
   font-size: 12px;
   font-weight: 800;
   line-height: 1.4;
-
   letter-spacing: 0.6px;
 
   text-transform: uppercase;
@@ -270,7 +273,6 @@
 
 .contact__alternative-buttons {
   display: flex;
-
   flex-wrap: wrap;
 
   gap: 10px;
@@ -278,7 +280,6 @@
 
 .contact__alternative {
   display: inline-flex;
-
   align-items: center;
   justify-content: center;
 
@@ -286,7 +287,8 @@
 
   padding: 9px 15px;
 
-  border: 1px solid
+  border:
+    1px solid
     color-mix(
       in srgb,
       var(--color-primary-text) 20%,
@@ -341,6 +343,7 @@
     );
 }
 
+
 /* =========================================================
    FORM WRAPPER
    ========================================================= */
@@ -353,7 +356,8 @@
 
   padding: 34px;
 
-  border: 1px solid
+  border:
+    1px solid
     color-mix(
       in srgb,
       var(--color-background) 70%,
@@ -366,6 +370,7 @@
 
   box-shadow: var(--shadow-md);
 }
+
 
 /* =========================================================
    FORM
@@ -397,6 +402,7 @@
   font-size: 13px;
   line-height: 1.6;
 }
+
 
 /* =========================================================
    FIELDS
@@ -442,11 +448,9 @@
   padding: 11px 13px;
 
   border: 1px solid var(--color-border);
-
   border-radius: var(--radius-md);
 
   background: var(--color-surface);
-
   color: var(--color-text);
 
   font-family: inherit;
@@ -501,6 +505,7 @@
   line-height: 1.45;
 }
 
+
 /* =========================================================
    OPTIONAL / COUNTER
    ========================================================= */
@@ -514,7 +519,6 @@
 
 .contact__textarea-footer {
   display: flex;
-
   align-items: center;
   justify-content: space-between;
 
@@ -532,6 +536,7 @@
   line-height: 1.4;
 }
 
+
 /* =========================================================
    STATUS
    ========================================================= */
@@ -546,11 +551,9 @@
   padding: 13px 15px;
 
   border: 1px solid var(--color-border);
-
   border-radius: var(--radius-md);
 
   background: var(--color-surface);
-
   color: var(--color-text);
 
   font-size: 13px;
@@ -574,7 +577,12 @@
       var(--color-border)
     );
 
-  background: var(--color-success-light);
+  background:
+    color-mix(
+      in srgb,
+      var(--color-success) 10%,
+      var(--color-surface)
+    );
 
   color: var(--color-success);
 }
@@ -587,7 +595,12 @@
       var(--color-border)
     );
 
-  background: var(--color-danger-light);
+  background:
+    color-mix(
+      in srgb,
+      var(--color-danger) 10%,
+      var(--color-surface)
+    );
 
   color: var(--color-danger);
 }
@@ -619,7 +632,8 @@
   width: 15px;
   height: 15px;
 
-  border: 2px solid
+  border:
+    2px solid
     color-mix(
       in srgb,
       var(--color-accent) 25%,
@@ -635,6 +649,7 @@
     0.7s linear infinite;
 }
 
+
 /* =========================================================
    ACTIONS
    ========================================================= */
@@ -645,7 +660,6 @@
   min-height: 48px;
 
   display: inline-flex;
-
   align-items: center;
   justify-content: center;
 
@@ -655,15 +669,12 @@
   padding: 0 20px;
 
   border: 1px solid var(--color-accent);
-
   border-radius: var(--radius-md);
 
   background: var(--color-accent);
-
   color: var(--color-accent-text);
 
   font-family: inherit;
-
   font-size: 14px;
   font-weight: 800;
   line-height: 1;
@@ -710,7 +721,6 @@
 
 .contact__submit-icon {
   font-size: 16px;
-
   line-height: 1;
 }
 
@@ -720,7 +730,6 @@
   min-height: 44px;
 
   display: inline-flex;
-
   align-items: center;
   justify-content: center;
 
@@ -728,7 +737,6 @@
   padding: 0 16px;
 
   border: 1px solid var(--color-border);
-
   border-radius: var(--radius-md);
 
   background: transparent;
@@ -736,7 +744,6 @@
   color: var(--color-text-secondary);
 
   font-family: inherit;
-
   font-size: 13px;
   font-weight: 700;
 
@@ -761,6 +768,7 @@
   color: var(--color-accent-dark);
 }
 
+
 /* =========================================================
    PRIVACY
    ========================================================= */
@@ -776,6 +784,7 @@
   text-align: center;
 }
 
+
 /* =========================================================
    FOCUS
    ========================================================= */
@@ -784,7 +793,8 @@
 .contact__submit:focus-visible,
 .contact__reset:focus-visible,
 .contact__detail a:focus-visible {
-  outline: 3px solid
+  outline:
+    3px solid
     color-mix(
       in srgb,
       var(--color-accent) 28%,
@@ -793,6 +803,7 @@
 
   outline-offset: 2px;
 }
+
 
 /* =========================================================
    ANIMATION
@@ -803,6 +814,7 @@
     transform: rotate(360deg);
   }
 }
+
 
 /* =========================================================
    RESPONSIVE
@@ -923,6 +935,7 @@
     min-height: 46px;
   }
 }
+
 
 /* =========================================================
    REDUCED MOTION

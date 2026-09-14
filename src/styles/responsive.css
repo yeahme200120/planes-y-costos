@@ -1179,7 +1179,12 @@
     inset: 0;
     z-index: 999;
     display: block;
-    background: rgba(15, 23, 42, 0.4);
+    background:
+      color-mix(
+        in srgb,
+        var(--color-primary) 40%,
+        transparent
+      );
   }
 
   .admin-layout__content {
@@ -2064,10 +2069,16 @@
   .admin-usuarios__mobile-card {
     min-width: 0;
     padding: 0.9rem;
-    border: 1px solid var(--color-border, #e5e7eb);
+    border: 1px solid var(--color-border-light);
     border-radius: 0.9rem;
-    background: var(--color-background, #ffffff);
-    box-shadow: 0 5px 18px rgb(0 0 0 / 4%);
+    background: var(--color-background);
+    box-shadow:
+      0 5px 18px
+      color-mix(
+        in srgb,
+        var(--color-primary) 4%,
+        transparent
+      );
   }
 
   .admin-usuarios__mobile-header {
@@ -2104,7 +2115,7 @@
     gap: 0.55rem;
     margin-top: 0.9rem;
     padding-top: 0.85rem;
-    border-top: 1px solid var(--color-border, #e5e7eb);
+    border-top: 1px solid var(--color-border-light);
   }
 
   .admin-usuarios__mobile-detail {
@@ -2117,7 +2128,7 @@
 
   .admin-usuarios__mobile-detail > span {
     flex: 0 0 auto;
-    color: var(--color-text-muted, #6b7280);
+    color: var(--color-text-muted);
     font-size: 0.67rem;
     font-weight: 700;
   }
@@ -2125,7 +2136,7 @@
   .admin-usuarios__mobile-detail > strong {
     min-width: 0;
     overflow: hidden;
-    color: var(--color-text, #1f2937);
+    color: var(--color-text);
     font-size: 0.7rem;
     font-weight: 700;
     text-align: right;
@@ -2154,7 +2165,7 @@
     gap: 0.4rem;
     margin-top: 0.9rem;
     padding-top: 0.85rem;
-    border-top: 1px solid var(--color-border, #e5e7eb);
+    border-top: 1px solid var(--color-border-light);
   }
 
   .admin-usuarios__mobile-actions
@@ -2175,7 +2186,13 @@
     width: 100%;
     padding: 1rem;
     border-left: 0;
-    box-shadow: 0 0 35px rgb(0 0 0 / 12%);
+    box-shadow:
+      0 0 35px
+      color-mix(
+        in srgb,
+        var(--color-primary) 12%,
+        transparent
+      );
   }
 
   .admin-usuarios__editor-header {
@@ -2192,8 +2209,8 @@
     margin-right: -1rem;
     margin-left: -1rem;
     padding: 0.85rem 1rem;
-    border-top: 1px solid var(--color-border, #e5e7eb);
-    background: var(--color-background, #ffffff);
+    border-top: 1px solid var(--color-border-light);
+    background: var(--color-background);
   }
 
   .admin-usuarios__editor-actions

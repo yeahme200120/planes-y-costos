@@ -9,7 +9,6 @@
 .admin-form {
   display: flex;
   flex-direction: column;
-
   gap: 20px;
 }
 
@@ -20,7 +19,6 @@
 .admin-form__group {
   display: flex;
   flex-direction: column;
-
   gap: 8px;
 }
 
@@ -30,7 +28,6 @@
 
 .admin-form__label {
   color: var(--color-primary);
-
   font-size: 12px;
   font-weight: 800;
 }
@@ -43,39 +40,69 @@
 .admin-form__textarea,
 .admin-form__select {
   min-height: 46px;
-
   padding: 10px 13px;
-
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-
-  background: var(--color-white);
+  background: var(--color-surface);
   color: var(--color-text);
-
   font: inherit;
   font-size: 14px;
-
   outline: none;
-
   transition:
     border-color var(--transition-fast),
+    background var(--transition-fast),
+    color var(--transition-fast),
     box-shadow var(--transition-fast);
 }
 
-.admin-form__textarea {
-  min-height: 120px;
+.admin-form__input::placeholder,
+.admin-form__textarea::placeholder {
+  color: var(--color-text-muted);
+}
 
-  resize: vertical;
+.admin-form__input:hover,
+.admin-form__textarea:hover,
+.admin-form__select:hover {
+  border-color:
+    color-mix(
+      in srgb,
+      var(--color-accent) 35%,
+      var(--color-border)
+    );
 }
 
 .admin-form__input:focus,
 .admin-form__textarea:focus,
 .admin-form__select:focus {
   border-color: var(--color-accent);
-
+  background: var(--color-surface);
+  color: var(--color-text);
   box-shadow:
     0 0 0 3px
-    rgba(47, 128, 237, 0.1);
+    color-mix(
+      in srgb,
+      var(--color-accent) 12%,
+      transparent
+    );
+}
+
+.admin-form__input:disabled,
+.admin-form__textarea:disabled,
+.admin-form__select:disabled {
+  background:
+    color-mix(
+      in srgb,
+      var(--color-background-alt) 70%,
+      var(--color-surface)
+    );
+  color: var(--color-text-muted);
+  cursor: not-allowed;
+  opacity: 0.75;
+}
+
+.admin-form__textarea {
+  min-height: 120px;
+  resize: vertical;
 }
 
 /* =========================================================
@@ -84,7 +111,6 @@
 
 .admin-form__grid {
   display: grid;
-
   gap: 18px;
 }
 
@@ -105,7 +131,6 @@
 .admin-form__options {
   display: flex;
   flex-wrap: wrap;
-
   gap: 18px;
 }
 
@@ -115,7 +140,6 @@
 
 .admin-form__hint {
   color: var(--color-text-muted);
-
   font-size: 11px;
   line-height: 1.5;
 }
@@ -127,9 +151,7 @@
 .admin-form__actions {
   display: flex;
   flex-wrap: wrap;
-
   gap: 10px;
-
   margin-top: 4px;
 }
 
@@ -140,11 +162,8 @@
 .admin-checkbox {
   display: inline-flex;
   align-items: center;
-
   gap: 8px;
-
   color: var(--color-text-secondary);
-
   font-size: 13px;
   font-weight: 600;
 }
@@ -152,8 +171,45 @@
 .admin-checkbox input {
   width: 17px;
   height: 17px;
-
   flex: 0 0 17px;
-
   margin: 0;
+  accent-color: var(--color-accent);
+  cursor: pointer;
+}
+
+.admin-checkbox input:focus-visible {
+  outline: 3px solid
+    color-mix(
+      in srgb,
+      var(--color-accent) 18%,
+      transparent
+    );
+  outline-offset: 2px;
+}
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 768px) {
+  .admin-form__grid--3 {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .admin-form__grid--2,
+  .admin-form__grid--3 {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-form__options {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .admin-form__actions {
+    width: 100%;
+  }
 }

@@ -61,6 +61,42 @@ let unsubscribeElementos = null
 
 /*
 |--------------------------------------------------------------------------
+| UTILIDADES
+|--------------------------------------------------------------------------
+*/
+
+function obtenerMensajeError(err, fallback) {
+  if (err instanceof Error && err.message) {
+    return err.message
+  }
+
+  if (
+    err &&
+    typeof err === 'object' &&
+    typeof err.message === 'string' &&
+    err.message
+  ) {
+    return err.message
+  }
+
+  return fallback
+}
+
+function normalizarOrden(valor) {
+  const numero = Number(valor)
+
+  if (!Number.isFinite(numero) || numero < 1) {
+    return 1
+  }
+
+  return Math.min(
+    Math.floor(numero),
+    999
+  )
+}
+
+/*
+|--------------------------------------------------------------------------
 | FORMULARIO
 |--------------------------------------------------------------------------
 */
@@ -99,41 +135,72 @@ function iniciarSuscripcion() {
   error.value = ''
   conectadaTiempoReal.value = false
 
-  unsubscribeElementos =
-    suscribirElementosAdmin(
-      coleccion,
-      (datos) => {
-        /*
-         * Verificamos que la respuesta
-         * pertenezca a la colección
-         * actualmente seleccionada.
-         */
-        if (
-          coleccion !==
-          coleccionSeleccionada.value
-        ) {
-          return
+  try {
+    unsubscribeElementos =
+      suscribirElementosAdmin(
+        coleccion,
+        (datos) => {
+          /*
+           * Verificamos que la respuesta
+           * pertenezca a la colección
+           * actualmente seleccionada.
+           */
+          if (
+            coleccion !==
+            coleccionSeleccionada.value
+          ) {
+            return
+          }
+
+          elementos.value =
+            Array.isArray(datos)
+              ? datos
+              : []
+
+          cargando.value = false
+          conectadaTiempoReal.value = true
+          error.value = ''
+        },
+        (err) => {
+          /*
+           * Si el usuario cambió de colección
+           * mientras llegaba una respuesta anterior,
+           * ignoramos el error de la suscripción vieja.
+           */
+          if (
+            coleccion !==
+            coleccionSeleccionada.value
+          ) {
+            return
+          }
+
+          console.error(
+            'Error en tiempo real:',
+            err
+          )
+
+          cargando.value = false
+          conectadaTiempoReal.value = false
+
+          error.value =
+            'No fue posible sincronizar el contenido en tiempo real.'
         }
-
-        elementos.value = datos
-
-        cargando.value = false
-        conectadaTiempoReal.value = true
-        error.value = ''
-      },
-      (err) => {
-        console.error(
-          'Error en tiempo real:',
-          err
-        )
-
-        cargando.value = false
-        conectadaTiempoReal.value = false
-
-        error.value =
-          'No fue posible sincronizar el contenido en tiempo real.'
-      }
+      )
+  } catch (err) {
+    console.error(
+      'No fue posible iniciar la suscripción:',
+      err
     )
+
+    cargando.value = false
+    conectadaTiempoReal.value = false
+
+    error.value =
+      obtenerMensajeError(
+        err,
+        'No fue posible iniciar la sincronización en tiempo real.'
+      )
+  }
 }
 
 function cambiarColeccion() {
@@ -152,6 +219,10 @@ function cambiarColeccion() {
 */
 
 function editarElemento(elemento) {
+  if (!elemento?.id) {
+    return
+  }
+
   error.value = ''
   mensaje.value = ''
 
@@ -176,7 +247,9 @@ function editarElemento(elemento) {
     elemento.respuesta ?? ''
 
   formulario.orden =
-    Number(elemento.orden ?? 1)
+    normalizarOrden(
+      elemento.orden ?? 1
+    )
 
   formulario.activo =
     Boolean(elemento.activo)
@@ -194,11 +267,20 @@ function editarElemento(elemento) {
 */
 
 async function guardarElemento() {
+  if (guardando.value) {
+    return
+  }
+
   try {
     guardando.value = true
 
     error.value = ''
     mensaje.value = ''
+
+    const orden =
+      normalizarOrden(
+        formulario.orden
+      )
 
     let datos = {}
 
@@ -216,8 +298,7 @@ async function guardarElemento() {
         respuesta:
           formulario.respuesta.trim(),
 
-        orden:
-          Number(formulario.orden),
+        orden,
 
         activo:
           Boolean(formulario.activo),
@@ -250,8 +331,7 @@ async function guardarElemento() {
         icono:
           formulario.icono.trim(),
 
-        orden:
-          Number(formulario.orden),
+        orden,
 
         activo:
           Boolean(formulario.activo),
@@ -267,7 +347,10 @@ async function guardarElemento() {
     /*
      * ACTUALIZAR
      */
-    if (modoEdicion.value) {
+    if (
+      modoEdicion.value &&
+      elementoEditandoId.value
+    ) {
       await actualizarElementoAdmin(
         coleccionSeleccionada.value,
         elementoEditandoId.value,
@@ -292,23 +375,22 @@ async function guardarElemento() {
     }
 
     /*
-     * IMPORTANTE:
-     *
-     * No hacemos:
-     *
-     * await cargarElementos()
-     *
      * Firestore onSnapshot()
      * actualizará automáticamente
      * la lista.
      */
     limpiarFormulario()
   } catch (err) {
-    console.error(err)
+    console.error(
+      'Error al guardar elemento:',
+      err
+    )
 
     error.value =
-      err.message ??
-      'No fue posible guardar el elemento.'
+      obtenerMensajeError(
+        err,
+        'No fue posible guardar el elemento.'
+      )
   } finally {
     guardando.value = false
   }
@@ -321,6 +403,13 @@ async function guardarElemento() {
 */
 
 async function cambiarEstado(elemento) {
+  if (
+    !elemento?.id ||
+    guardando.value
+  ) {
+    return
+  }
+
   try {
     error.value = ''
     mensaje.value = ''
@@ -344,10 +433,16 @@ async function cambiarEstado(elemento) {
     mensaje.value =
       'Estado actualizado correctamente.'
   } catch (err) {
-    console.error(err)
+    console.error(
+      'Error al cambiar estado:',
+      err
+    )
 
     error.value =
-      'No fue posible actualizar el estado.'
+      obtenerMensajeError(
+        err,
+        'No fue posible actualizar el estado.'
+      )
   }
 }
 
@@ -358,6 +453,13 @@ async function cambiarEstado(elemento) {
 */
 
 async function eliminar(elemento) {
+  if (
+    !elemento?.id ||
+    guardando.value
+  ) {
+    return
+  }
+
   const nombre =
     elemento.pregunta ??
     elemento.titulo ??
@@ -399,10 +501,16 @@ async function eliminar(elemento) {
     mensaje.value =
       'Elemento eliminado correctamente.'
   } catch (err) {
-    console.error(err)
+    console.error(
+      'Error al eliminar elemento:',
+      err
+    )
 
     error.value =
-      'No fue posible eliminar el elemento.'
+      obtenerMensajeError(
+        err,
+        'No fue posible eliminar el elemento.'
+      )
   }
 }
 
@@ -495,9 +603,7 @@ onUnmounted(() => {
       class="admin-contenido__success"
       role="status"
     >
-      <span
-        aria-hidden="true"
-      >
+      <span aria-hidden="true">
         ✓
       </span>
 
@@ -810,6 +916,7 @@ onUnmounted(() => {
               v-if="modoEdicion"
               type="button"
               class="admin-button admin-button--secondary"
+              :disabled="guardando"
               @click="limpiarFormulario"
             >
               Cancelar
@@ -968,6 +1075,7 @@ onUnmounted(() => {
                 class="admin-icon-button"
                 title="Editar"
                 aria-label="Editar elemento"
+                :disabled="guardando"
                 @click="
                   editarElemento(elemento)
                 "
@@ -988,6 +1096,7 @@ onUnmounted(() => {
                     ? 'Desactivar elemento'
                     : 'Activar elemento'
                 "
+                :disabled="guardando"
                 @click="
                   cambiarEstado(elemento)
                 "
@@ -1004,6 +1113,7 @@ onUnmounted(() => {
                 class="admin-icon-button admin-icon-button--danger"
                 title="Eliminar"
                 aria-label="Eliminar elemento"
+                :disabled="guardando"
                 @click="
                   eliminar(elemento)
                 "

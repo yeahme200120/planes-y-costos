@@ -43,12 +43,12 @@
   padding: 14px 28px;
 
   background: var(--color-primary);
-  color: var(--color-primary-text, var(--color-white));
+  color: var(--color-primary-text);
 
   border-bottom: 1px solid
     color-mix(
       in srgb,
-      var(--color-primary-text, var(--color-white)) 10%,
+      var(--color-primary-text) 10%,
       transparent
     );
 
@@ -56,7 +56,7 @@
     0 1px 0
       color-mix(
         in srgb,
-        var(--color-primary-text, var(--color-white)) 5%,
+        var(--color-primary-text) 5%,
         transparent
       ),
     0 8px 24px
@@ -95,7 +95,7 @@
   border: 1px solid
     color-mix(
       in srgb,
-      var(--color-primary-text, var(--color-white)) 16%,
+      var(--color-primary-text) 16%,
       transparent
     );
 
@@ -104,11 +104,11 @@
   background:
     color-mix(
       in srgb,
-      var(--color-primary-text, var(--color-white)) 7%,
+      var(--color-primary-text) 7%,
       transparent
     );
 
-  color: var(--color-primary-text, var(--color-white));
+  color: var(--color-primary-text);
 
   font-size: 20px;
   line-height: 1;
@@ -127,7 +127,7 @@
     color-mix(
       in srgb,
       var(--color-accent) 70%,
-      var(--color-primary-text, var(--color-white))
+      var(--color-primary-text)
     );
 
   background:
@@ -137,7 +137,7 @@
       transparent
     );
 
-  color: var(--color-primary-text, var(--color-white));
+  color: var(--color-primary-text);
 }
 
 .admin-layout__menu-button:active {
@@ -178,7 +178,7 @@
   color:
     color-mix(
       in srgb,
-      var(--color-primary-text, var(--color-white)) 58%,
+      var(--color-primary-text) 58%,
       transparent
     );
 
@@ -199,12 +199,8 @@
 .admin-layout__title {
   margin: 0;
 
-  color: var(--color-primary-text, var(--color-white));
+  color: var(--color-primary-text);
 
-  /*
-   * Más ligero que la versión anterior.
-   * Evita el aspecto excesivamente pesado.
-   */
   font-size: 19px;
   font-weight: 500;
 
@@ -229,7 +225,7 @@
   color:
     color-mix(
       in srgb,
-      var(--color-primary-text, var(--color-white)) 62%,
+      var(--color-primary-text) 62%,
       transparent
     );
 
@@ -279,7 +275,7 @@
   border: 1px solid
     color-mix(
       in srgb,
-      var(--color-primary-text, var(--color-white)) 14%,
+      var(--color-primary-text) 14%,
       transparent
     );
 
@@ -288,7 +284,7 @@
   background:
     color-mix(
       in srgb,
-      var(--color-primary-text, var(--color-white)) 7%,
+      var(--color-primary-text) 7%,
       transparent
     );
 
@@ -302,7 +298,7 @@
     color-mix(
       in srgb,
       var(--color-accent) 70%,
-      var(--color-primary-text, var(--color-white))
+      var(--color-primary-text)
     );
 
   background:
@@ -332,10 +328,7 @@
 
   background: var(--color-accent);
 
-  color: var(
-    --color-accent-text,
-    var(--color-white)
-  );
+  color: var(--color-accent-text);
 
   font-size: 13px;
   font-weight: 600;
@@ -369,7 +362,7 @@
   color:
     color-mix(
       in srgb,
-      var(--color-primary-text, var(--color-white)) 48%,
+      var(--color-primary-text) 48%,
       transparent
     );
 
@@ -385,7 +378,7 @@
 
   overflow: hidden;
 
-  color: var(--color-primary-text, var(--color-white));
+  color: var(--color-primary-text);
 
   font-size: 12px;
   font-weight: 500;
@@ -404,7 +397,7 @@
   color:
     color-mix(
       in srgb,
-      var(--color-primary-text, var(--color-white)) 52%,
+      var(--color-primary-text) 52%,
       transparent
     );
 
@@ -449,15 +442,12 @@
 
   background: var(--color-primary);
 
-  color: var(
-    --color-primary-text,
-    var(--color-white)
-  );
+  color: var(--color-primary-text);
 
   border-right: 1px solid
     color-mix(
       in srgb,
-      var(--color-primary-text, var(--color-white)) 7%,
+      var(--color-primary-text) 7%,
       transparent
     );
 
@@ -484,7 +474,7 @@
   border-bottom: 1px solid
     color-mix(
       in srgb,
-      var(--color-primary-text, var(--color-white)) 8%,
+      var(--color-primary-text) 8%,
       transparent
     );
 }
@@ -506,22 +496,19 @@
 
   overflow: hidden;
 
-  /*
-   * Logo circular.
-   */
   border-radius: 50%;
 
   background:
     color-mix(
       in srgb,
-      var(--color-primary-text, var(--color-white)) 10%,
+      var(--color-primary-text) 10%,
       transparent
     );
 
   border: 2px solid
     color-mix(
       in srgb,
-      var(--color-primary-text, var(--color-white)) 16%,
+      var(--color-primary-text) 16%,
       transparent
     );
 
@@ -554,10 +541,7 @@
 
   overflow: hidden;
 
-  color: var(
-    --color-primary-text,
-    var(--color-white)
-  );
+  color: var(--color-primary-text);
 
   font-size: 14px;
   font-weight: 600;
@@ -578,7 +562,7 @@
   color:
     color-mix(
       in srgb,
-      var(--color-primary-text, var(--color-white)) 55%,
+      var(--color-primary-text) 55%,
       transparent
     );
 
@@ -599,7 +583,7 @@
   color:
     color-mix(
       in srgb,
-      var(--color-primary-text, var(--color-white)) 55%,
+      var(--color-primary-text) 55%,
       transparent
     );
 
@@ -631,7 +615,7 @@
   color:
     color-mix(
       in srgb,
-      var(--color-primary-text, var(--color-white)) 38%,
+      var(--color-primary-text) 38%,
       transparent
     );
 
@@ -674,7 +658,7 @@
   color:
     color-mix(
       in srgb,
-      var(--color-primary-text, var(--color-white)) 68%,
+      var(--color-primary-text) 68%,
       transparent
     );
 
@@ -699,14 +683,11 @@
   background:
     color-mix(
       in srgb,
-      var(--color-primary-text, var(--color-white)) 7%,
+      var(--color-primary-text) 7%,
       transparent
     );
 
-  color: var(
-    --color-primary-text,
-    var(--color-white)
-  );
+  color: var(--color-primary-text);
 
   transform: translateX(2px);
 }
@@ -724,10 +705,7 @@
       transparent
     );
 
-  color: var(
-    --color-primary-text,
-    var(--color-white)
-  );
+  color: var(--color-primary-text);
 
   transform: none;
 }
@@ -799,7 +777,7 @@
   color:
     color-mix(
       in srgb,
-      var(--color-primary-text, var(--color-white)) 50%,
+      var(--color-primary-text) 50%,
       transparent
     );
 
@@ -816,10 +794,7 @@
 }
 
 .admin-sidebar__link:hover .admin-sidebar__icon {
-  color: var(
-    --color-primary-text,
-    var(--color-white)
-  );
+  color: var(--color-primary-text);
 }
 
 .admin-sidebar__link--active .admin-sidebar__icon {
@@ -860,10 +835,7 @@
 
   background: var(--color-accent);
 
-  color: var(
-    --color-accent-text,
-    var(--color-white)
-  );
+  color: var(--color-accent-text);
 
   font-size: 10px;
   font-weight: 600;
@@ -884,7 +856,7 @@
 }
 
 .admin-sidebar__link--active .admin-sidebar__badge {
-  background: var(--color-primary-text, var(--color-white));
+  background: var(--color-primary-text);
   color: var(--color-accent);
 }
 
@@ -932,7 +904,7 @@
   background:
     color-mix(
       in srgb,
-      var(--color-primary-text, var(--color-white)) 8%,
+      var(--color-primary-text) 8%,
       transparent
     );
 }
@@ -961,7 +933,7 @@
   color:
     color-mix(
       in srgb,
-      var(--color-primary-text, var(--color-white)) 62%,
+      var(--color-primary-text) 62%,
       transparent
     );
 
@@ -987,10 +959,7 @@
       transparent
     );
 
-  color: var(
-    --color-primary-text,
-    var(--color-white)
-  );
+  color: var(--color-primary-text);
 }
 
 .admin-sidebar__logout:focus-visible {

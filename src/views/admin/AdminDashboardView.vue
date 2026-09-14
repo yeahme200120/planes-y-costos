@@ -11,8 +11,8 @@ import {
 } from '../../services/adminService.js'
 
 import {
-  getActiveCollection,
-} from '../../services/contentService.js'
+  suscribirElementosAdmin,
+} from '../../services/adminService.js'
 
 import {
   suscribirContactosNuevos,
@@ -30,11 +30,20 @@ const estadisticas = ref({
   planes: 0,
   planesActivos: 0,
   soluciones: 0,
+  solucionesActivas: 0,
   caracteristicas: 0,
+  caracteristicasActivas: 0,
   faq: 0,
+  faqActivas: 0,
 })
 
 let cancelarContactos = null
+
+let cancelarSoluciones = null
+let cancelarCaracteristicas = null
+let cancelarFaq = null
+
+let dashboardActivo = true
 
 const porcentajePlanesActivos =
   computed(() => {
@@ -44,10 +53,8 @@ const porcentajePlanesActivos =
 
     return Math.round(
       (
-        estadisticas.value
-          .planesActivos /
-        estadisticas.value
-          .planes
+        estadisticas.value.planesActivos /
+        estadisticas.value.planes
       ) * 100
     )
   })
@@ -66,9 +73,9 @@ const contenidoActivo =
   computed(() => {
     return (
       estadisticas.value.planesActivos +
-      estadisticas.value.soluciones +
-      estadisticas.value.caracteristicas +
-      estadisticas.value.faq
+      estadisticas.value.solucionesActivas +
+      estadisticas.value.caracteristicasActivas +
+      estadisticas.value.faqActivas
     )
   })
 
@@ -128,7 +135,8 @@ const resumen = computed(() => {
       nombre: 'Soluciones',
       valor:
         estadisticas.value.soluciones,
-      detalle: 'Publicadas',
+      detalle:
+        `${estadisticas.value.solucionesActivas} activas`,
       icono: '◈',
       clase: 'solutions',
       ruta: '/admin/contenido',
@@ -138,7 +146,8 @@ const resumen = computed(() => {
       nombre: 'Características',
       valor:
         estadisticas.value.caracteristicas,
-      detalle: 'Publicadas',
+      detalle:
+        `${estadisticas.value.caracteristicasActivas} activas`,
       icono: '✦',
       clase: 'features',
       ruta: '/admin/contenido',
@@ -148,13 +157,175 @@ const resumen = computed(() => {
       nombre: 'Preguntas FAQ',
       valor:
         estadisticas.value.faq,
-      detalle: 'Publicadas',
+      detalle:
+        `${estadisticas.value.faqActivas} activas`,
       icono: '?',
       clase: 'faq',
       ruta: '/admin/contenido',
     },
   ]
 })
+
+function obtenerListaSegura(datos) {
+  return Array.isArray(datos)
+    ? datos
+    : []
+}
+
+function contarActivos(lista) {
+  return lista.filter(
+    (elemento) =>
+      elemento?.activo !== false
+  ).length
+}
+
+function aplicarEstadisticasColeccion(
+  nombre,
+  lista
+) {
+  if (!dashboardActivo) {
+    return
+  }
+
+  const datos =
+    obtenerListaSegura(lista)
+
+  if (nombre === 'soluciones') {
+    estadisticas.value.soluciones =
+      datos.length
+
+    estadisticas.value.solucionesActivas =
+      contarActivos(datos)
+  }
+
+  if (nombre === 'caracteristicas') {
+    estadisticas.value.caracteristicas =
+      datos.length
+
+    estadisticas.value.caracteristicasActivas =
+      contarActivos(datos)
+  }
+
+  if (nombre === 'faq') {
+    estadisticas.value.faq =
+      datos.length
+
+    estadisticas.value.faqActivas =
+      contarActivos(datos)
+  }
+}
+
+function obtenerMensajeError(
+  err,
+  fallback
+) {
+  if (
+    err instanceof Error &&
+    err.message
+  ) {
+    return err.message
+  }
+
+  if (
+    err &&
+    typeof err === 'object' &&
+    typeof err.message === 'string' &&
+    err.message
+  ) {
+    return err.message
+  }
+
+  return fallback
+}
+
+function detenerSuscripcionesContenido() {
+  cancelarSoluciones?.()
+  cancelarCaracteristicas?.()
+  cancelarFaq?.()
+
+  cancelarSoluciones = null
+  cancelarCaracteristicas = null
+  cancelarFaq = null
+}
+
+function iniciarSuscripcionesContenido() {
+  detenerSuscripcionesContenido()
+
+  cancelarSoluciones =
+    suscribirElementosAdmin(
+      'soluciones',
+      (datos) => {
+        aplicarEstadisticasColeccion(
+          'soluciones',
+          datos
+        )
+      },
+      (err) => {
+        console.error(
+          'Error obteniendo soluciones:',
+          err
+        )
+
+        if (dashboardActivo) {
+          error.value =
+            obtenerMensajeError(
+              err,
+              'No fue posible obtener las soluciones.'
+            )
+        }
+      }
+    )
+
+  cancelarCaracteristicas =
+    suscribirElementosAdmin(
+      'caracteristicas',
+      (datos) => {
+        aplicarEstadisticasColeccion(
+          'caracteristicas',
+          datos
+        )
+      },
+      (err) => {
+        console.error(
+          'Error obteniendo características:',
+          err
+        )
+
+        if (dashboardActivo) {
+          error.value =
+            obtenerMensajeError(
+              err,
+              'No fue posible obtener las características.'
+            )
+        }
+      }
+    )
+
+  cancelarFaq =
+    suscribirElementosAdmin(
+      'faq',
+      (datos) => {
+        aplicarEstadisticasColeccion(
+          'faq',
+          datos
+        )
+      },
+      (err) => {
+        console.error(
+          'Error obteniendo FAQ:',
+          err
+        )
+
+        if (dashboardActivo) {
+          error.value =
+            obtenerMensajeError(
+              err,
+              'No fue posible obtener las preguntas FAQ.'
+            )
+        }
+      }
+    )
+}
 
 async function cargarDashboard({
   silencioso = false,
@@ -168,67 +339,27 @@ async function cargarDashboard({
 
     error.value = ''
 
-    const [
-      planes,
-      soluciones,
-      caracteristicas,
-      faq,
-    ] = await Promise.all([
-      obtenerPlanesAdmin(),
+    const planes =
+      await obtenerPlanesAdmin()
 
-      getActiveCollection(
-        'soluciones'
-      ),
-
-      getActiveCollection(
-        'caracteristicas'
-      ),
-
-      getActiveCollection(
-        'faq'
-      ),
-    ])
+    if (!dashboardActivo) {
+      return
+    }
 
     const planesLista =
-      Array.isArray(planes)
-        ? planes
-        : []
-
-    const solucionesLista =
-      Array.isArray(soluciones)
-        ? soluciones
-        : []
-
-    const caracteristicasLista =
-      Array.isArray(
-        caracteristicas
-      )
-        ? caracteristicas
-        : []
-
-    const faqLista =
-      Array.isArray(faq)
-        ? faq
-        : []
+      obtenerListaSegura(planes)
 
     estadisticas.value = {
+      ...estadisticas.value,
+
       planes:
         planesLista.length,
 
       planesActivos:
         planesLista.filter(
           (plan) =>
-            plan.activo === true
+            plan?.activo !== false
         ).length,
-
-      soluciones:
-        solucionesLista.length,
-
-      caracteristicas:
-        caracteristicasLista.length,
-
-      faq:
-        faqLista.length,
     }
 
     if (silencioso) {
@@ -236,7 +367,9 @@ async function cargarDashboard({
         'Dashboard actualizado correctamente.'
 
       window.setTimeout(() => {
-        mensaje.value = ''
+        if (dashboardActivo) {
+          mensaje.value = ''
+        }
       }, 3000)
     }
   } catch (err) {
@@ -245,11 +378,18 @@ async function cargarDashboard({
       err
     )
 
-    error.value =
-      'No fue posible cargar las estadísticas del dashboard.'
+    if (dashboardActivo) {
+      error.value =
+        obtenerMensajeError(
+          err,
+          'No fue posible cargar las estadísticas del dashboard.'
+        )
+    }
   } finally {
-    cargando.value = false
-    actualizando.value = false
+    if (dashboardActivo) {
+      cargando.value = false
+      actualizando.value = false
+    }
   }
 }
 
@@ -259,6 +399,10 @@ function iniciarSuscripcionContactos() {
   cancelarContactos =
     suscribirContactosNuevos(
       (total) => {
+        if (!dashboardActivo) {
+          return
+        }
+
         contactosNuevos.value =
           Number(total) || 0
       },
@@ -267,22 +411,41 @@ function iniciarSuscripcionContactos() {
           'Error obteniendo contactos nuevos:',
           err
         )
+
+        if (dashboardActivo) {
+          error.value =
+            obtenerMensajeError(
+              err,
+              'No fue posible obtener los contactos nuevos.'
+            )
+        }
       }
     )
 }
 
 function actualizarDashboard() {
+  if (actualizando.value) {
+    return
+  }
+
   cargarDashboard({
     silencioso: true,
   })
 }
 
 onMounted(() => {
+  dashboardActivo = true
+
   cargarDashboard()
+  iniciarSuscripcionesContenido()
   iniciarSuscripcionContactos()
 })
 
 onUnmounted(() => {
+  dashboardActivo = false
+
+  detenerSuscripcionesContenido()
+
   cancelarContactos?.()
   cancelarContactos = null
 })
@@ -622,6 +785,10 @@ onUnmounted(() => {
 
               <strong>
                 {{
+                  estadisticas.solucionesActivas
+                }}
+                /
+                {{
                   estadisticas.soluciones
                 }}
               </strong>
@@ -642,6 +809,10 @@ onUnmounted(() => {
 
               <strong>
                 {{
+                  estadisticas.caracteristicasActivas
+                }}
+                /
+                {{
                   estadisticas.caracteristicas
                 }}
               </strong>
@@ -661,6 +832,10 @@ onUnmounted(() => {
               </div>
 
               <strong>
+                {{
+                  estadisticas.faqActivas
+                }}
+                /
                 {{
                   estadisticas.faq
                 }}

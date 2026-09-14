@@ -5,7 +5,6 @@ import {
   onMounted,
   onUnmounted,
   ref,
-  watch,
 } from 'vue'
 
 import {
@@ -34,8 +33,13 @@ const menuAbierto = ref(false)
 const cargandoRuta = ref(false)
 const errorSesion = ref(null)
 
+const sidebarRef = ref(null)
+const menuButtonRef = ref(null)
+
 let unsubscribeAuth = null
 let timeoutErrorSesion = null
+
+let componenteActivo = false
 
 // =========================================================
 // CONTACTOS NUEVOS
@@ -50,13 +54,51 @@ const {
 // =========================================================
 
 onMounted(() => {
-  unsubscribeAuth = onAuthStateChanged(
-    auth,
-    (usuarioActual) => {
-      usuario.value = usuarioActual
-      errorSesion.value = null
-    }
-  )
+  componenteActivo = true
+
+  unsubscribeAuth =
+    onAuthStateChanged(
+      auth,
+      (usuarioActual) => {
+        if (!componenteActivo) {
+          return
+        }
+
+        const usuarioAnterior =
+          usuario.value
+
+        usuario.value =
+          usuarioActual
+
+        if (usuarioActual) {
+          limpiarErrorSesion()
+          return
+        }
+
+        if (usuarioAnterior) {
+          mostrarErrorSesion(
+            'Tu sesión ha expirado. Por favor, inicia sesión nuevamente.'
+          )
+        }
+      },
+      (error) => {
+        console.error(
+          'Error observando autenticación:',
+          error
+        )
+
+        if (!componenteActivo) {
+          return
+        }
+
+        mostrarErrorSesion(
+          obtenerMensajeError(
+            error,
+            'No fue posible verificar el estado de la sesión.'
+          )
+        )
+      }
+    )
 
   document.addEventListener(
     'keydown',
@@ -70,12 +112,16 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+  componenteActivo = false
+
   if (
     typeof unsubscribeAuth ===
     'function'
   ) {
     unsubscribeAuth()
   }
+
+  unsubscribeAuth = null
 
   document.removeEventListener(
     'keydown',
@@ -89,8 +135,66 @@ onUnmounted(() => {
 
   if (timeoutErrorSesion) {
     clearTimeout(timeoutErrorSesion)
+    timeoutErrorSesion = null
   }
 })
+
+// =========================================================
+// UTILIDADES DE SESIÓN
+// =========================================================
+
+function obtenerMensajeError(
+  error,
+  fallback
+) {
+  if (
+    error instanceof Error &&
+    error.message
+  ) {
+    return error.message
+  }
+
+  if (
+    error &&
+    typeof error === 'object' &&
+    typeof error.message === 'string' &&
+    error.message
+  ) {
+    return error.message
+  }
+
+  return fallback
+}
+
+function limpiarErrorSesion() {
+  errorSesion.value = null
+
+  if (timeoutErrorSesion) {
+    clearTimeout(timeoutErrorSesion)
+    timeoutErrorSesion = null
+  }
+}
+
+function mostrarErrorSesion(
+  mensaje,
+  duracion = 6000
+) {
+  errorSesion.value = mensaje
+
+  if (timeoutErrorSesion) {
+    clearTimeout(timeoutErrorSesion)
+  }
+
+  timeoutErrorSesion =
+    window.setTimeout(() => {
+      if (!componenteActivo) {
+        return
+      }
+
+      errorSesion.value = null
+      timeoutErrorSesion = null
+    }, duracion)
+}
 
 // =========================================================
 // NAVEGACIÓN Y MENÚ
@@ -102,6 +206,11 @@ function manejarTecla(event) {
     menuAbierto.value
   ) {
     cerrarMenu()
+
+    nextTick(() => {
+      menuButtonRef.value?.focus()
+    })
+
     return
   }
 
@@ -115,22 +224,21 @@ function manejarTecla(event) {
 }
 
 function manejarClickFuera(event) {
-  const sidebar =
-    document.querySelector(
-      '.admin-layout__sidebar'
-    )
+  if (!menuAbierto.value) {
+    return
+  }
 
-  const menuBtn =
-    document.querySelector(
-      '.admin-layout__menu-button'
-    )
+  const sidebar =
+    sidebarRef.value
+
+  const menuButton =
+    menuButtonRef.value
 
   if (
-    menuAbierto.value &&
     sidebar &&
     !sidebar.contains(event.target) &&
-    menuBtn &&
-    !menuBtn.contains(event.target)
+    menuButton &&
+    !menuButton.contains(event.target)
   ) {
     cerrarMenu()
   }
@@ -157,6 +265,10 @@ function alternarMenu() {
 }
 
 async function navegar(ruta) {
+  if (cargandoRuta.value) {
+    return
+  }
+
   if (route.path === ruta) {
     cerrarMenu()
     return
@@ -173,8 +285,20 @@ async function navegar(ruta) {
       'Error de navegación:',
       error
     )
+
+    if (componenteActivo) {
+      mostrarErrorSesion(
+        obtenerMensajeError(
+          error,
+          'No fue posible realizar la navegación.'
+        ),
+        5000
+      )
+    }
   } finally {
-    cargandoRuta.value = false
+    if (componenteActivo) {
+      cargandoRuta.value = false
+    }
   }
 }
 
@@ -208,11 +332,16 @@ async function salir() {
 
   try {
     cerrandoSesion.value = true
-    errorSesion.value = null
+
+    limpiarErrorSesion()
 
     cerrarMenu()
 
     await cerrarSesion()
+
+    if (!componenteActivo) {
+      return
+    }
 
     await router.replace(
       '/admin/login'
@@ -223,20 +352,19 @@ async function salir() {
       err
     )
 
-    errorSesion.value =
-      err?.message ||
-      'Ocurrió un error al cerrar sesión.'
-
-    if (timeoutErrorSesion) {
-      clearTimeout(timeoutErrorSesion)
+    if (componenteActivo) {
+      mostrarErrorSesion(
+        obtenerMensajeError(
+          err,
+          'Ocurrió un error al cerrar sesión.'
+        ),
+        5000
+      )
     }
-
-    timeoutErrorSesion =
-      setTimeout(() => {
-        errorSesion.value = null
-      }, 5000)
   } finally {
-    cerrandoSesion.value = false
+    if (componenteActivo) {
+      cerrandoSesion.value = false
+    }
   }
 }
 
@@ -271,32 +399,6 @@ const inicialUsuario = computed(() => {
     .charAt(0)
     .toUpperCase()
 })
-
-// =========================================================
-// WATCH - AUTENTICACIÓN
-// =========================================================
-
-watch(
-  () => auth.currentUser,
-  (user) => {
-    if (
-      !user &&
-      usuario.value
-    ) {
-      errorSesion.value =
-        'Tu sesión ha expirado. Por favor, inicia sesión nuevamente.'
-
-      if (timeoutErrorSesion) {
-        clearTimeout(timeoutErrorSesion)
-      }
-
-      timeoutErrorSesion =
-        setTimeout(() => {
-          errorSesion.value = null
-        }, 6000)
-    }
-  }
-)
 </script>
 
 <template>
@@ -306,21 +408,40 @@ watch(
          HEADER
          =================================================== -->
 
-    <header class="admin-layout__header" role="banner">
+    <header
+      class="admin-layout__header"
+      role="banner"
+    >
 
       <div class="admin-layout__header-left">
 
-        <button type="button" class="admin-layout__menu-button" :aria-label="menuAbierto
-          ? 'Cerrar menú'
-          : 'Abrir menú'
-          " :aria-expanded="menuAbierto" aria-controls="admin-sidebar" :class="{
+        <button
+          ref="menuButtonRef"
+          type="button"
+          class="admin-layout__menu-button"
+          :aria-label="
+            menuAbierto
+              ? 'Cerrar menú'
+              : 'Abrir menú'
+          "
+          :aria-expanded="menuAbierto"
+          aria-controls="admin-sidebar"
+          :class="{
             'is-active': menuAbierto,
-          }" @click="alternarMenu">
-          <span v-if="!menuAbierto" aria-hidden="true">
+          }"
+          @click="alternarMenu"
+        >
+          <span
+            v-if="!menuAbierto"
+            aria-hidden="true"
+          >
             ☰
           </span>
 
-          <span v-else aria-hidden="true">
+          <span
+            v-else
+            aria-hidden="true"
+          >
             ✕
           </span>
         </button>
@@ -347,9 +468,16 @@ watch(
 
         <!-- Perfil -->
 
-        <div v-if="usuario" class="admin-layout__user" :title="emailUsuario">
+        <div
+          v-if="usuario"
+          class="admin-layout__user"
+          :title="emailUsuario"
+        >
 
-          <div class="admin-layout__avatar" aria-hidden="true">
+          <div
+            class="admin-layout__avatar"
+            aria-hidden="true"
+          >
             {{ inicialUsuario }}
           </div>
 
@@ -369,8 +497,12 @@ watch(
 
         <!-- Landing -->
 
-        <button type="button" class="admin-button admin-button--secondary"
-          title="Abrir la landing page en una nueva pestaña" @click="irALanding">
+        <button
+          type="button"
+          class="admin-button admin-button--secondary"
+          title="Abrir la landing page en una nueva pestaña"
+          @click="irALanding"
+        >
           <span aria-hidden="true">
             🌐
           </span>
@@ -380,8 +512,16 @@ watch(
 
         <!-- Logout -->
 
-        <button type="button" class="admin-button admin-button--danger" :disabled="cerrandoSesion" @click="salir">
-          <span v-if="cerrandoSesion" aria-hidden="true">
+        <button
+          type="button"
+          class="admin-button admin-button--danger"
+          :disabled="cerrandoSesion"
+          @click="salir"
+        >
+          <span
+            v-if="cerrandoSesion"
+            aria-hidden="true"
+          >
             ⏳
           </span>
 
@@ -405,17 +545,28 @@ watch(
 
       <!-- SIDEBAR -->
 
-      <aside id="admin-sidebar" class="admin-layout__sidebar" :class="{
-        'admin-layout__sidebar--open':
-          menuAbierto,
-      }" aria-label="Menú administrativo" role="navigation">
+      <aside
+        id="admin-sidebar"
+        ref="sidebarRef"
+        class="admin-layout__sidebar"
+        :class="{
+          'admin-layout__sidebar--open':
+            menuAbierto,
+        }"
+        aria-label="Menú administrativo"
+        role="navigation"
+      >
 
         <!-- BRAND -->
 
         <div class="admin-sidebar__brand">
 
           <div class="admin-sidebar__logo">
-            <img class="logo-image" src="/img/logo.jpg" alt="Logo">
+            <img
+              class="logo-image"
+              src="/img/logo.jpg"
+              alt="Logo"
+            >
           </div>
 
           <div>
@@ -432,7 +583,10 @@ watch(
 
         <!-- NAVEGACIÓN -->
 
-        <nav class="admin-sidebar__nav" aria-label="Navegación administrativa">
+        <nav
+          class="admin-sidebar__nav"
+          aria-label="Navegación administrativa"
+        >
 
           <p class="admin-sidebar__label">
             PRINCIPAL
@@ -440,18 +594,28 @@ watch(
 
           <!-- Dashboard -->
 
-          <button type="button" class="admin-sidebar__link" :class="{
-            'admin-sidebar__link--active':
+          <button
+            type="button"
+            class="admin-sidebar__link"
+            :class="{
+              'admin-sidebar__link--active':
+                route.path === '/admin' ||
+                route.path === '/admin/dashboard',
+            }"
+            :aria-current="
               route.path === '/admin' ||
-              route.path === '/admin/dashboard',
-          }" :aria-current="route.path === '/admin' ||
-            route.path === '/admin/dashboard'
-            ? 'page'
-            : undefined
-            " @click="
+              route.path === '/admin/dashboard'
+                ? 'page'
+                : undefined
+            "
+            @click="
               navegar('/admin/dashboard')
-              ">
-            <span class="admin-sidebar__icon" aria-hidden="true">
+            "
+          >
+            <span
+              class="admin-sidebar__icon"
+              aria-hidden="true"
+            >
               ▦
             </span>
 
@@ -466,20 +630,30 @@ watch(
 
           <!-- Planes -->
 
-          <button type="button" class="admin-sidebar__link" :class="{
-            'admin-sidebar__link--active':
+          <button
+            type="button"
+            class="admin-sidebar__link"
+            :class="{
+              'admin-sidebar__link--active':
+                route.path.startsWith(
+                  '/admin/planes'
+                ),
+            }"
+            :aria-current="
               route.path.startsWith(
                 '/admin/planes'
-              ),
-          }" :aria-current="route.path.startsWith(
-            '/admin/planes'
-          )
-            ? 'page'
-            : undefined
-            " @click="
+              )
+                ? 'page'
+                : undefined
+            "
+            @click="
               navegar('/admin/planes')
-              ">
-            <span class="admin-sidebar__icon" aria-hidden="true">
+            "
+          >
+            <span
+              class="admin-sidebar__icon"
+              aria-hidden="true"
+            >
               $
             </span>
 
@@ -490,20 +664,30 @@ watch(
 
           <!-- Secciones -->
 
-          <button type="button" class="admin-sidebar__link" :class="{
-            'admin-sidebar__link--active':
+          <button
+            type="button"
+            class="admin-sidebar__link"
+            :class="{
+              'admin-sidebar__link--active':
+                route.path.startsWith(
+                  '/admin/secciones'
+                ),
+            }"
+            :aria-current="
               route.path.startsWith(
                 '/admin/secciones'
-              ),
-          }" :aria-current="route.path.startsWith(
-            '/admin/secciones'
-          )
-            ? 'page'
-            : undefined
-            " @click="
+              )
+                ? 'page'
+                : undefined
+            "
+            @click="
               navegar('/admin/secciones')
-              ">
-            <span class="admin-sidebar__icon" aria-hidden="true">
+            "
+          >
+            <span
+              class="admin-sidebar__icon"
+              aria-hidden="true"
+            >
               ◫
             </span>
 
@@ -514,20 +698,30 @@ watch(
 
           <!-- Contenido -->
 
-          <button type="button" class="admin-sidebar__link" :class="{
-            'admin-sidebar__link--active':
+          <button
+            type="button"
+            class="admin-sidebar__link"
+            :class="{
+              'admin-sidebar__link--active':
+                route.path.startsWith(
+                  '/admin/contenido'
+                ),
+            }"
+            :aria-current="
               route.path.startsWith(
                 '/admin/contenido'
-              ),
-          }" :aria-current="route.path.startsWith(
-            '/admin/contenido'
-          )
-            ? 'page'
-            : undefined
-            " @click="
+              )
+                ? 'page'
+                : undefined
+            "
+            @click="
               navegar('/admin/contenido')
-              ">
-            <span class="admin-sidebar__icon" aria-hidden="true">
+            "
+          >
+            <span
+              class="admin-sidebar__icon"
+              aria-hidden="true"
+            >
               ◈
             </span>
 
@@ -538,20 +732,30 @@ watch(
 
           <!-- Contactos -->
 
-          <button type="button" class="admin-sidebar__link admin-sidebar__link--contacts" :class="{
-            'admin-sidebar__link--active':
+          <button
+            type="button"
+            class="admin-sidebar__link admin-sidebar__link--contacts"
+            :class="{
+              'admin-sidebar__link--active':
+                route.path.startsWith(
+                  '/admin/contactos'
+                ),
+            }"
+            :aria-current="
               route.path.startsWith(
                 '/admin/contactos'
-              ),
-          }" :aria-current="route.path.startsWith(
-            '/admin/contactos'
-          )
-            ? 'page'
-            : undefined
-            " @click="
+              )
+                ? 'page'
+                : undefined
+            "
+            @click="
               navegar('/admin/contactos')
-              ">
-            <span class="admin-sidebar__icon" aria-hidden="true">
+            "
+          >
+            <span
+              class="admin-sidebar__icon"
+              aria-hidden="true"
+            >
               ✉
             </span>
 
@@ -559,8 +763,11 @@ watch(
               Contactos
             </span>
 
-            <span v-if="contactosNuevos > 0" class="admin-sidebar__badge" :aria-label="`${contactosNuevos} contactos nuevos`
-              ">
+            <span
+              v-if="contactosNuevos > 0"
+              class="admin-sidebar__badge"
+              :aria-label="`${contactosNuevos} contactos nuevos`"
+            >
               {{
                 contactosNuevos > 99
                   ? '99+'
@@ -572,22 +779,33 @@ watch(
           <p class="admin-sidebar__label">
             SISTEMA
           </p>
+
           <!-- Usuarios -->
 
-          <button type="button" class="admin-sidebar__link" :class="{
-            'admin-sidebar__link--active':
+          <button
+            type="button"
+            class="admin-sidebar__link"
+            :class="{
+              'admin-sidebar__link--active':
+                route.path.startsWith(
+                  '/admin/usuarios'
+                ),
+            }"
+            :aria-current="
               route.path.startsWith(
                 '/admin/usuarios'
-              ),
-          }" :aria-current="route.path.startsWith(
-            '/admin/usuarios'
-          )
-            ? 'page'
-            : undefined
-            " @click="
+              )
+                ? 'page'
+                : undefined
+            "
+            @click="
               navegar('/admin/usuarios')
-              ">
-            <span class="admin-sidebar__icon" aria-hidden="true">
+            "
+          >
+            <span
+              class="admin-sidebar__icon"
+              aria-hidden="true"
+            >
               👥
             </span>
 
@@ -598,20 +816,30 @@ watch(
 
           <!-- Configuración -->
 
-          <button type="button" class="admin-sidebar__link" :class="{
-            'admin-sidebar__link--active':
+          <button
+            type="button"
+            class="admin-sidebar__link"
+            :class="{
+              'admin-sidebar__link--active':
+                route.path.startsWith(
+                  '/admin/configuracion'
+                ),
+            }"
+            :aria-current="
               route.path.startsWith(
                 '/admin/configuracion'
-              ),
-          }" :aria-current="route.path.startsWith(
-            '/admin/configuracion'
-          )
-            ? 'page'
-            : undefined
-            " @click="
+              )
+                ? 'page'
+                : undefined
+            "
+            @click="
               navegar('/admin/configuracion')
-              ">
-            <span class="admin-sidebar__icon" aria-hidden="true">
+            "
+          >
+            <span
+              class="admin-sidebar__icon"
+              aria-hidden="true"
+            >
               ⚙
             </span>
 
@@ -626,7 +854,12 @@ watch(
 
         <div class="admin-sidebar__footer">
 
-          <button type="button" class="admin-sidebar__logout" :disabled="cerrandoSesion" @click="salir">
+          <button
+            type="button"
+            class="admin-sidebar__logout"
+            :disabled="cerrandoSesion"
+            @click="salir"
+          >
             <span aria-hidden="true">
               ↪
             </span>
@@ -648,38 +881,73 @@ watch(
 
       <transition name="fade">
 
-        <div v-if="menuAbierto" class="admin-layout__overlay" role="button" tabindex="0" aria-label="Cerrar menú"
-          @click="cerrarMenu" @keydown.enter="cerrarMenu" @keydown.space.prevent="cerrarMenu"></div>
+        <div
+          v-if="menuAbierto"
+          class="admin-layout__overlay"
+          role="button"
+          tabindex="0"
+          aria-label="Cerrar menú"
+          @click="cerrarMenu"
+          @keydown.enter="cerrarMenu"
+          @keydown.space.prevent="cerrarMenu"
+        ></div>
 
       </transition>
 
       <!-- CONTENIDO -->
 
-      <main class="admin-layout__content" tabindex="-1">
+      <main
+  class="admin-layout__content"
+  tabindex="-1"
+>
 
-        <div v-if="cargandoRuta" class="admin-layout__loading" aria-live="polite">
-          <span class="admin-spinner" aria-hidden="true"></span>
+  <div
+    v-if="cargandoRuta"
+    class="admin-layout__loading"
+    aria-live="polite"
+  >
+    <span
+      class="admin-spinner"
+      aria-hidden="true"
+    ></span>
 
-          Cargando...
-        </div>
+    Cargando...
+  </div>
 
-        <div v-if="errorSesion" class="admin-alert admin-alert--error" role="alert">
-          <span aria-hidden="true">
-            ⚠️
-          </span>
+  <div
+    v-if="errorSesion"
+    class="admin-alert admin-alert--error"
+    role="alert"
+  >
+    <span aria-hidden="true">
+      ⚠️
+    </span>
 
-          {{ errorSesion }}
+    {{ errorSesion }}
 
-          <button type="button" class="admin-alert__close" aria-label="Cerrar mensaje" @click="errorSesion = null">
-            ✕
-          </button>
-        </div>
+    <button
+      type="button"
+      class="admin-alert__close"
+      aria-label="Cerrar mensaje"
+      @click="limpiarErrorSesion"
+    >
+      ✕
+    </button>
+  </div>
 
-        <transition name="fade-slide" mode="out-in">
-          <RouterView :key="route.fullPath" />
-        </transition>
+  <RouterView v-slot="{ Component }">
+    <transition
+      name="fade-slide"
+      mode="out-in"
+    >
+      <component
+        :is="Component"
+        :key="route.fullPath"
+      />
+    </transition>
+  </RouterView>
 
-      </main>
+</main>
 
     </div>
 

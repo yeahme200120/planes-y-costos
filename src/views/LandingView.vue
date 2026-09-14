@@ -37,8 +37,9 @@ const {
 | Valores por defecto
 |--------------------------------------------------------------------------
 |
-| Estos valores permiten que la landing siga funcionando incluso cuando
-| Firebase todavía no ha entregado la configuración.
+| Estos valores solamente funcionan como respaldo mientras Firebase
+| todavía no ha entregado la configuración o cuando algún campo no
+| existe en la configuración.
 |
 */
 
@@ -70,24 +71,87 @@ const COLORES_POR_DEFECTO = {
   success: '#2E9B6F',
   warning: '#D89432',
   danger: '#D95C5C',
+
+  white: '#FFFFFF',
+
+  primaryText: '#FFFFFF',
+  secondaryText: '#FFFFFF',
+  accentText: '#FFFFFF',
 }
 
 /*
 |--------------------------------------------------------------------------
-| Normalizar color
+| Validar color
 |--------------------------------------------------------------------------
 */
 
-function obtenerColor(config, campo) {
-  const valor = config?.[campo]
-
-  if (
+function esColorValido(valor) {
+  return (
     typeof valor === 'string' &&
     /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(
       valor.trim()
     )
-  ) {
+  )
+}
+
+/*
+|--------------------------------------------------------------------------
+| Obtener color
+|--------------------------------------------------------------------------
+|
+| Si el valor existe y es válido se utiliza Firebase.
+| Si no existe, se utiliza el valor de respaldo.
+|
+*/
+
+function obtenerColor(
+  config,
+  campo,
+  respaldo = COLORES_POR_DEFECTO[campo]
+) {
+  const valor = config?.[campo]
+
+  if (esColorValido(valor)) {
     return valor.trim().toUpperCase()
+  }
+
+  return respaldo
+}
+
+/*
+|--------------------------------------------------------------------------
+| Obtener color con prioridad
+|--------------------------------------------------------------------------
+|
+| Orden:
+|
+| 1. paleta
+| 2. configuración general
+| 3. valor por defecto
+|
+*/
+
+function obtenerColorConfigurado(
+  paleta,
+  config,
+  campo
+) {
+  const valorPaleta =
+    paleta?.[campo]
+
+  if (esColorValido(valorPaleta)) {
+    return valorPaleta
+      .trim()
+      .toUpperCase()
+  }
+
+  const valorConfig =
+    config?.[campo]
+
+  if (esColorValido(valorConfig)) {
+    return valorConfig
+      .trim()
+      .toUpperCase()
   }
 
   return COLORES_POR_DEFECTO[campo]
@@ -100,8 +164,10 @@ function obtenerColor(config, campo) {
 |
 | Toda la landing recibe la paleta desde Firebase.
 |
-| Los componentes individuales no necesitan conocer Firebase.
-| Solamente utilizan variables CSS como:
+| Los componentes individuales NO necesitan conocer Firebase.
+| Únicamente utilizan variables CSS.
+|
+| Ejemplo:
 |
 | --color-primary
 | --color-secondary
@@ -113,7 +179,8 @@ function obtenerColor(config, campo) {
 */
 
 const estilosConfiguracion = computed(() => {
-  const config = configuracion.value || {}
+  const config =
+    configuracion.value || {}
 
   const paleta =
     config.paleta &&
@@ -122,6 +189,12 @@ const estilosConfiguracion = computed(() => {
       : {}
 
   return {
+    /*
+    |----------------------------------------------------------------------
+    | Primary
+    |----------------------------------------------------------------------
+    */
+
     '--color-primary':
       obtenerColor(
         config,
@@ -129,24 +202,24 @@ const estilosConfiguracion = computed(() => {
       ),
 
     '--color-primary-light':
-      obtenerColor(
+      obtenerColorConfigurado(
         paleta,
-        'primaryLight'
-      ) ||
-      obtenerColor(
         config,
         'primaryLight'
       ),
 
     '--color-primary-dark':
-      obtenerColor(
+      obtenerColorConfigurado(
         paleta,
-        'primaryDark'
-      ) ||
-      obtenerColor(
         config,
         'primaryDark'
       ),
+
+    /*
+    |----------------------------------------------------------------------
+    | Secondary
+    |----------------------------------------------------------------------
+    */
 
     '--color-secondary':
       obtenerColor(
@@ -155,24 +228,24 @@ const estilosConfiguracion = computed(() => {
       ),
 
     '--color-secondary-light':
-      obtenerColor(
+      obtenerColorConfigurado(
         paleta,
-        'secondaryLight'
-      ) ||
-      obtenerColor(
         config,
         'secondaryLight'
       ),
 
     '--color-secondary-dark':
-      obtenerColor(
+      obtenerColorConfigurado(
         paleta,
-        'secondaryDark'
-      ) ||
-      obtenerColor(
         config,
         'secondaryDark'
       ),
+
+    /*
+    |----------------------------------------------------------------------
+    | Accent
+    |----------------------------------------------------------------------
+    */
 
     '--color-accent':
       obtenerColor(
@@ -181,24 +254,24 @@ const estilosConfiguracion = computed(() => {
       ),
 
     '--color-accent-light':
-      obtenerColor(
+      obtenerColorConfigurado(
         paleta,
-        'accentLight'
-      ) ||
-      obtenerColor(
         config,
         'accentLight'
       ),
 
     '--color-accent-dark':
-      obtenerColor(
+      obtenerColorConfigurado(
         paleta,
-        'accentDark'
-      ) ||
-      obtenerColor(
         config,
         'accentDark'
       ),
+
+    /*
+    |----------------------------------------------------------------------
+    | Background
+    |----------------------------------------------------------------------
+    */
 
     '--color-background':
       obtenerColor(
@@ -207,34 +280,37 @@ const estilosConfiguracion = computed(() => {
       ),
 
     '--color-background-alt':
-      obtenerColor(
+      obtenerColorConfigurado(
         paleta,
-        'backgroundAlt'
-      ) ||
-      obtenerColor(
         config,
         'backgroundAlt'
       ),
 
+    /*
+    |----------------------------------------------------------------------
+    | Surface
+    |----------------------------------------------------------------------
+    */
+
     '--color-surface':
-      obtenerColor(
+      obtenerColorConfigurado(
         paleta,
-        'surface'
-      ) ||
-      obtenerColor(
         config,
         'surface'
       ),
 
     '--color-surface-alt':
-      obtenerColor(
+      obtenerColorConfigurado(
         paleta,
-        'surfaceAlt'
-      ) ||
-      obtenerColor(
         config,
         'surfaceAlt'
       ),
+
+    /*
+    |----------------------------------------------------------------------
+    | Texto
+    |----------------------------------------------------------------------
+    */
 
     '--color-text':
       obtenerColor(
@@ -243,72 +319,71 @@ const estilosConfiguracion = computed(() => {
       ),
 
     '--color-text-secondary':
-      obtenerColor(
+      obtenerColorConfigurado(
         paleta,
-        'textSecondary'
-      ) ||
-      obtenerColor(
         config,
         'textSecondary'
       ),
 
     '--color-text-muted':
-      obtenerColor(
+      obtenerColorConfigurado(
         paleta,
-        'textMuted'
-      ) ||
-      obtenerColor(
         config,
         'textMuted'
       ),
+
+    /*
+    |----------------------------------------------------------------------
+    | Bordes
+    |----------------------------------------------------------------------
+    */
 
     '--color-border':
-      obtenerColor(
+      obtenerColorConfigurado(
         paleta,
-        'border'
-      ) ||
-      obtenerColor(
         config,
         'border'
       ),
 
+    /*
+    |----------------------------------------------------------------------
+    | Estados
+    |----------------------------------------------------------------------
+    */
+
     '--color-success':
-      obtenerColor(
+      obtenerColorConfigurado(
         paleta,
-        'success'
-      ) ||
-      obtenerColor(
         config,
         'success'
       ),
 
     '--color-warning':
-      obtenerColor(
+      obtenerColorConfigurado(
         paleta,
-        'warning'
-      ) ||
-      obtenerColor(
         config,
         'warning'
       ),
 
     '--color-danger':
-      obtenerColor(
+      obtenerColorConfigurado(
         paleta,
-        'danger'
-      ) ||
-      obtenerColor(
         config,
         'danger'
       ),
 
     /*
     |----------------------------------------------------------------------
-    | Variables adicionales
+    | Colores auxiliares
     |----------------------------------------------------------------------
     */
 
-    '--color-white': '#FFFFFF',
+    '--color-white':
+      obtenerColorConfigurado(
+        paleta,
+        config,
+        'white'
+      ),
 
     /*
     |----------------------------------------------------------------------
@@ -317,16 +392,25 @@ const estilosConfiguracion = computed(() => {
     */
 
     '--color-primary-text':
-      paleta.primaryText ||
-      '#FFFFFF',
+      obtenerColorConfigurado(
+        paleta,
+        config,
+        'primaryText'
+      ),
 
     '--color-secondary-text':
-      paleta.secondaryText ||
-      '#FFFFFF',
+      obtenerColorConfigurado(
+        paleta,
+        config,
+        'secondaryText'
+      ),
 
     '--color-accent-text':
-      paleta.accentText ||
-      '#FFFFFF',
+      obtenerColorConfigurado(
+        paleta,
+        config,
+        'accentText'
+      ),
   }
 })
 
@@ -452,7 +536,9 @@ watch(
       config.faviconUrl
     )
 
-    actualizarTitulo(config)
+    actualizarTitulo(
+      config
+    )
 
     actualizarMetaDescription(
       config

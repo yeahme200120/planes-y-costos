@@ -2,6 +2,7 @@
    ADMIN USUARIOS
    ========================================================= */
 
+
 /* =========================================================
    CONTENEDOR
    ========================================================= */
@@ -12,8 +13,9 @@
 
   padding: 1.5rem;
 
-  color: var(--color-text, #1f2937);
+  color: var(--color-text);
 }
+
 
 /* =========================================================
    HEADER
@@ -36,7 +38,7 @@
 .admin-usuarios__eyebrow {
   margin-bottom: 0.35rem;
 
-  color: var(--color-primary, #9ac53b);
+  color: var(--color-primary);
 
   font-size: 0.75rem;
   font-weight: 800;
@@ -49,7 +51,7 @@
 .admin-usuarios__title {
   margin: 0;
 
-  color: var(--color-text, #1f2937);
+  color: var(--color-text);
 
   font-size: clamp(1.7rem, 3vw, 2.35rem);
   font-weight: 800;
@@ -61,11 +63,12 @@
 
   margin: 0.65rem 0 0;
 
-  color: var(--color-text-muted, #6b7280);
+  color: var(--color-text-muted);
 
   font-size: 0.95rem;
   line-height: 1.6;
 }
+
 
 /* =========================================================
    ESTADÍSTICAS
@@ -87,15 +90,18 @@
 
   padding: 0.9rem 1rem;
 
-  border: 1px solid
-    var(--color-border, #e5e7eb);
+  border: 1px solid var(--color-border);
   border-radius: 0.85rem;
 
-  background: var(--color-background, #ffffff);
+  background: var(--color-surface);
 
   box-shadow:
     0 4px 14px
-    rgb(0 0 0 / 4%);
+    color-mix(
+      in srgb,
+      var(--color-primary) 5%,
+      transparent
+    );
 }
 
 .admin-usuarios__stat-label {
@@ -103,7 +109,7 @@
 
   margin-bottom: 0.3rem;
 
-  color: var(--color-text-muted, #6b7280);
+  color: var(--color-text-muted);
 
   font-size: 0.72rem;
   font-weight: 700;
@@ -115,12 +121,13 @@
 .admin-usuarios__stat-value {
   display: block;
 
-  color: var(--color-text, #1f2937);
+  color: var(--color-text);
 
   font-size: 1.45rem;
   font-weight: 800;
   line-height: 1;
 }
+
 
 /* =========================================================
    ALERTAS
@@ -138,29 +145,50 @@
   margin-bottom: 1rem;
   padding: 0.85rem 1rem;
 
-  border: 1px solid
-    var(--color-border, #e5e7eb);
+  border: 1px solid var(--color-border);
   border-radius: 0.75rem;
 
-  background: var(--color-background, #ffffff);
-  color: var(--color-text, #1f2937);
+  background: var(--color-surface);
+  color: var(--color-text);
 
   font-size: 0.88rem;
   line-height: 1.45;
 }
 
 .admin-usuarios__alert--warning {
-  border-color: #f3d48a;
+  border-color:
+    color-mix(
+      in srgb,
+      var(--color-warning) 35%,
+      var(--color-border)
+    );
 
-  background: #fffaf0;
-  color: #8a5a00;
+  background:
+    color-mix(
+      in srgb,
+      var(--color-warning) 9%,
+      var(--color-surface)
+    );
+
+  color: var(--color-warning);
 }
 
 .admin-usuarios__alert--error {
-  border-color: #f1b7b7;
+  border-color:
+    color-mix(
+      in srgb,
+      var(--color-danger) 35%,
+      var(--color-border)
+    );
 
-  background: #fff5f5;
-  color: #a12626;
+  background:
+    color-mix(
+      in srgb,
+      var(--color-danger) 8%,
+      var(--color-surface)
+    );
+
+  color: var(--color-danger);
 }
 
 .admin-usuarios__alert button {
@@ -190,10 +218,16 @@
 }
 
 .admin-usuarios__alert button:hover {
-  background: rgb(0 0 0 / 6%);
+  background:
+    color-mix(
+      in srgb,
+      currentColor 10%,
+      transparent
+    );
 
   transform: scale(1.04);
 }
+
 
 /* =========================================================
    TOOLBAR
@@ -208,6 +242,7 @@
 
   margin-bottom: 1rem;
 }
+
 
 /* =========================================================
    SEARCH
@@ -232,6 +267,8 @@
 
   pointer-events: none;
 
+  color: var(--color-text-muted);
+
   font-size: 0.9rem;
   line-height: 1;
 }
@@ -243,34 +280,37 @@
 
   padding: 0 2.7rem 0 2.5rem;
 
-  border: 1px solid
-    var(--color-border, #e5e7eb);
+  border: 1px solid var(--color-border);
   border-radius: 0.75rem;
 
   outline: none;
 
-  background: var(--color-background, #ffffff);
-  color: var(--color-text, #1f2937);
+  background: var(--color-surface);
+  color: var(--color-text);
 
   font: inherit;
   font-size: 0.88rem;
 
   transition:
     border-color var(--transition-fast),
-    box-shadow var(--transition-fast);
+    box-shadow var(--transition-fast),
+    background-color var(--transition-fast);
 }
 
 .admin-usuarios__search input::placeholder {
-  color: var(--color-text-muted, #9ca3af);
+  color: var(--color-text-muted);
 }
 
 .admin-usuarios__search input:focus {
-  border-color:
-    var(--color-primary, #9ac53b);
+  border-color: var(--color-accent);
 
   box-shadow:
     0 0 0 3px
-    rgb(154 197 59 / 13%);
+    color-mix(
+      in srgb,
+      var(--color-accent) 13%,
+      transparent
+    );
 }
 
 .admin-usuarios__search-clear {
@@ -290,19 +330,29 @@
   border-radius: 0.45rem;
 
   background: transparent;
-  color: var(--color-text-muted, #6b7280);
+  color: var(--color-text-muted);
 
   cursor: pointer;
 
   font-size: 1.2rem;
   line-height: 1;
+
+  transition:
+    background-color var(--transition-fast),
+    color var(--transition-fast);
 }
 
 .admin-usuarios__search-clear:hover {
-  background: rgb(0 0 0 / 6%);
+  background:
+    color-mix(
+      in srgb,
+      var(--color-text) 7%,
+      transparent
+    );
 
-  color: var(--color-text, #1f2937);
+  color: var(--color-text);
 }
+
 
 /* =========================================================
    REALTIME
@@ -316,7 +366,7 @@
 
   flex-shrink: 0;
 
-  color: var(--color-text-muted, #6b7280);
+  color: var(--color-text-muted);
 
   font-size: 0.78rem;
   font-weight: 600;
@@ -332,11 +382,15 @@
 
   border-radius: 50%;
 
-  background: #4caf50;
+  background: var(--color-success);
 
   box-shadow:
     0 0 0 4px
-    rgb(76 175 80 / 12%);
+    color-mix(
+      in srgb,
+      var(--color-success) 12%,
+      transparent
+    );
 
   animation:
     adminUsuariosPulse
@@ -358,6 +412,7 @@
   }
 }
 
+
 /* =========================================================
    CONTENT
    ========================================================= */
@@ -366,6 +421,7 @@
   width: 100%;
   min-width: 0;
 }
+
 
 /* =========================================================
    TABLE
@@ -376,15 +432,18 @@
 
   overflow-x: auto;
 
-  border: 1px solid
-    var(--color-border, #e5e7eb);
+  border: 1px solid var(--color-border);
   border-radius: 1rem;
 
-  background: var(--color-background, #ffffff);
+  background: var(--color-surface);
 
   box-shadow:
     0 8px 28px
-    rgb(0 0 0 / 5%);
+    color-mix(
+      in srgb,
+      var(--color-primary) 6%,
+      transparent
+    );
 
   -webkit-overflow-scrolling: touch;
 }
@@ -402,12 +461,16 @@
 .admin-usuarios__table th {
   padding: 0.85rem 1rem;
 
-  border-bottom: 1px solid
-    var(--color-border, #e5e7eb);
+  border-bottom: 1px solid var(--color-border);
 
-  background: rgb(0 0 0 / 2%);
+  background:
+    color-mix(
+      in srgb,
+      var(--color-background) 82%,
+      var(--color-primary) 3%
+    );
 
-  color: var(--color-text-muted, #6b7280);
+  color: var(--color-text-muted);
 
   font-size: 0.7rem;
   font-weight: 800;
@@ -423,8 +486,9 @@
 .admin-usuarios__table td {
   padding: 1rem;
 
-  border-bottom: 1px solid
-    var(--color-border, #e5e7eb);
+  border-bottom: 1px solid var(--color-border);
+
+  background: var(--color-surface);
 
   vertical-align: middle;
 }
@@ -435,12 +499,18 @@
 }
 
 .admin-usuarios__table tbody tr:hover {
-  background: rgb(0 0 0 / 2.5%);
+  background:
+    color-mix(
+      in srgb,
+      var(--color-accent-light) 35%,
+      var(--color-surface)
+    );
 }
 
 .admin-usuarios__table tbody tr:last-child td {
   border-bottom: 0;
 }
+
 
 /* =========================================================
    USER
@@ -467,9 +537,8 @@
 
   border-radius: 50%;
 
-  background:
-    var(--color-primary, #9ac53b);
-  color: #ffffff;
+  background: var(--color-primary);
+  color: var(--color-primary-text);
 
   font-size: 0.78rem;
   font-weight: 800;
@@ -478,7 +547,11 @@
 
   box-shadow:
     0 4px 10px
-    rgb(0 0 0 / 8%);
+    color-mix(
+      in srgb,
+      var(--color-primary) 14%,
+      transparent
+    );
 }
 
 .admin-usuarios__user-info {
@@ -493,7 +566,7 @@
 .admin-usuarios__user-info strong {
   overflow: hidden;
 
-  color: var(--color-text, #1f2937);
+  color: var(--color-text);
 
   font-size: 0.88rem;
   font-weight: 750;
@@ -506,7 +579,7 @@
 .admin-usuarios__user-info span {
   overflow: hidden;
 
-  color: var(--color-text-muted, #6b7280);
+  color: var(--color-text-muted);
 
   font-size: 0.77rem;
   line-height: 1.35;
@@ -518,7 +591,7 @@
 .admin-usuarios__user-info small {
   overflow: hidden;
 
-  color: var(--color-text-muted, #9ca3af);
+  color: var(--color-text-muted);
 
   font-size: 0.67rem;
   line-height: 1.3;
@@ -526,6 +599,7 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
 
 /* =========================================================
    ROLE
@@ -541,12 +615,17 @@
 
   overflow: hidden;
 
-  border: 1px solid
-    var(--color-border, #e5e7eb);
+  border: 1px solid var(--color-border);
   border-radius: 999px;
 
-  background: rgb(0 0 0 / 2%);
-  color: var(--color-text, #1f2937);
+  background:
+    color-mix(
+      in srgb,
+      var(--color-background) 88%,
+      var(--color-primary) 3%
+    );
+
+  color: var(--color-text);
 
   font-size: 0.73rem;
   font-weight: 700;
@@ -554,6 +633,7 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
 
 /* =========================================================
    STATUS
@@ -565,7 +645,7 @@
 
   gap: 0.45rem;
 
-  color: #34813a;
+  color: var(--color-success);
 
   font-size: 0.76rem;
   font-weight: 750;
@@ -581,17 +661,18 @@
 
   border-radius: 50%;
 
-  background: #4caf50;
+  background: var(--color-success);
 }
 
 .admin-usuarios__status--inactive {
-  color: #a16207;
+  color: var(--color-warning);
 }
 
 .admin-usuarios__status--inactive
-  .admin-usuarios__status-dot {
-  background: #d99a18;
+.admin-usuarios__status-dot {
+  background: var(--color-warning);
 }
+
 
 /* =========================================================
    DATE
@@ -604,7 +685,7 @@
 
   overflow: hidden;
 
-  color: var(--color-text-muted, #6b7280);
+  color: var(--color-text-muted);
 
   font-family:
     ui-monospace,
@@ -622,6 +703,7 @@
   white-space: nowrap;
 }
 
+
 /* =========================================================
    ACTIONS
    ========================================================= */
@@ -636,6 +718,7 @@
   min-width: max-content;
 }
 
+
 /* =========================================================
    BUTTON
    ========================================================= */
@@ -649,12 +732,11 @@
 
   padding: 0.5rem 0.75rem;
 
-  border: 1px solid
-    var(--color-border, #e5e7eb);
+  border: 1px solid var(--color-border);
   border-radius: 0.6rem;
 
-  background: var(--color-background, #ffffff);
-  color: var(--color-text, #1f2937);
+  background: var(--color-surface);
+  color: var(--color-text);
 
   cursor: pointer;
 
@@ -674,17 +756,25 @@
 }
 
 .admin-usuarios__button:hover:not(:disabled) {
-  border-color:
-    var(--color-primary, #9ac53b);
+  border-color: var(--color-accent);
 
-  background: rgb(154 197 59 / 7%);
+  background:
+    color-mix(
+      in srgb,
+      var(--color-accent-light) 35%,
+      var(--color-surface)
+    );
 
   transform: translateY(-1px);
 }
 
 .admin-usuarios__button:focus-visible {
   outline: 3px solid
-    rgb(154 197 59 / 22%);
+    color-mix(
+      in srgb,
+      var(--color-accent) 22%,
+      transparent
+    );
 
   outline-offset: 2px;
 }
@@ -698,40 +788,56 @@
 }
 
 .admin-usuarios__button--primary {
-  border-color:
-    var(--color-primary, #9ac53b);
+  border-color: var(--color-primary);
 
-  background:
-    var(--color-primary, #9ac53b);
+  background: var(--color-primary);
 
-  color: #ffffff;
+  color: var(--color-primary-text);
 }
 
 .admin-usuarios__button--primary:hover:not(:disabled) {
-  border-color:
-    var(--color-primary, #9ac53b);
+  border-color: var(--color-primary-dark);
 
-  background:
-    var(--color-primary, #9ac53b);
+  background: var(--color-primary-dark);
 
   box-shadow:
     0 5px 14px
-    rgb(154 197 59 / 25%);
+    color-mix(
+      in srgb,
+      var(--color-primary) 25%,
+      transparent
+    );
 }
 
 .admin-usuarios__button--danger {
-  border-color: #efc4c4;
+  border-color:
+    color-mix(
+      in srgb,
+      var(--color-danger) 35%,
+      var(--color-border)
+    );
 
-  background: #fff8f8;
+  background:
+    color-mix(
+      in srgb,
+      var(--color-danger) 6%,
+      var(--color-surface)
+    );
 
-  color: #b42323;
+  color: var(--color-danger);
 }
 
 .admin-usuarios__button--danger:hover:not(:disabled) {
-  border-color: #dc7c7c;
+  border-color: var(--color-danger);
 
-  background: #fff0f0;
+  background:
+    color-mix(
+      in srgb,
+      var(--color-danger) 12%,
+      var(--color-surface)
+    );
 }
+
 
 /* =========================================================
    MOBILE LIST
@@ -746,15 +852,18 @@
 
   padding: 0.9rem;
 
-  border: 1px solid
-    var(--color-border, #e5e7eb);
+  border: 1px solid var(--color-border);
   border-radius: 0.9rem;
 
-  background: var(--color-background, #ffffff);
+  background: var(--color-surface);
 
   box-shadow:
     0 5px 18px
-    rgb(0 0 0 / 4%);
+    color-mix(
+      in srgb,
+      var(--color-primary) 5%,
+      transparent
+    );
 }
 
 .admin-usuarios__mobile-header {
@@ -768,13 +877,14 @@
 }
 
 .admin-usuarios__mobile-header
-  .admin-usuarios__user {
+.admin-usuarios__user {
   min-width: 0;
+
   flex: 1;
 }
 
 .admin-usuarios__mobile-header
-  .admin-usuarios__avatar {
+.admin-usuarios__avatar {
   width: 2.5rem;
   height: 2.5rem;
 
@@ -782,7 +892,7 @@
 }
 
 .admin-usuarios__mobile-header
-  .admin-usuarios__status {
+.admin-usuarios__status {
   flex-shrink: 0;
 
   padding-top: 0.25rem;
@@ -800,8 +910,7 @@
   margin-top: 0.9rem;
   padding-top: 0.85rem;
 
-  border-top: 1px solid
-    var(--color-border, #e5e7eb);
+  border-top: 1px solid var(--color-border);
 }
 
 .admin-usuarios__mobile-detail {
@@ -817,7 +926,7 @@
 .admin-usuarios__mobile-detail > span {
   flex: 0 0 auto;
 
-  color: var(--color-text-muted, #6b7280);
+  color: var(--color-text-muted);
 
   font-size: 0.67rem;
   font-weight: 700;
@@ -828,7 +937,7 @@
 
   overflow: hidden;
 
-  color: var(--color-text, #1f2937);
+  color: var(--color-text);
 
   font-size: 0.7rem;
   font-weight: 700;
@@ -840,9 +949,9 @@
 }
 
 .admin-usuarios__mobile-detail:nth-child(2)
-  > strong,
+> strong,
 .admin-usuarios__mobile-detail:nth-child(3)
-  > strong {
+> strong {
   max-width: 65%;
 
   font-family:
@@ -867,12 +976,11 @@
   margin-top: 0.9rem;
   padding-top: 0.85rem;
 
-  border-top: 1px solid
-    var(--color-border, #e5e7eb);
+  border-top: 1px solid var(--color-border);
 }
 
 .admin-usuarios__mobile-actions
-  .admin-usuarios__button {
+.admin-usuarios__button {
   width: 100%;
   min-width: 0;
 
@@ -882,6 +990,7 @@
 
   font-size: 0.65rem;
 }
+
 
 /* =========================================================
    LOADING
@@ -898,12 +1007,11 @@
 
   gap: 0.85rem;
 
-  border: 1px solid
-    var(--color-border, #e5e7eb);
+  border: 1px solid var(--color-border);
   border-radius: 1rem;
 
-  background: var(--color-background, #ffffff);
-  color: var(--color-text-muted, #6b7280);
+  background: var(--color-surface);
+  color: var(--color-text-muted);
 }
 
 .admin-usuarios__loading p {
@@ -916,11 +1024,9 @@
   width: 2rem;
   height: 2rem;
 
-  border: 3px solid
-    var(--color-border, #e5e7eb);
+  border: 3px solid var(--color-border);
 
-  border-top-color:
-    var(--color-primary, #9ac53b);
+  border-top-color: var(--color-accent);
 
   border-radius: 50%;
 
@@ -937,6 +1043,7 @@
   }
 }
 
+
 /* =========================================================
    EMPTY
    ========================================================= */
@@ -952,11 +1059,10 @@
 
   padding: 2rem;
 
-  border: 1px dashed
-    var(--color-border, #dfe3e8);
+  border: 1px dashed var(--color-border);
   border-radius: 1rem;
 
-  background: var(--color-background, #ffffff);
+  background: var(--color-surface);
 
   text-align: center;
 }
@@ -974,7 +1080,13 @@
   border-radius: 1rem;
 
   background:
-    rgb(154 197 59 / 10%);
+    color-mix(
+      in srgb,
+      var(--color-accent) 10%,
+      var(--color-surface)
+    );
+
+  color: var(--color-accent);
 
   font-size: 1.5rem;
 }
@@ -982,7 +1094,7 @@
 .admin-usuarios__empty h2 {
   margin: 0;
 
-  color: var(--color-text, #1f2937);
+  color: var(--color-text);
 
   font-size: 1.05rem;
   font-weight: 800;
@@ -993,11 +1105,12 @@
 
   margin: 0.5rem 0 1rem;
 
-  color: var(--color-text-muted, #6b7280);
+  color: var(--color-text-muted);
 
   font-size: 0.82rem;
   line-height: 1.55;
 }
+
 
 /* =========================================================
    EDITOR
@@ -1021,14 +1134,19 @@
 
   overflow-y: auto;
 
-  border-left: 1px solid
-    var(--color-border, #e5e7eb);
+  border-left: 1px solid var(--color-border);
 
-  background: var(--color-background, #ffffff);
+  background: var(--color-surface);
+
+  color: var(--color-text);
 
   box-shadow:
     -12px 0 35px
-    rgb(0 0 0 / 10%);
+    color-mix(
+      in srgb,
+      var(--color-primary) 12%,
+      transparent
+    );
 
   animation:
     adminUsuariosEditorIn
@@ -1046,8 +1164,7 @@
   margin-bottom: 1.5rem;
   padding-bottom: 1rem;
 
-  border-bottom: 1px solid
-    var(--color-border, #e5e7eb);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .admin-usuarios__editor-header > div {
@@ -1059,7 +1176,7 @@
 
   margin-bottom: 0.25rem;
 
-  color: var(--color-primary, #9ac53b);
+  color: var(--color-primary);
 
   font-size: 0.7rem;
   font-weight: 800;
@@ -1071,11 +1188,12 @@
 .admin-usuarios__editor-header h2 {
   margin: 0;
 
-  color: var(--color-text, #1f2937);
+  color: var(--color-text);
 
   font-size: 1.3rem;
   font-weight: 800;
 }
+
 
 /* =========================================================
    CLOSE
@@ -1093,12 +1211,11 @@
 
   padding: 0;
 
-  border: 1px solid
-    var(--color-border, #e5e7eb);
+  border: 1px solid var(--color-border);
   border-radius: 0.65rem;
 
-  background: var(--color-background, #ffffff);
-  color: var(--color-text-muted, #6b7280);
+  background: var(--color-surface);
+  color: var(--color-text-muted);
 
   cursor: pointer;
 
@@ -1107,13 +1224,26 @@
 
   transition:
     background-color var(--transition-fast),
+    border-color var(--transition-fast),
     color var(--transition-fast);
 }
 
 .admin-usuarios__close:hover:not(:disabled) {
-  background: rgb(0 0 0 / 5%);
+  border-color:
+    color-mix(
+      in srgb,
+      var(--color-accent) 30%,
+      var(--color-border)
+    );
 
-  color: var(--color-text, #1f2937);
+  background:
+    color-mix(
+      in srgb,
+      var(--color-accent-light) 35%,
+      var(--color-surface)
+    );
+
+  color: var(--color-text);
 }
 
 .admin-usuarios__close:disabled {
@@ -1121,6 +1251,7 @@
 
   opacity: 0.5;
 }
+
 
 /* =========================================================
    FIELDS
@@ -1136,7 +1267,7 @@
 }
 
 .admin-usuarios__field label {
-  color: var(--color-text, #1f2937);
+  color: var(--color-text);
 
   font-size: 0.78rem;
   font-weight: 750;
@@ -1149,30 +1280,37 @@
 
   padding: 0.65rem 0.75rem;
 
-  border: 1px solid
-    var(--color-border, #e5e7eb);
+  border: 1px solid var(--color-border);
   border-radius: 0.65rem;
 
   outline: none;
 
-  background: var(--color-background, #ffffff);
-  color: var(--color-text, #1f2937);
+  background: var(--color-surface);
+  color: var(--color-text);
 
   font: inherit;
   font-size: 0.83rem;
 
   transition:
     border-color var(--transition-fast),
-    box-shadow var(--transition-fast);
+    box-shadow var(--transition-fast),
+    background-color var(--transition-fast);
+}
+
+.admin-usuarios__field input::placeholder {
+  color: var(--color-text-muted);
 }
 
 .admin-usuarios__field input:focus {
-  border-color:
-    var(--color-primary, #9ac53b);
+  border-color: var(--color-accent);
 
   box-shadow:
     0 0 0 3px
-    rgb(154 197 59 / 13%);
+    color-mix(
+      in srgb,
+      var(--color-accent) 13%,
+      transparent
+    );
 }
 
 .admin-usuarios__field input:disabled {
@@ -1182,7 +1320,9 @@
 }
 
 .admin-usuarios__field input[readonly] {
-  background: rgb(0 0 0 / 2%);
+  background: var(--color-background-alt);
+
+  color: var(--color-text-secondary);
 
   font-family:
     ui-monospace,
@@ -1194,6 +1334,7 @@
 
   font-size: 0.72rem;
 }
+
 
 /* =========================================================
    SWITCH
@@ -1208,9 +1349,10 @@
   margin: 0.5rem 0 1rem;
   padding: 0.85rem;
 
-  border: 1px solid
-    var(--color-border, #e5e7eb);
+  border: 1px solid var(--color-border);
   border-radius: 0.75rem;
+
+  background: var(--color-surface);
 
   cursor: pointer;
 
@@ -1220,11 +1362,14 @@
 }
 
 .admin-usuarios__switch:hover {
-  border-color:
-    var(--color-primary, #9ac53b);
+  border-color: var(--color-accent);
 
   background:
-    rgb(154 197 59 / 4%);
+    color-mix(
+      in srgb,
+      var(--color-accent-light) 25%,
+      var(--color-surface)
+    );
 }
 
 .admin-usuarios__switch input {
@@ -1250,7 +1395,7 @@
 
   border-radius: 999px;
 
-  background: #cfd4da;
+  background: var(--color-border);
 
   transition:
     background-color var(--transition-fast);
@@ -1267,43 +1412,53 @@
 
   border-radius: 50%;
 
-  background: #ffffff;
+  background: var(--color-surface);
 
   box-shadow:
     0 1px 4px
-    rgb(0 0 0 / 18%);
+    color-mix(
+      in srgb,
+      var(--color-primary) 18%,
+      transparent
+    );
 
   content: "";
 
   transition:
-    transform var(--transition-fast);
+    transform var(--transition-fast),
+    background-color var(--transition-fast);
 }
 
 .admin-usuarios__switch
-  input:checked
-  + .admin-usuarios__switch-control {
-  background:
-    var(--color-primary, #9ac53b);
+input:checked
++ .admin-usuarios__switch-control {
+  background: var(--color-accent);
 }
 
 .admin-usuarios__switch
-  input:checked
-  + .admin-usuarios__switch-control::after {
+input:checked
++ .admin-usuarios__switch-control::after {
   transform: translateX(1.05rem);
+
+  background: var(--color-accent-text);
 }
 
 .admin-usuarios__switch
-  input:focus-visible
-  + .admin-usuarios__switch-control {
+input:focus-visible
++ .admin-usuarios__switch-control {
   outline: 3px solid
-    rgb(154 197 59 / 20%);
+    color-mix(
+      in srgb,
+      var(--color-accent) 20%,
+      transparent
+    );
 
   outline-offset: 2px;
 }
 
 .admin-usuarios__switch
-  input:disabled
-  + .admin-usuarios__switch-control {
+input:disabled
++ .admin-usuarios__switch-control {
   opacity: 0.5;
 }
 
@@ -1318,17 +1473,18 @@
 }
 
 .admin-usuarios__switch strong {
-  color: var(--color-text, #1f2937);
+  color: var(--color-text);
 
   font-size: 0.8rem;
 }
 
 .admin-usuarios__switch small {
-  color: var(--color-text-muted, #6b7280);
+  color: var(--color-text-muted);
 
   font-size: 0.7rem;
   line-height: 1.4;
 }
+
 
 /* =========================================================
    EDITOR WARNING
@@ -1338,15 +1494,28 @@
   margin: 0 0 1rem;
   padding: 0.75rem;
 
-  border: 1px solid #f3d48a;
+  border: 1px solid
+    color-mix(
+      in srgb,
+      var(--color-warning) 35%,
+      var(--color-border)
+    );
+
   border-radius: 0.65rem;
 
-  background: #fffaf0;
-  color: #8a5a00;
+  background:
+    color-mix(
+      in srgb,
+      var(--color-warning) 9%,
+      var(--color-surface)
+    );
+
+  color: var(--color-warning);
 
   font-size: 0.74rem;
   line-height: 1.5;
 }
+
 
 /* =========================================================
    EDITOR ACTIONS
@@ -1360,4 +1529,126 @@
 
   margin-top: auto;
   padding-top: 1.25rem;
+}
+
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 980px) {
+  .admin-usuarios__header {
+    flex-direction: column;
+  }
+
+  .admin-usuarios__stats {
+    width: 100%;
+  }
+
+  .admin-usuarios__toolbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .admin-usuarios__search {
+    width: 100%;
+  }
+
+  .admin-usuarios__realtime {
+    align-self: flex-end;
+  }
+}
+
+
+@media (max-width: 760px) {
+  .admin-usuarios {
+    padding: 1rem;
+  }
+
+  .admin-usuarios__table-wrapper {
+    display: none;
+  }
+
+  .admin-usuarios__mobile-list {
+    display: grid;
+
+    gap: 0.75rem;
+  }
+
+  .admin-usuarios__stats {
+    grid-template-columns:
+      repeat(3, minmax(0, 1fr));
+  }
+
+  .admin-usuarios__stat {
+    min-width: 0;
+
+    padding: 0.75rem;
+  }
+
+  .admin-usuarios__stat-value {
+    font-size: 1.25rem;
+  }
+
+  .admin-usuarios__editor {
+    width: 100%;
+
+    padding: 1rem;
+  }
+}
+
+
+@media (max-width: 520px) {
+  .admin-usuarios {
+    padding: 0.75rem;
+  }
+
+  .admin-usuarios__header {
+    gap: 1rem;
+  }
+
+  .admin-usuarios__title {
+    font-size: 1.65rem;
+  }
+
+  .admin-usuarios__description {
+    font-size: 0.85rem;
+  }
+
+  .admin-usuarios__stats {
+    gap: 0.5rem;
+  }
+
+  .admin-usuarios__stat {
+    padding: 0.65rem;
+  }
+
+  .admin-usuarios__stat-label {
+    font-size: 0.62rem;
+  }
+
+  .admin-usuarios__stat-value {
+    font-size: 1.1rem;
+  }
+
+  .admin-usuarios__mobile-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-usuarios__mobile-detail {
+    gap: 0.5rem;
+  }
+
+  .admin-usuarios__mobile-detail > strong {
+    max-width: 62%;
+  }
+
+  .admin-usuarios__editor-actions {
+    flex-direction: column;
+  }
+
+  .admin-usuarios__editor-actions
+  .admin-usuarios__button {
+    width: 100%;
+  }
 }

@@ -3,9 +3,19 @@
    ========================================================= */
 
 .solutions {
+  width: 100%;
+  min-width: 0;
   background: var(--color-background);
 }
 
+/* =========================================================
+   CONTAINER
+   ========================================================= */
+
+.solutions__container {
+  width: 100%;
+  min-width: 0;
+}
 
 /* =========================================================
    GRID
@@ -13,13 +23,12 @@
 
 .solutions__grid {
   display: grid;
-
   grid-template-columns:
     repeat(3, minmax(0, 1fr));
-
   gap: 24px;
+  width: 100%;
+  min-width: 0;
 }
-
 
 /* =========================================================
    SOLUTION CARD
@@ -31,7 +40,12 @@
   display: flex;
   flex-direction: column;
 
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
   min-height: 260px;
+
+  box-sizing: border-box;
 
   padding: 32px 30px 30px;
 
@@ -50,12 +64,10 @@
     border-color var(--transition-normal);
 }
 
-
 .solution-card::before {
   content: "";
 
   position: absolute;
-
   top: 0;
   left: 0;
 
@@ -71,7 +83,6 @@
     transform var(--transition-normal);
 }
 
-
 .solution-card:hover {
   transform: translateY(-5px);
 
@@ -80,17 +91,32 @@
   box-shadow: var(--shadow-md);
 }
 
-
 .solution-card:hover::before {
   transform: scaleX(1);
 }
 
+/* =========================================================
+   TOP
+   ========================================================= */
+
+.solution-card__top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+
+  gap: 16px;
+
+  width: 100%;
+  min-width: 0;
+}
 
 /* =========================================================
    ICON
    ========================================================= */
 
 .solution-card__icon {
+  flex: 0 0 auto;
+
   width: 58px;
   height: 58px;
 
@@ -127,7 +153,6 @@
     border-color var(--transition-normal);
 }
 
-
 .solution-card:hover .solution-card__icon {
   transform: translateY(-2px);
 
@@ -138,6 +163,26 @@
   color: var(--color-accent-text);
 }
 
+/* =========================================================
+   NUMBER
+   ========================================================= */
+
+.solution-card__number {
+  flex: 0 0 auto;
+
+  color:
+    color-mix(
+      in srgb,
+      var(--color-text-muted) 72%,
+      var(--color-surface)
+    );
+
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+
+  letter-spacing: 0.08em;
+}
 
 /* =========================================================
    CONTENT
@@ -147,11 +192,11 @@
   display: flex;
   flex-direction: column;
 
-  flex: 1;
+  flex: 1 1 auto;
 
+  width: 100%;
   min-width: 0;
 }
-
 
 /* =========================================================
    TITLE
@@ -159,6 +204,9 @@
 
 .solution-card__title,
 .solution-card h3 {
+  min-width: 0;
+  max-width: 100%;
+
   margin: 0;
 
   color: var(--color-primary);
@@ -168,8 +216,10 @@
   line-height: 1.3;
 
   letter-spacing: -0.2px;
-}
 
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
 
 /* =========================================================
    DESCRIPTION
@@ -177,6 +227,9 @@
 
 .solution-card__description,
 .solution-card p {
+  min-width: 0;
+  max-width: 100%;
+
   margin: 12px 0 0;
 
   color:
@@ -188,8 +241,10 @@
 
   font-size: 15px;
   line-height: 1.7;
-}
 
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
 
 /* =========================================================
    LINK
@@ -202,6 +257,8 @@
   gap: 7px;
 
   width: fit-content;
+  max-width: 100%;
+  min-width: 0;
 
   margin-top: auto;
   padding-top: 22px;
@@ -217,19 +274,30 @@
     gap var(--transition-fast);
 }
 
-
 .solution-card__link:hover {
   color: var(--color-primary);
 
   gap: 10px;
 }
 
+/* =========================================================
+   LINK TEXT
+   ========================================================= */
+
+.solution-card__link-text {
+  min-width: 0;
+
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
 
 /* =========================================================
    LINK ICON
    ========================================================= */
 
 .solution-card__link-icon {
+  flex: 0 0 auto;
+
   display: inline-flex;
 
   font-size: 15px;
@@ -239,12 +307,10 @@
     transform var(--transition-fast);
 }
 
-
 .solution-card__link:hover
 .solution-card__link-icon {
   transform: translateX(2px);
 }
-
 
 /* =========================================================
    EMPTY STATE
@@ -253,9 +319,11 @@
 .solutions__empty {
   display: flex;
   flex-direction: column;
+
   align-items: center;
   justify-content: center;
 
+  min-width: 0;
   min-height: 220px;
 
   padding: 40px;
@@ -286,7 +354,6 @@
   text-align: center;
 }
 
-
 /* =========================================================
    EMPTY ICON
    ========================================================= */
@@ -297,6 +364,8 @@
 
   display: grid;
   place-items: center;
+
+  flex: 0 0 auto;
 
   margin-bottom: 14px;
 
@@ -314,16 +383,43 @@
   font-size: 20px;
 }
 
-
 /* =========================================================
    EMPTY CONTENT
    ========================================================= */
 
 .solutions__empty p {
+  width: 100%;
   max-width: 460px;
 
   margin: 0;
 
   font-size: 14px;
   line-height: 1.6;
+
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 900px) {
+  .solutions__grid {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 600px) {
+  .solutions__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .solution-card {
+    min-height: 240px;
+
+    padding:
+      26px 24px 24px;
+  }
 }

@@ -25,7 +25,7 @@
       var(--color-primary-dark) 100%
     );
 
-  color: var(--color-white);
+  color: var(--color-primary-text);
 }
 
 
@@ -34,7 +34,7 @@
    ========================================================= */
 
 .app-footer::before {
-  content: '';
+  content: "";
 
   position: absolute;
 
@@ -47,13 +47,13 @@
   background:
     color-mix(
       in srgb,
-      var(--color-white) 12%,
+      var(--color-primary-text) 12%,
       transparent
     );
 }
 
 .app-footer::after {
-  content: '';
+  content: "";
 
   position: absolute;
 
@@ -68,7 +68,7 @@
   border: 1px solid
     color-mix(
       in srgb,
-      var(--color-white) 5%,
+      var(--color-primary-text) 5%,
       transparent
     );
 
@@ -137,7 +137,7 @@
   border: 1px solid
     color-mix(
       in srgb,
-      var(--color-white) 14%,
+      var(--color-primary-text) 14%,
       transparent
     );
 
@@ -146,12 +146,11 @@
   background:
     color-mix(
       in srgb,
-      var(--color-white) 8%,
+      var(--color-primary-text) 8%,
       transparent
     );
 
-  box-shadow:
-    var(--shadow-md);
+  box-shadow: var(--shadow-md);
 
   overflow: hidden;
 
@@ -168,7 +167,7 @@
 
   padding: 8px;
 
-  background: var(--color-white);
+  background: var(--color-surface);
 }
 
 .app-footer__logo-text {
@@ -180,7 +179,7 @@
   width: 100%;
   height: 100%;
 
-  color: var(--color-white);
+  color: var(--color-primary-text);
 
   font-size: 22px;
   font-weight: 800;
@@ -196,7 +195,7 @@
 .app-footer__company {
   margin: 0 0 10px;
 
-  color: var(--color-white);
+  color: var(--color-primary-text);
 
   font-size: 20px;
   font-weight: 750;
@@ -214,7 +213,7 @@
   color:
     color-mix(
       in srgb,
-      var(--color-white) 58%,
+      var(--color-primary-text) 58%,
       transparent
     );
 
@@ -235,7 +234,7 @@
 .app-footer__column-title {
   margin: 4px 0 20px;
 
-  color: var(--color-white);
+  color: var(--color-primary-text);
 
   font-size: 12px;
   font-weight: 750;
@@ -276,7 +275,7 @@
   color:
     color-mix(
       in srgb,
-      var(--color-white) 56%,
+      var(--color-primary-text) 56%,
       transparent
     );
 
@@ -292,7 +291,7 @@
 }
 
 .app-footer__links a::before {
-  content: '';
+  content: "";
 
   width: 0;
   height: 1px;
@@ -307,7 +306,7 @@
 }
 
 .app-footer__links a:hover {
-  color: var(--color-white);
+  color: var(--color-primary-text);
 
   transform: translateX(3px);
 }
@@ -357,7 +356,7 @@
   background:
     color-mix(
       in srgb,
-      var(--color-white) 6%,
+      var(--color-primary-text) 6%,
       transparent
     );
 
@@ -378,7 +377,7 @@
   border: 1px solid
     color-mix(
       in srgb,
-      var(--color-white) 10%,
+      var(--color-primary-text) 10%,
       transparent
     );
 
@@ -387,7 +386,7 @@
   background:
     color-mix(
       in srgb,
-      var(--color-white) 5%,
+      var(--color-primary-text) 5%,
       transparent
     );
 
@@ -411,7 +410,7 @@
   color:
     color-mix(
       in srgb,
-      var(--color-white) 38%,
+      var(--color-primary-text) 38%,
       transparent
     );
 
@@ -430,7 +429,7 @@
   color:
     color-mix(
       in srgb,
-      var(--color-white) 76%,
+      var(--color-primary-text) 76%,
       transparent
     );
 
@@ -445,7 +444,7 @@
 
 .app-footer__contact-item--whatsapp:hover
 .app-footer__contact-icon {
-  color: var(--color-white);
+  color: var(--color-accent-text);
 
   background: var(--color-accent);
 
@@ -479,7 +478,7 @@
   border: 1px solid
     color-mix(
       in srgb,
-      var(--color-white) 10%,
+      var(--color-primary-text) 10%,
       transparent
     );
 
@@ -488,14 +487,14 @@
   background:
     color-mix(
       in srgb,
-      var(--color-white) 4%,
+      var(--color-primary-text) 4%,
       transparent
     );
 
   color:
     color-mix(
       in srgb,
-      var(--color-white) 68%,
+      var(--color-primary-text) 68%,
       transparent
     );
 
@@ -512,7 +511,7 @@
 }
 
 .app-footer__social a:hover {
-  color: var(--color-white);
+  color: var(--color-accent-text);
 
   background: var(--color-accent);
 
@@ -545,7 +544,7 @@
   border-top: 1px solid
     color-mix(
       in srgb,
-      var(--color-white) 9%,
+      var(--color-primary-text) 9%,
       transparent
     );
 
@@ -569,7 +568,7 @@
   color:
     color-mix(
       in srgb,
-      var(--color-white) 38%,
+      var(--color-primary-text) 38%,
       transparent
     );
 
@@ -599,7 +598,7 @@
   color:
     color-mix(
       in srgb,
-      var(--color-white) 46%,
+      var(--color-primary-text) 46%,
       transparent
     );
 
@@ -626,7 +625,7 @@
   border: 1px solid
     color-mix(
       in srgb,
-      var(--color-white) 11%,
+      var(--color-primary-text) 11%,
       transparent
     );
 
@@ -635,7 +634,7 @@
   background:
     color-mix(
       in srgb,
-      var(--color-white) 4%,
+      var(--color-primary-text) 4%,
       transparent
     );
 
@@ -643,7 +642,7 @@
 }
 
 .app-footer__back-top:hover {
-  color: var(--color-white);
+  color: var(--color-primary-text);
 
   transform: translateY(-2px);
 }

@@ -10,58 +10,135 @@ const props = defineProps({
   },
 })
 
+/*
+|--------------------------------------------------------------------------
+| Estado
+|--------------------------------------------------------------------------
+*/
+
 const activo = computed(() => {
   return props.item?.activo !== false
 })
 
+/*
+|--------------------------------------------------------------------------
+| Contenido
+|--------------------------------------------------------------------------
+*/
+
 const titulo = computed(() => {
-  return String(
-    props.item?.titulo || ''
-  ).trim()
+  return typeof props.item?.titulo === 'string'
+    ? props.item.titulo.trim()
+    : ''
 })
 
 const descripcion = computed(() => {
-  return String(
-    props.item?.descripcion || ''
-  ).trim()
+  return typeof props.item?.descripcion === 'string'
+    ? props.item.descripcion.trim()
+    : ''
 })
 
 const icono = computed(() => {
-  return String(
-    props.item?.icono || '✦'
-  ).trim()
+  return typeof props.item?.icono === 'string' &&
+    props.item.icono.trim()
+    ? props.item.icono.trim()
+    : '✦'
 })
 
+/*
+|--------------------------------------------------------------------------
+| Enlace
+|--------------------------------------------------------------------------
+*/
+
 const enlace = computed(() => {
-  return String(
-    props.item?.url ||
-    props.item?.enlace ||
+  const valor =
+    props.item?.url ??
+    props.item?.enlace ??
     ''
-  ).trim()
+
+  return typeof valor === 'string'
+    ? valor.trim()
+    : ''
 })
 
 const textoEnlace = computed(() => {
-  return String(
-    props.item?.textoEnlace ||
-    props.item?.botonTexto ||
+  const valor =
+    props.item?.textoEnlace ??
+    props.item?.botonTexto ??
     'Conocer más'
-  ).trim()
+
+  return typeof valor === 'string'
+    ? valor.trim()
+    : 'Conocer más'
 })
+
+/*
+|--------------------------------------------------------------------------
+| Estado del contenido
+|--------------------------------------------------------------------------
+*/
 
 const tieneContenido = computed(() => {
   return Boolean(
     titulo.value ||
-    descripcion.value
+    descripcion.value,
   )
 })
 
+/*
+|--------------------------------------------------------------------------
+| Enlace externo
+|--------------------------------------------------------------------------
+*/
+
 const esEnlaceExterno = computed(() => {
   const url = enlace.value
+
+  if (!url) {
+    return false
+  }
 
   return (
     /^https?:\/\//i.test(url) ||
     /^www\./i.test(url)
   )
+})
+
+/*
+|--------------------------------------------------------------------------
+| URL final
+|--------------------------------------------------------------------------
+*/
+
+const urlEnlace = computed(() => {
+  const url = enlace.value
+
+  if (!url) {
+    return ''
+  }
+
+  if (/^www\./i.test(url)) {
+    return `https://${url}`
+  }
+
+  return url
+})
+
+/*
+|--------------------------------------------------------------------------
+| Número de orden
+|--------------------------------------------------------------------------
+*/
+
+const numeroOrden = computed(() => {
+  const orden = Number(props.item?.orden)
+
+  if (!Number.isFinite(orden)) {
+    return ''
+  }
+
+  return String(orden).padStart(2, '0')
 })
 </script>
 
@@ -70,10 +147,12 @@ const esEnlaceExterno = computed(() => {
     v-if="activo && tieneContenido"
     class="solution-card"
   >
+    <!-- =========================================================
+         PARTE SUPERIOR
+         ========================================================= -->
 
-    <div
-      class="solution-card__top"
-    >
+    <div class="solution-card__top">
+
       <div
         class="solution-card__icon"
         aria-hidden="true"
@@ -82,17 +161,21 @@ const esEnlaceExterno = computed(() => {
       </div>
 
       <span
-        v-if="item.orden !== undefined"
+        v-if="numeroOrden"
         class="solution-card__number"
         aria-hidden="true"
       >
-        {{ String(item.orden).padStart(2, '0') }}
+        {{ numeroOrden }}
       </span>
+
     </div>
 
-    <div
-      class="solution-card__content"
-    >
+    <!-- =========================================================
+         CONTENIDO
+         ========================================================= -->
+
+    <div class="solution-card__content">
+
       <h3
         v-if="titulo"
         class="solution-card__title"
@@ -106,24 +189,25 @@ const esEnlaceExterno = computed(() => {
       >
         {{ descripcion }}
       </p>
+
     </div>
+
+    <!-- =========================================================
+         ENLACE
+         ========================================================= -->
 
     <a
       v-if="enlace"
-      :href="enlace"
+      :href="urlEnlace"
       class="solution-card__link"
-      :target="
-        esEnlaceExterno
-          ? '_blank'
-          : undefined
-      "
+      :target="esEnlaceExterno ? '_blank' : undefined"
       :rel="
         esEnlaceExterno
           ? 'noopener noreferrer'
           : undefined
       "
     >
-      <span>
+      <span class="solution-card__link-text">
         {{ textoEnlace }}
       </span>
 
@@ -134,6 +218,5 @@ const esEnlaceExterno = computed(() => {
         →
       </span>
     </a>
-
   </article>
 </template>

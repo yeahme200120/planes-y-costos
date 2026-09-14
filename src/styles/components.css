@@ -2,6 +2,7 @@
    COMPONENTS
    ========================================================= */
 
+
 /* =========================================================
    BUTTONS
    ========================================================= */
@@ -10,23 +11,17 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-
   min-height: 48px;
   padding: 0 22px;
-
   border: 1px solid transparent;
   border-radius: var(--radius-md);
-
   font-family: inherit;
   font-size: 14px;
   font-weight: 700;
   line-height: 1.2;
-
   text-align: center;
   white-space: nowrap;
-
   cursor: pointer;
-
   transition:
     transform var(--transition-fast),
     background var(--transition-fast),
@@ -40,14 +35,18 @@
 }
 
 .btn:focus-visible {
-  outline: 3px solid rgba(47, 128, 237, 0.25);
+  outline: 3px solid
+    color-mix(
+      in srgb,
+      var(--color-accent) 25%,
+      transparent
+    );
   outline-offset: 3px;
 }
 
 .btn--primary {
   background: var(--color-accent);
-  color: var(--color-white);
-
+  color: var(--color-accent-text);
   box-shadow: var(--shadow-sm);
 }
 
@@ -57,19 +56,23 @@
 }
 
 .btn--secondary {
-  background: var(--color-white);
+  background: var(--color-surface);
   color: var(--color-primary);
-
   border-color: var(--color-border);
 }
 
 .btn--secondary:hover {
-  background: var(--color-accent-light);
+  background:
+    color-mix(
+      in srgb,
+      var(--color-accent) 10%,
+      var(--color-surface)
+    );
   border-color: var(--color-accent);
 }
 
 .btn--light {
-  background: var(--color-white);
+  background: var(--color-surface);
   color: var(--color-primary);
 }
 
@@ -84,7 +87,12 @@
 }
 
 .btn--ghost:hover {
-  background: var(--color-accent-light);
+  background:
+    color-mix(
+      in srgb,
+      var(--color-accent) 10%,
+      var(--color-background)
+    );
 }
 
 .btn--full {
@@ -94,33 +102,26 @@
 .btn:disabled,
 .btn[aria-disabled="true"] {
   opacity: 0.55;
-
   cursor: not-allowed;
   pointer-events: none;
 }
 
 .btn--loading {
   position: relative;
-
   color: transparent;
-
   pointer-events: none;
 }
 
 .btn--loading::after {
   content: "";
-
   position: absolute;
-
   width: 18px;
   height: 18px;
-
-  border: 2px solid var(--color-white);
+  border: 2px solid var(--color-accent-text);
   border-right-color: transparent;
-
   border-radius: 50%;
-
-  animation: button-spin 0.7s linear infinite;
+  animation:
+    button-spin 0.7s linear infinite;
 }
 
 @keyframes button-spin {
@@ -128,6 +129,7 @@
     transform: rotate(360deg);
   }
 }
+
 
 /* =========================================================
    STATES
@@ -138,19 +140,14 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-
   min-height: 180px;
-
   padding: 30px;
-
   text-align: center;
-
   color: var(--color-text-muted);
 }
 
 .state p {
   margin-top: 12px;
-
   font-size: 14px;
   line-height: 1.6;
 }
@@ -158,13 +155,16 @@
 .state__spinner {
   width: 34px;
   height: 34px;
-
-  border: 3px solid var(--color-border);
+  border: 3px solid
+    color-mix(
+      in srgb,
+      var(--color-text) 16%,
+      transparent
+    );
   border-top-color: var(--color-accent);
-
   border-radius: 50%;
-
-  animation: state-spin 0.8s linear infinite;
+  animation:
+    state-spin 0.8s linear infinite;
 }
 
 @keyframes state-spin {
@@ -181,15 +181,22 @@
   display: flex;
   align-items: center;
   justify-content: center;
-
   width: 36px;
   height: 36px;
-
+  border: 1px solid
+    color-mix(
+      in srgb,
+      var(--color-danger) 22%,
+      transparent
+    );
   border-radius: 50%;
-
-  background: #fef2f2;
+  background:
+    color-mix(
+      in srgb,
+      var(--color-danger) 10%,
+      var(--color-background)
+    );
   color: var(--color-danger);
-
   font-size: 18px;
   font-weight: 800;
 }
@@ -198,23 +205,21 @@
   color: var(--color-text-muted);
 }
 
+
 /* =========================================================
    ABOUT / NOSOTROS
    ========================================================= */
 
 .about {
-  background: var(--color-white);
+  background: var(--color-surface);
 }
 
 .about__layout {
   display: grid;
-
   grid-template-columns:
     minmax(0, 1fr)
     minmax(380px, 0.85fr);
-
   align-items: center;
-
   gap: 80px;
 }
 
@@ -232,65 +237,51 @@
 
 .about__description {
   margin: 24px 0 0;
-
   color: var(--color-text-secondary);
-
   font-size: 17px;
   line-height: 1.8;
 }
 
 .about__media {
   position: relative;
-
   overflow: hidden;
-
   min-height: 360px;
-
   border-radius: var(--radius-xl);
-
   background: var(--color-background);
-
   box-shadow: var(--shadow-md);
 }
 
 .about__media::after {
   content: "";
-
   position: absolute;
   inset: 0;
-
   border: 1px solid var(--color-border);
-
   border-radius: inherit;
-
   pointer-events: none;
 }
 
 .about__media img {
   width: 100%;
   height: 100%;
-
   min-height: 360px;
-
   object-fit: cover;
 }
 
 .about__visual {
   position: relative;
-
   min-height: 360px;
-
   display: grid;
   place-items: center;
-
   padding: 40px;
-
   border-radius: var(--radius-xl);
-
   background:
     radial-gradient(
       circle at 75% 25%,
-      rgba(47, 128, 237, 0.22),
+      color-mix(
+        in srgb,
+        var(--color-accent) 22%,
+        transparent
+      ),
       transparent 35%
     ),
     linear-gradient(
@@ -298,20 +289,20 @@
       var(--color-primary-dark),
       var(--color-primary)
     );
-
   overflow: hidden;
-
   box-shadow: var(--shadow-md);
 }
 
 .about__visual::before,
 .about__visual::after {
   content: "";
-
   position: absolute;
-
-  border: 1px solid rgba(255, 255, 255, 0.1);
-
+  border: 1px solid
+    color-mix(
+      in srgb,
+      var(--color-white) 10%,
+      transparent
+    );
   border-radius: 50%;
 }
 
@@ -328,32 +319,38 @@
 .about__visual-inner {
   position: relative;
   z-index: 1;
-
   width: 130px;
   height: 130px;
-
   display: grid;
   place-items: center;
-
-  border: 1px solid rgba(255, 255, 255, 0.18);
-
+  border: 1px solid
+    color-mix(
+      in srgb,
+      var(--color-white) 18%,
+      transparent
+    );
   border-radius: 32px;
-
-  background: rgba(255, 255, 255, 0.08);
-
+  background:
+    color-mix(
+      in srgb,
+      var(--color-white) 8%,
+      transparent
+    );
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-
   color: var(--color-white);
-
   font-size: 28px;
   font-weight: 900;
-
   letter-spacing: 1px;
-
   box-shadow:
-    0 20px 50px rgba(0, 0, 0, 0.18);
+    0 20px 50px
+    color-mix(
+      in srgb,
+      var(--color-primary-dark) 18%,
+      transparent
+    );
 }
+
 
 /* =========================================================
    BENEFITS
@@ -365,24 +362,17 @@
 
 .benefits__grid {
   display: grid;
-
   grid-template-columns:
     repeat(3, minmax(0, 1fr));
-
   gap: 24px;
 }
 
 .benefit-card {
   padding: 34px 30px;
-
   border: 1px solid var(--color-border);
-
   border-radius: var(--radius-lg);
-
-  background: var(--color-white);
-
+  background: var(--color-surface);
   box-shadow: var(--shadow-sm);
-
   transition:
     transform var(--transition-normal),
     box-shadow var(--transition-normal),
@@ -391,47 +381,47 @@
 
 .benefit-card:hover {
   transform: translateY(-5px);
-
-  border-color: rgba(47, 128, 237, 0.25);
-
+  border-color:
+    color-mix(
+      in srgb,
+      var(--color-accent) 25%,
+      var(--color-border)
+    );
   box-shadow: var(--shadow-md);
 }
 
 .benefit-card__icon {
   width: 54px;
   height: 54px;
-
   display: grid;
   place-items: center;
-
   margin-bottom: 24px;
-
   border-radius: var(--radius-md);
-
-  background: var(--color-accent-light);
-
+  background:
+    color-mix(
+      in srgb,
+      var(--color-accent) 12%,
+      var(--color-surface)
+    );
+  color: var(--color-accent);
   font-size: 25px;
 }
 
 .benefit-card h3 {
   margin: 0;
-
   color: var(--color-primary);
-
   font-size: 19px;
   font-weight: 800;
-
   line-height: 1.3;
 }
 
 .benefit-card p {
   margin: 12px 0 0;
-
   color: var(--color-text-secondary);
-
   font-size: 15px;
   line-height: 1.7;
 }
+
 
 /* =========================================================
    CONTACT
@@ -443,25 +433,22 @@
 
 .contact__card {
   position: relative;
-
   display: grid;
-
   grid-template-columns:
     minmax(0, 1fr)
     auto;
-
   align-items: center;
-
   gap: 50px;
-
   padding: 55px 60px;
-
   border-radius: var(--radius-xl);
-
   background:
     radial-gradient(
       circle at 90% 10%,
-      rgba(47, 128, 237, 0.2),
+      color-mix(
+        in srgb,
+        var(--color-accent) 20%,
+        transparent
+      ),
       transparent 35%
     ),
     linear-gradient(
@@ -469,78 +456,76 @@
       var(--color-primary-dark),
       var(--color-primary)
     );
-
   overflow: hidden;
-
   box-shadow: var(--shadow-lg);
 }
 
 .contact__card::before {
   content: "";
-
   position: absolute;
-
   width: 320px;
   height: 320px;
-
   right: -140px;
   bottom: -180px;
-
-  border: 1px solid rgba(255, 255, 255, 0.08);
-
+  border: 1px solid
+    color-mix(
+      in srgb,
+      var(--color-white) 8%,
+      transparent
+    );
   border-radius: 50%;
-
   pointer-events: none;
 }
 
 .contact__card::after {
   content: "";
-
   position: absolute;
-
   width: 220px;
   height: 220px;
-
   right: 20px;
   top: -150px;
-
-  border: 1px solid rgba(255, 255, 255, 0.06);
-
+  border: 1px solid
+    color-mix(
+      in srgb,
+      var(--color-white) 6%,
+      transparent
+    );
   border-radius: 50%;
-
   pointer-events: none;
 }
 
 .contact__content {
   position: relative;
   z-index: 1;
-
   max-width: 700px;
 }
 
 .contact__content .section-eyebrow {
-  color: #63a4f4;
+  color:
+    color-mix(
+      in srgb,
+      var(--color-accent) 72%,
+      var(--color-white)
+    );
 }
 
 .contact__title {
   margin: 12px 0 0;
-
   color: var(--color-white);
-
   font-size: clamp(30px, 4vw, 46px);
-
   line-height: 1.1;
-
   letter-spacing: -1.5px;
 }
 
 .contact__description {
   max-width: 650px;
-
   margin: 18px 0 0;
-
-  color: #c7d3e3;
-
+  color:
+    color-mix(
+      in srgb,
+      var(--color-white) 78%,
+      var(--color-primary)
+    );
   font-size: 16px;
   line-height: 1.7;
 }
@@ -548,45 +533,47 @@
 .contact__action {
   position: relative;
   z-index: 1;
-
   flex-shrink: 0;
 }
 
 .contact__button {
   display: inline-flex;
-
   align-items: center;
   justify-content: center;
-
   min-height: 50px;
-
   padding: 0 26px;
-
+  border: 1px solid
+    color-mix(
+      in srgb,
+      var(--color-white) 20%,
+      transparent
+    );
   border-radius: var(--radius-md);
-
   background: var(--color-white);
-
   color: var(--color-primary);
-
   font-size: 14px;
   font-weight: 800;
-
   white-space: nowrap;
-
   transition:
     transform var(--transition-fast),
     box-shadow var(--transition-fast),
-    background var(--transition-fast);
+    background var(--transition-fast),
+    color var(--transition-fast);
 }
 
 .contact__button:hover {
   transform: translateY(-2px);
-
   background: var(--color-background);
-
+  color: var(--color-primary);
   box-shadow:
-    0 12px 28px rgba(0, 0, 0, 0.2);
+    0 12px 28px
+    color-mix(
+      in srgb,
+      var(--color-primary-dark) 20%,
+      transparent
+    );
 }
+
 
 /* =========================================================
    FAQ
@@ -598,61 +585,53 @@
 
 .faq__list {
   width: min(100%, 850px);
-
   margin: 0 auto;
-
   display: flex;
   flex-direction: column;
-
   gap: 12px;
 }
 
 .faq-item {
   overflow: hidden;
-
   border: 1px solid var(--color-border);
-
   border-radius: var(--radius-md);
-
-  background: var(--color-white);
-
+  background: var(--color-surface);
   box-shadow: var(--shadow-sm);
-
   transition:
     border-color var(--transition-normal),
     box-shadow var(--transition-normal);
 }
 
 .faq-item:hover {
-  border-color: rgba(47, 128, 237, 0.25);
-
+  border-color:
+    color-mix(
+      in srgb,
+      var(--color-accent) 25%,
+      var(--color-border)
+    );
   box-shadow: var(--shadow-md);
 }
 
 .faq-item--open {
-  border-color: rgba(47, 128, 237, 0.3);
+  border-color:
+    color-mix(
+      in srgb,
+      var(--color-accent) 30%,
+      var(--color-border)
+    );
 }
 
 .faq-item__question {
   width: 100%;
-
   display: flex;
-
   align-items: center;
   justify-content: space-between;
-
   gap: 25px;
-
   padding: 22px 24px;
-
   border: 0;
-
   background: transparent;
-
   color: var(--color-primary);
-
   text-align: left;
-
   font-size: 16px;
   font-weight: 800;
   line-height: 1.5;
@@ -664,19 +643,19 @@
 
 .faq-item__icon {
   position: relative;
-
   width: 32px;
   height: 32px;
-
   flex: 0 0 32px;
-
   display: grid;
   place-items: center;
-
   border-radius: 50%;
-
-  background: var(--color-accent-light);
-
+  background:
+    color-mix(
+      in srgb,
+      var(--color-accent) 10%,
+      var(--color-surface)
+    );
+  color: var(--color-accent);
   transition:
     background var(--transition-fast),
     transform var(--transition-normal);
@@ -684,27 +663,22 @@
 
 .faq-item--open .faq-item__icon {
   background: var(--color-accent);
-
   transform: rotate(180deg);
 }
 
 .faq-item__icon span {
   position: absolute;
-
   width: 11px;
   height: 2px;
-
   border-radius: 2px;
-
   background: var(--color-primary);
-
   transition:
     transform var(--transition-fast),
     opacity var(--transition-fast);
 }
 
 .faq-item--open .faq-item__icon span {
-  background: var(--color-white);
+  background: var(--color-accent-text);
 }
 
 .faq-item__icon span:first-child {
@@ -723,16 +697,13 @@
 
 .faq-item__answer p {
   margin: 0;
-
   padding-top: 4px;
-
   border-top: 1px solid var(--color-border-light);
-
   color: var(--color-text-secondary);
-
   font-size: 15px;
   line-height: 1.75;
 }
+
 
 /* =========================================================
    FEATURES
@@ -744,29 +715,20 @@
 
 .features__grid {
   display: grid;
-
   grid-template-columns:
     repeat(4, minmax(0, 1fr));
-
   gap: 20px;
 }
 
 .feature-card {
   display: flex;
   flex-direction: column;
-
   min-height: 230px;
-
   padding: 30px 26px;
-
   border: 1px solid var(--color-border);
-
   border-radius: var(--radius-lg);
-
-  background: var(--color-white);
-
+  background: var(--color-surface);
   box-shadow: var(--shadow-sm);
-
   transition:
     transform var(--transition-normal),
     box-shadow var(--transition-normal),
@@ -775,25 +737,29 @@
 
 .feature-card:hover {
   transform: translateY(-4px);
-
-  border-color: rgba(47, 128, 237, 0.25);
-
+  border-color:
+    color-mix(
+      in srgb,
+      var(--color-accent) 25%,
+      var(--color-border)
+    );
   box-shadow: var(--shadow-md);
 }
 
 .feature-card__icon {
   width: 52px;
   height: 52px;
-
   display: grid;
   place-items: center;
-
   margin-bottom: 22px;
-
   border-radius: var(--radius-md);
-
-  background: var(--color-accent-light);
-
+  background:
+    color-mix(
+      in srgb,
+      var(--color-accent) 12%,
+      var(--color-surface)
+    );
+  color: var(--color-accent);
   font-size: 24px;
 }
 
@@ -803,23 +769,19 @@
 
 .feature-card h3 {
   margin: 0;
-
   color: var(--color-primary);
-
   font-size: 17px;
   font-weight: 800;
-
   line-height: 1.35;
 }
 
 .feature-card p {
   margin: 10px 0 0;
-
   color: var(--color-text-secondary);
-
   font-size: 14px;
   line-height: 1.7;
 }
+
 
 /* =========================================================
    HEADER
@@ -827,129 +789,100 @@
 
 .app-header {
   position: sticky;
-
   top: 0;
-
   z-index: 1000;
-
-  background: rgba(255, 255, 255, 0.96);
-
+  background:
+    color-mix(
+      in srgb,
+      var(--color-surface) 96%,
+      transparent
+    );
   border-bottom: 1px solid var(--color-border-light);
-
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
 }
 
 .app-header__inner {
   min-height: 76px;
-
   display: flex;
-
   align-items: center;
   justify-content: space-between;
-
   gap: 30px;
 }
 
 .app-header__brand {
   display: inline-flex;
-
   align-items: center;
-
   gap: 12px;
-
   flex-shrink: 0;
 }
 
 .app-header__logo {
   width: 42px;
   height: 42px;
-
   display: grid;
   place-items: center;
-
   overflow: hidden;
-
   border-radius: 11px;
-
   background: var(--color-primary);
-
-  color: var(--color-white);
-
+  color: var(--color-primary-text);
   font-size: 14px;
   font-weight: 800;
-
   letter-spacing: 0.5px;
 }
 
 .app-header__logo img {
   width: 100%;
   height: 100%;
-
   object-fit: contain;
 }
 
 .app-header__brand-text {
   display: flex;
-
   flex-direction: column;
-
   line-height: 1.15;
 }
 
 .app-header__brand-text strong {
   color: var(--color-primary);
-
   font-size: 15px;
   font-weight: 800;
 }
 
 .app-header__brand-text small {
   margin-top: 4px;
-
   color: var(--color-text-muted);
-
   font-size: 10px;
   font-weight: 600;
-
   letter-spacing: 0.4px;
 }
 
 .app-header__nav {
   display: flex;
-
   align-items: center;
-
   gap: 32px;
-
   margin-left: auto;
 }
 
 .app-header__nav a {
   position: relative;
-
   color: var(--color-text-secondary);
-
   font-size: 14px;
   font-weight: 600;
-
-  transition: color var(--transition-fast);
+  transition:
+    color var(--transition-fast);
 }
 
 .app-header__nav a::after {
   content: "";
-
   position: absolute;
-
   left: 0;
   bottom: -8px;
-
   width: 0;
   height: 2px;
-
   background: var(--color-accent);
-
-  transition: width var(--transition-fast);
+  transition:
+    width var(--transition-fast);
 }
 
 .app-header__nav a:hover {
@@ -962,25 +895,16 @@
 
 .app-header__cta {
   display: inline-flex;
-
   align-items: center;
   justify-content: center;
-
   min-height: 42px;
-
   padding: 0 20px;
-
   border-radius: var(--radius-md);
-
   background: var(--color-primary);
-
-  color: var(--color-white);
-
+  color: var(--color-primary-text);
   font-size: 13px;
   font-weight: 700;
-
   white-space: nowrap;
-
   transition:
     background var(--transition-fast),
     transform var(--transition-fast),
@@ -989,53 +913,38 @@
 
 .app-header__cta:hover {
   background: var(--color-primary-light);
-
   transform: translateY(-1px);
-
   box-shadow: var(--shadow-sm);
 }
 
 .app-header__menu-button {
   display: none;
-
   width: 42px;
   height: 42px;
-
   padding: 9px;
-
   border: 1px solid var(--color-border);
-
   border-radius: var(--radius-md);
-
-  background: var(--color-white);
+  background: var(--color-surface);
 }
 
 .app-header__menu-button span {
   display: block;
-
   width: 100%;
   height: 2px;
-
   margin: 5px 0;
-
   background: var(--color-primary);
-
   border-radius: 2px;
 }
 
 .app-header__mobile-menu {
   display: none;
-
   border-top: 1px solid var(--color-border-light);
-
-  background: var(--color-white);
+  background: var(--color-surface);
 }
 
 .app-header__mobile-menu nav {
   display: flex;
-
   flex-direction: column;
-
   padding: 10px 20px 20px;
 }
 
@@ -1043,34 +952,25 @@
   nav
   > a:not(.app-header__mobile-cta) {
   padding: 14px 0;
-
   border-bottom: 1px solid var(--color-border-light);
-
   color: var(--color-text);
-
   font-size: 15px;
   font-weight: 600;
 }
 
 .app-header__mobile-cta {
   display: flex;
-
   align-items: center;
   justify-content: center;
-
   min-height: 46px;
-
   margin-top: 16px;
-
   border-radius: var(--radius-md);
-
   background: var(--color-primary);
-
-  color: var(--color-white);
-
+  color: var(--color-primary-text);
   font-size: 14px;
   font-weight: 700;
 }
+
 
 /* =========================================================
    PLAN CARD
@@ -1078,25 +978,16 @@
 
 .plan-card {
   position: relative;
-
   display: flex;
-
   flex-direction: column;
-
   width: 100%;
   min-width: 0;
   height: 100%;
-
   overflow: hidden;
-
-  background: var(--color-white);
-
+  background: var(--color-surface);
   border: 1px solid var(--color-border);
-
   border-radius: var(--radius-xl);
-
   box-shadow: var(--shadow-sm);
-
   transition:
     transform var(--transition-normal),
     box-shadow var(--transition-normal),
@@ -1105,13 +996,12 @@
 
 .plan-card:hover {
   transform: translateY(-8px);
-
+  border-color: var(--color-accent);
   box-shadow: var(--shadow-lg);
 }
 
 .plan-card--featured {
   border: 2px solid var(--color-accent);
-
   box-shadow: var(--shadow-lg);
 }
 
@@ -1121,39 +1011,25 @@
 
 .plan-card__badge {
   display: flex;
-
   align-items: center;
   justify-content: center;
-
   gap: 7px;
-
   width: 100%;
-
   min-height: 42px;
-
   padding: 10px 14px;
-
   background: var(--color-accent);
-
-  color: var(--color-white);
-
+  color: var(--color-accent-text);
   font-size: 13px;
   font-weight: 800;
-
   line-height: 1.2;
-
   text-align: center;
 }
 
 .plan-card__content {
   display: flex;
-
   flex-direction: column;
-
   flex: 1;
-
   min-width: 0;
-
   padding: 34px;
 }
 
@@ -1163,202 +1039,148 @@
 
 .plan-card__name {
   margin: 0;
-
   color: var(--color-primary);
-
   font-size: 25px;
   font-weight: 800;
-
   line-height: 1.2;
-
   overflow-wrap: anywhere;
 }
 
 .plan-card__description {
   min-height: 48px;
-
   margin: 9px 0 0;
-
   color: var(--color-text-secondary);
-
   font-size: 15px;
   line-height: 1.6;
-
   overflow-wrap: anywhere;
 }
 
 .plan-card__price {
   display: flex;
-
   align-items: baseline;
-
   flex-wrap: nowrap;
-
   min-width: 0;
-
   margin-top: 30px;
-
   white-space: nowrap;
 }
 
 .plan-card__currency {
   flex: 0 0 auto;
-
   color: var(--color-primary);
-
   font-size: 22px;
   font-weight: 700;
 }
 
 .plan-card__amount {
   min-width: 0;
-
   color: var(--color-primary);
-
   font-size: clamp(36px, 4vw, 50px);
-
   font-weight: 850;
-
   line-height: 1;
-
   letter-spacing: -2px;
-
   overflow-wrap: anywhere;
 }
 
 .plan-card__period {
   flex: 0 0 auto;
-
   margin-left: 6px;
-
   color: var(--color-text-muted);
-
   font-size: 14px;
-
   line-height: 1.3;
 }
 
 .plan-card__divider {
   width: 100%;
   height: 1px;
-
   margin: 30px 0;
-
   background: var(--color-border-light);
 }
 
 .plan-card__features {
   flex: 1;
-
   min-width: 0;
 }
 
 .plan-card__features-title {
   margin: 0 0 18px;
-
   color: var(--color-primary);
-
   font-size: 14px;
   font-weight: 800;
-
   line-height: 1.4;
 }
 
 .plan-card__features ul {
   display: flex;
-
   flex-direction: column;
-
   gap: 15px;
-
   margin: 0;
   padding: 0;
-
   list-style: none;
 }
 
 .plan-card__features li {
   display: flex;
-
   align-items: flex-start;
-
   width: 100%;
   min-width: 0;
-
   gap: 11px;
-
   color: var(--color-text-secondary);
-
   font-size: 14px;
-
   line-height: 1.5;
 }
 
 .plan-card__check {
   display: flex;
-
   align-items: center;
   justify-content: center;
-
   flex: 0 0 22px;
-
   width: 22px;
   height: 22px;
-
   margin-top: 1px;
-
+  border: 1px solid
+    color-mix(
+      in srgb,
+      var(--color-success) 18%,
+      var(--color-border)
+    );
   border-radius: 50%;
-
-  background: var(--color-success-light);
-
+  background:
+    color-mix(
+      in srgb,
+      var(--color-success) 12%,
+      var(--color-surface)
+    );
   color: var(--color-success);
-
   font-size: 12px;
   font-weight: 900;
 }
 
 .plan-card__feature-text {
   min-width: 0;
-
   overflow-wrap: anywhere;
-
   word-break: break-word;
 }
 
 .plan-card__no-features {
   margin: 0;
-
   color: var(--color-text-muted);
-
   font-size: 14px;
-
   line-height: 1.5;
 }
 
 .plan-card__button {
   width: 100%;
-
   margin-top: 32px;
-
   padding: 14px 20px;
-
   border: 1px solid var(--color-primary);
-
   border-radius: var(--radius-md);
-
-  background: var(--color-white);
-
+  background: var(--color-surface);
   color: var(--color-primary);
-
   font-family: inherit;
-
   font-size: 14px;
   font-weight: 800;
-
   line-height: 1.2;
-
   cursor: pointer;
-
   transition:
     background var(--transition-fast),
     color var(--transition-fast),
@@ -1368,8 +1190,7 @@
 
 .plan-card__button:hover {
   background: var(--color-primary);
-
-  color: var(--color-white);
+  color: var(--color-primary-text);
 }
 
 .plan-card__button:active {
@@ -1378,17 +1199,15 @@
 
 .plan-card__button--featured {
   border-color: var(--color-accent);
-
   background: var(--color-accent);
-
-  color: var(--color-white);
+  color: var(--color-accent-text);
 }
 
 .plan-card__button--featured:hover {
   background: var(--color-accent-dark);
-
   border-color: var(--color-accent-dark);
 }
+
 
 /* =========================================================
    PLANS
@@ -1396,18 +1215,15 @@
 
 .plans {
   width: 100%;
+  background: var(--color-background);
 }
 
 .plans__grid {
   display: grid;
-
   grid-template-columns:
     repeat(3, minmax(0, 1fr));
-
   gap: 28px;
-
   width: 100%;
-
   align-items: stretch;
 }
 
@@ -1417,15 +1233,10 @@
 
 .plans__status {
   width: 100%;
-
   padding: 40px 20px;
-
   color: var(--color-text-secondary);
-
   font-size: 15px;
-
   line-height: 1.5;
-
   text-align: center;
 }
 
@@ -1433,44 +1244,34 @@
   color: var(--color-danger);
 }
 
+
 /* =========================================================
    SOLUTIONS
    ========================================================= */
 
 .solutions {
-  background: var(--color-white);
+  width: 100%;
+  background: var(--color-surface);
 }
 
 .solutions__grid {
   display: grid;
-
   grid-template-columns:
     repeat(3, minmax(0, 1fr));
-
   gap: 24px;
 }
 
 .solution-card {
   position: relative;
-
   display: flex;
-
   flex-direction: column;
-
   min-height: 260px;
-
   padding: 34px 30px;
-
   border: 1px solid var(--color-border);
-
   border-radius: var(--radius-lg);
-
-  background: var(--color-white);
-
+  background: var(--color-surface);
   box-shadow: var(--shadow-sm);
-
   overflow: hidden;
-
   transition:
     transform var(--transition-normal),
     box-shadow var(--transition-normal),
@@ -1479,29 +1280,26 @@
 
 .solution-card::before {
   content: "";
-
   position: absolute;
-
   top: 0;
   left: 0;
-
   width: 100%;
   height: 3px;
-
   background: var(--color-accent);
-
   transform: scaleX(0);
-
   transform-origin: left;
-
-  transition: transform var(--transition-normal);
+  transition:
+    transform var(--transition-normal);
 }
 
 .solution-card:hover {
   transform: translateY(-5px);
-
-  border-color: rgba(47, 128, 237, 0.25);
-
+  border-color:
+    color-mix(
+      in srgb,
+      var(--color-accent) 25%,
+      var(--color-border)
+    );
   box-shadow: var(--shadow-md);
 }
 
@@ -1512,47 +1310,59 @@
 .solution-card__icon {
   width: 58px;
   height: 58px;
-
   display: grid;
   place-items: center;
-
   margin-bottom: 26px;
-
+  border: 1px solid
+    color-mix(
+      in srgb,
+      var(--color-accent) 18%,
+      var(--color-border)
+    );
   border-radius: var(--radius-md);
-
-  background: var(--color-accent-light);
-
+  background:
+    color-mix(
+      in srgb,
+      var(--color-accent) 12%,
+      var(--color-surface)
+    );
+  color: var(--color-accent);
   font-size: 26px;
+  transition:
+    transform var(--transition-normal),
+    background var(--transition-normal),
+    color var(--transition-normal),
+    border-color var(--transition-normal);
+}
+
+.solution-card:hover .solution-card__icon {
+  transform: translateY(-2px);
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-accent-text);
 }
 
 .solution-card__content {
   display: flex;
-
   flex-direction: column;
-
   flex: 1;
 }
 
 .solution-card h3 {
   margin: 0;
-
   color: var(--color-primary);
-
   font-size: 19px;
   font-weight: 800;
-
   line-height: 1.3;
 }
 
 .solution-card p {
   margin: 12px 0 0;
-
   color: var(--color-text-secondary);
-
   font-size: 15px;
-
   line-height: 1.7;
 }
+
 
 /* =========================================================
    RESPONSIVE
@@ -1562,7 +1372,6 @@
   .plans__grid {
     grid-template-columns:
       repeat(2, minmax(0, 1fr));
-
     gap: 22px;
   }
 
@@ -1585,7 +1394,6 @@
 @media (max-width: 900px) {
   .about__layout {
     grid-template-columns: 1fr;
-
     gap: 50px;
   }
 
@@ -1599,7 +1407,6 @@
 
   .about__content .section-eyebrow {
     display: block;
-
     text-align: center;
   }
 
@@ -1630,11 +1437,8 @@
 @media (max-width: 800px) {
   .contact__card {
     grid-template-columns: 1fr;
-
     gap: 30px;
-
     padding: 45px 35px;
-
     text-align: center;
   }
 
@@ -1649,7 +1453,6 @@
 
   .contact__action {
     display: flex;
-
     justify-content: center;
   }
 }
@@ -1657,7 +1460,6 @@
 @media (max-width: 700px) {
   .plans__grid {
     grid-template-columns: 1fr;
-
     gap: 20px;
   }
 
@@ -1700,9 +1502,7 @@
 
   .app-footer__main {
     grid-template-columns: 1fr;
-
     gap: 35px;
-
     padding-bottom: 35px;
   }
 
@@ -1712,9 +1512,7 @@
 
   .app-footer__bottom {
     flex-direction: column;
-
     align-items: flex-start;
-
     gap: 12px;
   }
 }
@@ -1732,13 +1530,11 @@
 
   .feature-card {
     min-height: auto;
-
     padding: 28px 24px;
   }
 
   .solution-card {
     min-height: auto;
-
     padding: 28px 24px;
   }
 
@@ -1759,7 +1555,6 @@
   .about__visual-inner {
     width: 110px;
     height: 110px;
-
     font-size: 24px;
   }
 
@@ -1769,9 +1564,7 @@
 
   .faq-item__question {
     padding: 19px 18px;
-
     gap: 15px;
-
     font-size: 15px;
   }
 
@@ -1786,13 +1579,11 @@
   .faq-item__icon {
     width: 30px;
     height: 30px;
-
     flex-basis: 30px;
   }
 
   .plan-card__description {
     min-height: auto;
-
     font-size: 14px;
   }
 
@@ -1802,7 +1593,6 @@
 
   .plan-card__amount {
     font-size: clamp(34px, 12vw, 42px);
-
     letter-spacing: -1px;
   }
 

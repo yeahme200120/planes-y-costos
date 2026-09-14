@@ -474,7 +474,7 @@
   overflow: hidden;
   border: 1px solid var(--color-border);
   border-radius: 14px;
-  background: var(--color-white, #fff);
+  background: var(--color-surface);
 }
 
 .admin-configuracion__favicon-icon img {
@@ -527,7 +527,9 @@
   transition:
     transform 0.2s ease,
     box-shadow 0.2s ease,
-    background-color 0.2s ease;
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
 }
 
 .admin-configuracion__button:hover:not(:disabled) {
@@ -679,6 +681,20 @@
   color: var(--color-text-secondary);
   font-size: 1.3rem;
   cursor: pointer;
+  transition:
+    border-color 0.2s ease,
+    color 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.admin-configuracion__icon-button:hover {
+  border-color: var(--color-primary);
+  background: color-mix(
+    in srgb,
+    var(--color-primary) 5%,
+    var(--color-surface)
+  );
+  color: var(--color-primary);
 }
 
 .admin-configuracion__editor-body {
@@ -714,7 +730,7 @@
 .admin-configuracion__crop-frame {
   position: absolute;
   pointer-events: none;
-  border: 2px solid #fff;
+  border: 2px solid var(--color-primary-text);
 }
 
 .admin-configuracion__editor-controls {
@@ -752,6 +768,16 @@
   font: inherit;
   font-size: 0.7rem;
   cursor: pointer;
+  transition:
+    border-color 0.2s ease,
+    color 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.admin-configuracion__segmented button:hover,
+.admin-configuracion__editor-buttons button:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
 }
 
 .admin-configuracion__segmented button.is-active {
@@ -780,11 +806,6 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 7px;
-}
-
-.admin-configuracion__editor-buttons button:hover {
-  border-color: var(--color-primary);
-  color: var(--color-primary);
 }
 
 .admin-configuracion__reset-editor {
@@ -830,6 +851,14 @@
   color: var(--color-text-secondary);
   text-align: left;
   cursor: pointer;
+  transition:
+    color 0.2s ease,
+    background-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.admin-configuracion__appearance-nav button:hover {
+  color: var(--color-primary);
 }
 
 .admin-configuracion__appearance-nav button.is-active {
@@ -1177,7 +1206,7 @@
   border: 0;
   border-radius: 7px;
   background: var(--preview-accent);
-  color: #fff;
+  color: var(--preview-accent-text);
   font-size: 0.64rem;
   font-weight: 750;
 }
