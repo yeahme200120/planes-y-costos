@@ -417,7 +417,7 @@ onBeforeUnmount(() => {
           </strong>
 
           <small v-if="subtitulo">
-            {{ subtitulo }} NEL
+            {{ subtitulo }}
           </small>
         </span>
       </a>

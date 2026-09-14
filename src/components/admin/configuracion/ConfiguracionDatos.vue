@@ -28,9 +28,18 @@ const camposExcluidos = computed(() => [
 
   /*
    * La paleta se administra mediante
-   * el componente especializado.
+   * el componente especializado de apariencia.
    */
   'paleta',
+
+  /*
+   * Los degradados también son una configuración
+   * visual especializada y se muestran como
+   * previsualizaciones de color en Apariencia.
+   *
+   * NO deben aparecer aquí como JSON.
+   */
+  'degradados',
 
   /*
    * Recursos visuales administrados
@@ -41,6 +50,14 @@ const camposExcluidos = computed(() => [
   'logoIcoUrl',
   'faviconUrl',
   'logoVersion',
+
+  /*
+   * Metadatos internos del editor de logo.
+   * Se mantienen fuera de los datos generales
+   * para evitar mostrar estructuras JSON.
+   */
+  'logoEditor',
+  'logoStoragePath',
 
   /*
    * Identificador interno de Firebase.
@@ -76,6 +93,9 @@ function etiqueta(campo) {
     nombreEmpresa:
       'Nombre de la empresa',
 
+    descripcion:
+      'Descripción',
+
     descripcionEmpresa:
       'Descripción de la empresa',
 
@@ -105,6 +125,21 @@ function etiqueta(campo) {
 
     copyright:
       'Copyright',
+
+    activo:
+      'Configuración activa',
+
+    orden:
+      'Orden',
+
+    logoTexto:
+      'Texto del logotipo',
+
+    telefonoEmpresa:
+      'Teléfono empresarial',
+
+    whatsappEmpresa:
+      'WhatsApp empresarial',
   }
 
   if (textos[campo]) {
@@ -235,6 +270,14 @@ function actualizarArray(
    ACTUALIZAR OBJETO
    ========================================================= */
 
+/*
+ * Esta función se conserva para cualquier objeto
+ * que realmente necesite editarse desde Datos generales.
+ *
+ * Los objetos visuales como "degradados" ya no llegan
+ * a esta sección porque están excluidos arriba.
+ */
+
 function actualizarObjeto(
   campo,
   event,
@@ -270,6 +313,13 @@ function actualizarObjeto(
 /* =========================================================
    SERIALIZAR JSON
    ========================================================= */
+
+/*
+ * Se conserva para objetos que realmente
+ * deban editarse manualmente.
+ *
+ * "degradados" ya no utilizará esta función.
+ */
 
 function obtenerJson(valor) {
   try {
@@ -308,231 +358,233 @@ function obtenerArray(valor) {
     class="admin-configuracion__panel"
   >
 
-    <!-- ===================================================
-         ENCABEZADO
-         =================================================== -->
+
+<!-- ===================================================
+     ENCABEZADO
+     =================================================== -->
+
+<div
+  class="admin-configuracion__panel-heading"
+>
+
+  <div>
+
+    <span
+      class="admin-configuracion__section-kicker"
+    >
+      INFORMACIÓN
+    </span>
+
+    <h2>
+      Datos generales
+    </h2>
+
+    <p>
+      Información empresarial almacenada
+      directamente en Firebase.
+    </p>
+
+  </div>
+
+</div>
+
+<!-- ===================================================
+     DATOS GENERALES
+     =================================================== -->
+
+<div
+  class="admin-configuracion__data-grid"
+>
+
+  <article
+    v-for="campo in campos"
+    :key="campo"
+    class="admin-configuracion__data-card"
+  >
+
+    <!-- =================================================
+         ENCABEZADO DEL CAMPO
+         ================================================= -->
 
     <div
-      class="admin-configuracion__panel-heading"
+      class="admin-configuracion__data-heading"
     >
 
-      <div>
+      <strong>
+        {{ etiqueta(campo) }}
+      </strong>
 
-        <span
-          class="admin-configuracion__section-kicker"
-        >
-          INFORMACIÓN
-        </span>
-
-        <h2>
-          Datos generales
-        </h2>
-
-        <p>
-          Información empresarial almacenada
-          directamente en Firebase.
-        </p>
-
-      </div>
+      <span>
+        {{ campo }}
+      </span>
 
     </div>
 
-    <!-- ===================================================
-         DATOS GENERALES
-         =================================================== -->
+    <!-- =================================================
+         BOOLEAN
+         ================================================= -->
 
-    <div
-      class="admin-configuracion__data-grid"
+    <label
+      v-if="
+        tipoCampo(
+          configuracion[campo],
+        ) === 'boolean'
+      "
+      class="admin-configuracion__switch"
     >
 
-      <article
-        v-for="campo in campos"
-        :key="campo"
-        class="admin-configuracion__data-card"
-      >
+      <input
+        :checked="
+          Boolean(
+            configuracion[campo],
+          )
+        "
+        type="checkbox"
+        @change="
+          actualizar(
+            campo,
+            $event.target.checked,
+          )
+        "
+      />
 
-        <!-- =================================================
-             ENCABEZADO DEL CAMPO
-             ================================================= -->
+      <span
+        class="admin-configuracion__switch-ui"
+      ></span>
 
-        <div
-          class="admin-configuracion__data-heading"
-        >
+      <span>
+        {{
+          configuracion[campo]
+            ? 'Activado'
+            : 'Desactivado'
+        }}
+      </span>
 
-          <strong>
-            {{ etiqueta(campo) }}
-          </strong>
+    </label>
 
-          <span>
-            {{ campo }}
-          </span>
+    <!-- =================================================
+         NUMBER
+         ================================================= -->
 
-        </div>
+    <input
+      v-else-if="
+        tipoCampo(
+          configuracion[campo],
+        ) === 'number'
+      "
+      :value="
+        configuracion[campo]
+      "
+      type="number"
+      class="admin-configuracion__field"
+      @change="
+        actualizar(
+          campo,
+          Number(
+            $event.target.value,
+          ),
+        )
+      "
+    />
 
-        <!-- =================================================
-             BOOLEAN
-             ================================================= -->
+    <!-- =================================================
+         ARRAY
+         ================================================= -->
 
-        <label
-          v-if="
-            tipoCampo(
-              configuracion[campo],
-            ) === 'boolean'
-          "
-          class="admin-configuracion__switch"
-        >
+    <textarea
+      v-else-if="
+        tipoCampo(
+          configuracion[campo],
+        ) === 'array'
+      "
+      class="admin-configuracion__field admin-configuracion__field--textarea"
+      :value="
+        obtenerArray(
+          configuracion[campo],
+        )
+      "
+      placeholder="Un elemento por línea"
+      @change="
+        actualizarArray(
+          campo,
+          $event,
+        )
+      "
+    ></textarea>
 
-          <input
-            :checked="
-              Boolean(
-                configuracion[campo],
-              )
-            "
-            type="checkbox"
-            @change="
-              actualizar(
-                campo,
-                $event.target.checked,
-              )
-            "
-          />
+    <!-- =================================================
+         OBJECT
+         ================================================= -->
 
-          <span
-            class="admin-configuracion__switch-ui"
-          ></span>
+    <textarea
+      v-else-if="
+        tipoCampo(
+          configuracion[campo],
+        ) === 'object'
+      "
+      class="admin-configuracion__field admin-configuracion__field--code"
+      :value="
+        obtenerJson(
+          configuracion[campo],
+        )
+      "
+      @change="
+        actualizarObjeto(
+          campo,
+          $event,
+        )
+      "
+    ></textarea>
 
-          <span>
-            {{
-              configuracion[campo]
-                ? 'Activado'
-                : 'Desactivado'
-            }}
-          </span>
+    <!-- =================================================
+         TEXTAREA
+         ================================================= -->
 
-        </label>
+    <textarea
+      v-else-if="
+        tipoCampo(
+          configuracion[campo],
+        ) === 'textarea'
+      "
+      class="admin-configuracion__field admin-configuracion__field--textarea"
+      :value="
+        valorTexto(
+          configuracion[campo],
+        )
+      "
+      @input="
+        actualizar(
+          campo,
+          $event.target.value,
+        )
+      "
+    ></textarea>
 
-        <!-- =================================================
-             NUMBER
-             ================================================= -->
+    <!-- =================================================
+         TEXT
+         ================================================= -->
 
-        <input
-          v-else-if="
-            tipoCampo(
-              configuracion[campo],
-            ) === 'number'
-          "
-          :value="
-            configuracion[campo]
-          "
-          type="number"
-          class="admin-configuracion__field"
-          @change="
-            actualizar(
-              campo,
-              Number(
-                $event.target.value,
-              ),
-            )
-          "
-        />
+    <input
+      v-else
+      :value="
+        valorTexto(
+          configuracion[campo],
+        )
+      "
+      type="text"
+      class="admin-configuracion__field"
+      @input="
+        actualizar(
+          campo,
+          $event.target.value,
+        )
+      "
+    />
 
-        <!-- =================================================
-             ARRAY
-             ================================================= -->
+  </article>
 
-        <textarea
-          v-else-if="
-            tipoCampo(
-              configuracion[campo],
-            ) === 'array'
-          "
-          class="admin-configuracion__field admin-configuracion__field--textarea"
-          :value="
-            obtenerArray(
-              configuracion[campo],
-            )
-          "
-          placeholder="Un elemento por línea"
-          @change="
-            actualizarArray(
-              campo,
-              $event,
-            )
-          "
-        ></textarea>
+</div>
 
-        <!-- =================================================
-             OBJECT
-             ================================================= -->
-
-        <textarea
-          v-else-if="
-            tipoCampo(
-              configuracion[campo],
-            ) === 'object'
-          "
-          class="admin-configuracion__field admin-configuracion__field--code"
-          :value="
-            obtenerJson(
-              configuracion[campo],
-            )
-          "
-          @change="
-            actualizarObjeto(
-              campo,
-              $event,
-            )
-          "
-        ></textarea>
-
-        <!-- =================================================
-             TEXTAREA
-             ================================================= -->
-
-        <textarea
-          v-else-if="
-            tipoCampo(
-              configuracion[campo],
-            ) === 'textarea'
-          "
-          class="admin-configuracion__field admin-configuracion__field--textarea"
-          :value="
-            valorTexto(
-              configuracion[campo],
-            )
-          "
-          @input="
-            actualizar(
-              campo,
-              $event.target.value,
-            )
-          "
-        ></textarea>
-
-        <!-- =================================================
-             TEXT
-             ================================================= -->
-
-        <input
-          v-else
-          :value="
-            valorTexto(
-              configuracion[campo],
-            )
-          "
-          type="text"
-          class="admin-configuracion__field"
-          @input="
-            actualizar(
-              campo,
-              $event.target.value,
-            )
-          "
-        />
-
-      </article>
-
-    </div>
 
   </section>
 </template>

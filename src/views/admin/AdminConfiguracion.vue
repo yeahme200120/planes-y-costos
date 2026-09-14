@@ -5,6 +5,7 @@ import {
   onUnmounted,
   reactive,
   ref,
+  toRaw,
   watch,
 } from 'vue'
 
@@ -17,45 +18,60 @@ import ConfiguracionIdentidad from '../../components/admin/configuracion/Configu
 import ConfiguracionApariencia from '../../components/admin/configuracion/ConfiguracionApariencia.vue'
 import ConfiguracionDatos from '../../components/admin/configuracion/ConfiguracionDatos.vue'
 
-const cargando = ref(true)
-const guardando = ref(false)
-const error = ref('')
-const mensaje = ref('')
-const conectadaTiempoReal = ref(false)
+const cargando =
+  ref(true)
 
-const configuracion = reactive({})
-const configuracionOriginal = reactive({})
+const guardando =
+  ref(false)
 
-let unsubscribeConfiguracion = null
+const error =
+  ref('')
 
-const panelActivo = ref('identidad')
+const mensaje =
+  ref('')
+
+const conectadaTiempoReal =
+  ref(false)
+
+const configuracion =
+  reactive({})
+
+const configuracionOriginal =
+  reactive({})
+
+let unsubscribeConfiguracion =
+  null
+
+const panelActivo =
+  ref('identidad')
 
 const paneles = [
   {
     id: 'identidad',
     titulo: 'Identidad visual',
-    descripcion: 'Logo, favicon y recursos gráficos',
+    descripcion:
+      'Logo, favicon y recursos gráficos',
     icono: '◇',
   },
   {
     id: 'apariencia',
     titulo: 'Apariencia',
-    descripcion: 'Colores y sistema visual',
+    descripcion:
+      'Colores y sistema visual',
     icono: '✦',
   },
   {
     id: 'datos',
     titulo: 'Datos generales',
-    descripcion: 'Información de la empresa',
+    descripcion:
+      'Información de la empresa',
     icono: '☷',
   },
 ]
 
-/*
-|--------------------------------------------------------------------------
-| CAMPOS DE COLOR
-|--------------------------------------------------------------------------
-*/
+/* =========================================================
+   CAMPOS DE COLOR
+   ========================================================= */
 
 const camposColor = [
   'primary',
@@ -90,22 +106,9 @@ const camposColor = [
   'warning',
 ]
 
-/*
-|--------------------------------------------------------------------------
-| PALETA PREDETERMINADA
-|--------------------------------------------------------------------------
-|
-| La relación de las familias principales es:
-|
-| primaryDark  = desde
-| primary      = base
-| primaryLight = hasta
-|
-| Esto permite construir visualmente:
-|
-| Dark → Base → Light
-|
-*/
+/* =========================================================
+   PALETA PREDETERMINADA
+   ========================================================= */
 
 const coloresPredeterminados = {
   primary: '#4678EC',
@@ -140,46 +143,155 @@ const coloresPredeterminados = {
   warning: '#D89432',
 }
 
+/* =========================================================
+   UTILIDADES
+   ========================================================= */
+
 /*
-|--------------------------------------------------------------------------
-| UTILIDADES
-|--------------------------------------------------------------------------
-*/
-
-function limpiarObjeto(objeto) {
-  Object.keys(objeto).forEach((clave) => {
-    delete objeto[clave]
-  })
-}
-
+ * El estado configuracion es reactivo.
+ * Firestore NO debe recibir objetos Proxy de Vue.
+ *
+ * Esta función realiza una copia profunda y,
+ * especialmente, conserva Uint8Array como bytes nativos.
+ */
 function copiarConfiguracion(objeto) {
-  try {
-    return JSON.parse(JSON.stringify(objeto || {}))
-  } catch {
-    return {}
+  if (
+    objeto === null ||
+    objeto === undefined
+  ) {
+    return objeto
   }
+
+  /*
+   * Sacar cualquier Proxy de Vue antes de trabajar
+   * con el objeto binario.
+   */
+  let valorRaw = objeto
+
+  try {
+    valorRaw =
+      toRaw(objeto)
+  } catch {
+    valorRaw =
+      objeto
+  }
+
+  /*
+   * Firestore acepta bytes nativos.
+   *
+   * IMPORTANTE:
+   * Nunca devolver un Uint8Array reactivo.
+   */
+  if (
+    valorRaw instanceof Uint8Array
+  ) {
+    return new Uint8Array(
+      valorRaw,
+    )
+  }
+
+  if (
+    valorRaw instanceof ArrayBuffer
+  ) {
+    return valorRaw.slice(0)
+  }
+
+  if (
+    ArrayBuffer.isView(
+      valorRaw,
+    )
+  ) {
+    return new Uint8Array(
+      valorRaw.buffer.slice(
+        valorRaw.byteOffset,
+        valorRaw.byteOffset +
+          valorRaw.byteLength,
+      ),
+    )
+  }
+
+  if (
+    Array.isArray(
+      valorRaw,
+    )
+  ) {
+    return valorRaw.map(
+      (valor) =>
+        copiarConfiguracion(
+          valor,
+        ),
+    )
+  }
+
+  if (
+    typeof valorRaw ===
+      'object'
+  ) {
+    const copia = {}
+
+    Object.entries(
+      valorRaw,
+    ).forEach(
+      ([clave, valor]) => {
+        copia[clave] =
+          copiarConfiguracion(
+            valor,
+          )
+      },
+    )
+
+    return copia
+  }
+
+  return valorRaw
 }
 
-/*
-|--------------------------------------------------------------------------
-| VALIDACIÓN DE COLORES
-|--------------------------------------------------------------------------
-*/
-
-function esHexValido(valor) {
-  return /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/.test(
-    String(valor || '').trim(),
+function limpiarObjeto(
+  objeto,
+) {
+  Object.keys(
+    objeto,
+  ).forEach(
+    (clave) => {
+      delete objeto[clave]
+    },
   )
 }
 
-function normalizarHex(valor) {
-  const limpio = String(valor || '').trim()
+/* =========================================================
+   VALIDACIÓN DE COLORES
+   ========================================================= */
 
-  if (!esHexValido(limpio)) {
+function esHexValido(
+  valor,
+) {
+  return /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/.test(
+    String(
+      valor || '',
+    ).trim(),
+  )
+}
+
+function normalizarHex(
+  valor,
+) {
+  const limpio =
+    String(
+      valor || '',
+    ).trim()
+
+  if (
+    !esHexValido(
+      limpio,
+    )
+  ) {
     return ''
   }
 
-  if (limpio.length === 4) {
+  if (
+    limpio.length ===
+    4
+  ) {
     return (
       '#' +
       limpio[1] +
@@ -194,162 +306,254 @@ function normalizarHex(valor) {
   return limpio.toUpperCase()
 }
 
-/*
-|--------------------------------------------------------------------------
-| OBTENER COLOR
-|--------------------------------------------------------------------------
-*/
+/* =========================================================
+   OBTENER COLOR
+   ========================================================= */
 
-function valorColor(campo) {
-  const valor = configuracion[campo]
+function valorColor(
+  campo,
+) {
+  const valor =
+    configuracion[
+      campo
+    ]
 
-  if (esHexValido(valor)) {
-    return normalizarHex(valor)
+  if (
+    esHexValido(
+      valor,
+    )
+  ) {
+    return normalizarHex(
+      valor,
+    )
   }
 
-  return coloresPredeterminados[campo] || '#FFFFFF'
+  return (
+    coloresPredeterminados[
+      campo
+    ] ||
+    '#FFFFFF'
+  )
 }
 
-/*
-|--------------------------------------------------------------------------
-| RGB
-|--------------------------------------------------------------------------
-*/
+/* =========================================================
+   RGB
+   ========================================================= */
 
-function hexToRgb(hex) {
-  const color = normalizarHex(hex)
+function hexToRgb(
+  hex,
+) {
+  const color =
+    normalizarHex(
+      hex,
+    )
 
-  if (!color) {
+  if (
+    !color
+  ) {
     return null
   }
 
-  const valor = color.substring(1)
+  const valor =
+    color.substring(
+      1,
+    )
 
   return {
-    r: parseInt(valor.substring(0, 2), 16),
-    g: parseInt(valor.substring(2, 4), 16),
-    b: parseInt(valor.substring(4, 6), 16),
+    r: parseInt(
+      valor.substring(
+        0,
+        2,
+      ),
+      16,
+    ),
+
+    g: parseInt(
+      valor.substring(
+        2,
+        4,
+      ),
+      16,
+    ),
+
+    b: parseInt(
+      valor.substring(
+        4,
+        6,
+      ),
+      16,
+    ),
   }
 }
 
-/*
-|--------------------------------------------------------------------------
-| LUMINANCIA
-|--------------------------------------------------------------------------
-*/
+/* =========================================================
+   LUMINANCIA
+   ========================================================= */
 
-function obtenerLuminancia(color) {
-  const rgb = hexToRgb(color)
+function obtenerLuminancia(
+  color,
+) {
+  const rgb =
+    hexToRgb(
+      color,
+    )
 
   if (!rgb) {
     return 0
   }
 
-  const canales = [rgb.r, rgb.g, rgb.b].map((canal) => {
-    const valor = canal / 255
+  const canales = [
+    rgb.r,
+    rgb.g,
+    rgb.b,
+  ].map(
+    (canal) => {
+      const valor =
+        canal / 255
 
-    return valor <= 0.03928
-      ? valor / 12.92
-      : Math.pow((valor + 0.055) / 1.055, 2.4)
-  })
+      return valor <=
+        0.03928
+        ? valor /
+          12.92
+        : Math.pow(
+            (
+              valor +
+              0.055
+            ) /
+              1.055,
+            2.4,
+          )
+    },
+  )
 
   return (
-    0.2126 * canales[0] +
-    0.7152 * canales[1] +
-    0.0722 * canales[2]
+    0.2126 *
+      canales[0] +
+    0.7152 *
+      canales[1] +
+    0.0722 *
+      canales[2]
   )
 }
 
-/*
-|--------------------------------------------------------------------------
-| TEXTO CONTRASTANTE
-|--------------------------------------------------------------------------
-|
-| Determina automáticamente si conviene usar texto oscuro
-| o texto claro sobre el color.
-*/
+/* =========================================================
+   TEXTO CONTRASTANTE
+   ========================================================= */
 
-function obtenerTextoContraste(color) {
-  const luminancia = obtenerLuminancia(color)
+function obtenerTextoContraste(
+  color,
+) {
+  const luminancia =
+    obtenerLuminancia(
+      color,
+    )
 
-  return luminancia > 0.179
+  return luminancia >
+    0.179
     ? '#172033'
     : '#FFFFFF'
 }
 
-/*
-|--------------------------------------------------------------------------
-| CONTRASTE WCAG
-|--------------------------------------------------------------------------
-*/
+/* =========================================================
+   CONTRASTE WCAG
+   ========================================================= */
 
-function contrasteEntre(colorA, colorB) {
-  const luminanciaA = obtenerLuminancia(colorA)
-  const luminanciaB = obtenerLuminancia(colorB)
+function contrasteEntre(
+  colorA,
+  colorB,
+) {
+  const luminanciaA =
+    obtenerLuminancia(
+      colorA,
+    )
 
-  const mayor = Math.max(
-    luminanciaA,
-    luminanciaB,
-  )
+  const luminanciaB =
+    obtenerLuminancia(
+      colorB,
+    )
 
-  const menor = Math.min(
-    luminanciaA,
-    luminanciaB,
-  )
+  const mayor =
+    Math.max(
+      luminanciaA,
+      luminanciaB,
+    )
+
+  const menor =
+    Math.min(
+      luminanciaA,
+      luminanciaB,
+    )
 
   return Number(
-    ((mayor + 0.05) / (menor + 0.05)).toFixed(2),
+    (
+      (
+        mayor +
+        0.05
+      ) /
+      (
+        menor +
+        0.05
+      )
+    ).toFixed(2),
   )
 }
 
-/*
-|--------------------------------------------------------------------------
-| NIVEL DE CONTRASTE
-|--------------------------------------------------------------------------
-*/
+/* =========================================================
+   NIVEL DE CONTRASTE
+   ========================================================= */
 
-function obtenerNivelContraste(colorFondo, colorTexto) {
-  const ratio = contrasteEntre(
-    colorFondo,
-    colorTexto,
-  )
+function obtenerNivelContraste(
+  colorFondo,
+  colorTexto,
+) {
+  const ratio =
+    contrasteEntre(
+      colorFondo,
+      colorTexto,
+    )
 
-  if (ratio >= 7) {
+  if (
+    ratio >= 7
+  ) {
     return 'AAA'
   }
 
-  if (ratio >= 4.5) {
+  if (
+    ratio >= 4.5
+  ) {
     return 'AA'
   }
 
-  if (ratio >= 3) {
+  if (
+    ratio >= 3
+  ) {
     return 'AA grande'
   }
 
   return 'Bajo'
 }
 
-/*
-|--------------------------------------------------------------------------
-| DEGRADADO DE UNA FAMILIA
-|--------------------------------------------------------------------------
-|
-| Ejemplo:
-|
-| primaryDark  → primary → primaryLight
-|
-| El componente visual podrá mostrar:
-|
-| Desde: #2858C7
-| Base:  #4678EC
-| Hasta: #DCE7FF
-|
-*/
+/* =========================================================
+   DEGRADADO
+   ========================================================= */
 
-function obtenerDegradado(campo) {
-  const base = valorColor(campo)
-  const desde = valorColor(`${campo}Dark`)
-  const hasta = valorColor(`${campo}Light`)
+function obtenerDegradado(
+  campo,
+) {
+  const base =
+    valorColor(
+      campo,
+    )
+
+  const desde =
+    valorColor(
+      `${campo}Dark`,
+    )
+
+  const hasta =
+    valorColor(
+      `${campo}Light`,
+    )
 
   return `linear-gradient(
     90deg,
@@ -359,103 +563,230 @@ function obtenerDegradado(campo) {
   )`
 }
 
-/*
-|--------------------------------------------------------------------------
-| INFORMACIÓN DE FAMILIA DE COLOR
-|--------------------------------------------------------------------------
-*/
+/* =========================================================
+   INFORMACIÓN DE FAMILIA
+   ========================================================= */
 
-function obtenerFamiliaColor(campo) {
-  const base = valorColor(campo)
-  const desde = valorColor(`${campo}Dark`)
-  const hasta = valorColor(`${campo}Light`)
+function obtenerFamiliaColor(
+  campo,
+) {
+  const base =
+    valorColor(
+      campo,
+    )
 
-  const textoBase = valorColor(`${campo}Text`)
+  const desde =
+    valorColor(
+      `${campo}Dark`,
+    )
+
+  const hasta =
+    valorColor(
+      `${campo}Light`,
+    )
+
+  const textoBase =
+    valorColor(
+      `${campo}Text`,
+    )
+
+  const texto =
+    textoBase ||
+    obtenerTextoContraste(
+      base,
+    )
 
   return {
     base,
     desde,
     hasta,
-    texto: textoBase || obtenerTextoContraste(base),
+    texto,
+
     contraste:
-      textoBase
-        ? contrasteEntre(base, textoBase)
-        : contrasteEntre(
-            base,
-            obtenerTextoContraste(base),
-          ),
+      contrasteEntre(
+        base,
+        texto,
+      ),
+
     nivel:
-      textoBase
-        ? obtenerNivelContraste(base, textoBase)
-        : obtenerNivelContraste(
-            base,
-            obtenerTextoContraste(base),
-          ),
-    degradado: obtenerDegradado(campo),
+      obtenerNivelContraste(
+        base,
+        texto,
+      ),
+
+    degradado:
+      obtenerDegradado(
+        campo,
+      ),
   }
 }
 
-/*
-|--------------------------------------------------------------------------
-| APLICAR VARIABLES GLOBALES
-|--------------------------------------------------------------------------
-*/
+/* =========================================================
+   APLICAR VARIABLES GLOBALES
+   ========================================================= */
 
 function aplicarVariablesGlobales() {
-  if (typeof document === 'undefined') {
+  if (
+    typeof document ===
+    'undefined'
+  ) {
     return
   }
 
-  const root = document.documentElement
+  const root =
+    document.documentElement
 
   const variables = {
-    '--color-primary': valorColor('primary'),
-    '--color-primary-light': valorColor('primaryLight'),
-    '--color-primary-dark': valorColor('primaryDark'),
-    '--color-primary-text': valorColor('primaryText'),
+    '--color-primary':
+      valorColor(
+        'primary',
+      ),
 
-    '--color-secondary': valorColor('secondary'),
-    '--color-secondary-light': valorColor('secondaryLight'),
-    '--color-secondary-dark': valorColor('secondaryDark'),
-    '--color-secondary-text': valorColor('secondaryText'),
+    '--color-primary-light':
+      valorColor(
+        'primaryLight',
+      ),
 
-    '--color-accent': valorColor('accent'),
-    '--color-accent-light': valorColor('accentLight'),
-    '--color-accent-dark': valorColor('accentDark'),
-    '--color-accent-text': valorColor('accentText'),
+    '--color-primary-dark':
+      valorColor(
+        'primaryDark',
+      ),
 
-    '--color-background': valorColor('background'),
-    '--color-background-alt': valorColor('backgroundAlt'),
+    '--color-primary-text':
+      valorColor(
+        'primaryText',
+      ),
 
-    '--color-surface': valorColor('surface'),
-    '--color-surface-alt': valorColor('surfaceAlt'),
+    '--color-secondary':
+      valorColor(
+        'secondary',
+      ),
 
-    '--color-text': valorColor('text'),
-    '--color-text-secondary': valorColor('textSecondary'),
-    '--color-text-muted': valorColor('textMuted'),
+    '--color-secondary-light':
+      valorColor(
+        'secondaryLight',
+      ),
 
-    '--color-border': valorColor('border'),
+    '--color-secondary-dark':
+      valorColor(
+        'secondaryDark',
+      ),
 
-    '--color-success': valorColor('success'),
-    '--color-danger': valorColor('danger'),
-    '--color-warning': valorColor('warning'),
+    '--color-secondary-text':
+      valorColor(
+        'secondaryText',
+      ),
 
-    '--color-success-text': obtenerTextoContraste(
-      valorColor('success'),
-    ),
+    '--color-accent':
+      valorColor(
+        'accent',
+      ),
 
-    '--color-danger-text': obtenerTextoContraste(
-      valorColor('danger'),
-    ),
+    '--color-accent-light':
+      valorColor(
+        'accentLight',
+      ),
 
-    '--color-warning-text': obtenerTextoContraste(
-      valorColor('warning'),
-    ),
+    '--color-accent-dark':
+      valorColor(
+        'accentDark',
+      ),
+
+    '--color-accent-text':
+      valorColor(
+        'accentText',
+      ),
+
+    '--color-background':
+      valorColor(
+        'background',
+      ),
+
+    '--color-background-alt':
+      valorColor(
+        'backgroundAlt',
+      ),
+
+    '--color-surface':
+      valorColor(
+        'surface',
+      ),
+
+    '--color-surface-alt':
+      valorColor(
+        'surfaceAlt',
+      ),
+
+    '--color-text':
+      valorColor(
+        'text',
+      ),
+
+    '--color-text-secondary':
+      valorColor(
+        'textSecondary',
+      ),
+
+    '--color-text-muted':
+      valorColor(
+        'textMuted',
+      ),
+
+    '--color-border':
+      valorColor(
+        'border',
+      ),
+
+    '--color-success':
+      valorColor(
+        'success',
+      ),
+
+    '--color-danger':
+      valorColor(
+        'danger',
+      ),
+
+    '--color-warning':
+      valorColor(
+        'warning',
+      ),
+
+    '--color-success-text':
+      obtenerTextoContraste(
+        valorColor(
+          'success',
+        ),
+      ),
+
+    '--color-danger-text':
+      obtenerTextoContraste(
+        valorColor(
+          'danger',
+        ),
+      ),
+
+    '--color-warning-text':
+      obtenerTextoContraste(
+        valorColor(
+          'warning',
+        ),
+      ),
+
+    '--color-white':
+      '#FFFFFF',
   }
 
-  Object.entries(variables).forEach(
-    ([variable, valor]) => {
-      if (!valor) return
+  Object.entries(
+    variables,
+  ).forEach(
+    ([
+      variable,
+      valor,
+    ]) => {
+      if (!valor) {
+        return
+      }
 
       root.style.setProperty(
         variable,
@@ -465,17 +796,25 @@ function aplicarVariablesGlobales() {
   )
 }
 
-/*
-|--------------------------------------------------------------------------
-| APLICAR CONFIGURACIÓN RECIBIDA DE FIREBASE
-|--------------------------------------------------------------------------
-*/
+/* =========================================================
+   APLICAR CONFIGURACIÓN RECIBIDA DE FIREBASE
+   ========================================================= */
 
-function aplicarConfiguracion(datos = {}) {
-  limpiarObjeto(configuracion)
-  limpiarObjeto(configuracionOriginal)
+function aplicarConfiguracion(
+  datos = {},
+) {
+  limpiarObjeto(
+    configuracion,
+  )
 
-  const copia = copiarConfiguracion(datos)
+  limpiarObjeto(
+    configuracionOriginal,
+  )
+
+  const copia =
+    copiarConfiguracion(
+      datos,
+    )
 
   Object.assign(
     configuracion,
@@ -484,113 +823,333 @@ function aplicarConfiguracion(datos = {}) {
 
   Object.assign(
     configuracionOriginal,
-    copiarConfiguracion(copia),
+    copiarConfiguracion(
+      copia,
+    ),
   )
 
   aplicarVariablesGlobales()
 }
 
-/*
-|--------------------------------------------------------------------------
-| CAMBIO DE PANEL
-|--------------------------------------------------------------------------
-*/
+/* =========================================================
+   CAMBIO DE PANEL
+   ========================================================= */
 
-function cambiarPanel(panel) {
-  panelActivo.value = panel
+function cambiarPanel(
+  panel,
+) {
+  panelActivo.value =
+    panel
 
   error.value = ''
+
   mensaje.value = ''
 }
 
-/*
-|--------------------------------------------------------------------------
-| ACTUALIZACIÓN GENERAL
-|--------------------------------------------------------------------------
-*/
+/* =========================================================
+   ACTUALIZACIÓN GENERAL
+   ========================================================= */
 
-function actualizarConfiguracionLocal(datos = {}) {
-  Object.entries(datos).forEach(
-    ([clave, valor]) => {
-      configuracion[clave] = valor
+function actualizarConfiguracionLocal(
+  datos = {},
+) {
+  Object.entries(
+    datos,
+  ).forEach(
+    ([
+      clave,
+      valor,
+    ]) => {
+      if (
+        valor ===
+          undefined ||
+        valor === null
+      ) {
+        return
+      }
+
+      /*
+       * Si el dato es binario,
+       * lo conservamos como una copia
+       * nativa para el estado local.
+       */
+      if (
+        valor instanceof Uint8Array
+      ) {
+        const bytes =
+          toRaw(
+            valor,
+          )
+
+        configuracion[
+          clave
+        ] =
+          new Uint8Array(
+            bytes,
+          )
+
+        return
+      }
+
+      configuracion[
+        clave
+      ] =
+        valor
     },
   )
 
   aplicarVariablesGlobales()
 }
 
-/*
-|--------------------------------------------------------------------------
-| ACTUALIZAR COLOR INDIVIDUAL
-|--------------------------------------------------------------------------
-*/
+/* =========================================================
+   ACTUALIZAR COLOR INDIVIDUAL
+   ========================================================= */
 
 function actualizarColor({
   campo,
   valor,
 }) {
-  if (!camposColor.includes(campo)) {
+  if (
+    !camposColor.includes(
+      campo,
+    )
+  ) {
     return
   }
 
-  const color = normalizarHex(valor)
+  const color =
+    normalizarHex(
+      valor,
+    )
 
   if (!color) {
     return
   }
 
-  configuracion[campo] = color
+  configuracion[
+    campo
+  ] =
+    color
 
   aplicarVariablesGlobales()
 }
 
-/*
-|--------------------------------------------------------------------------
-| ACTUALIZAR LOGO
-|--------------------------------------------------------------------------
-*/
+/* =========================================================
+   ACTUALIZAR LOGO
+   ========================================================= */
 
-function actualizarLogo(datos = {}) {
-  Object.entries(datos).forEach(
-    ([clave, valor]) => {
-      if (
-        valor !== undefined &&
-        valor !== null &&
-        valor !== ''
-      ) {
-        configuracion[clave] = valor
-      }
-    },
-  )
+async function actualizarLogo(
+  datos = {},
+) {
+  if (
+    guardando.value
+  ) {
+    return
+  }
+
+  try {
+    guardando.value =
+      true
+
+    error.value = ''
+
+    mensaje.value = ''
+
+    /*
+     * ======================================================
+     * PREPARAR DATOS SIN PASAR EL BLOB POR EL REACTIVO
+     * ======================================================
+     */
+
+    const datosLogo = {}
+
+    Object.entries(
+      datos,
+    ).forEach(
+      ([
+        clave,
+        valor,
+      ]) => {
+        if (
+          valor ===
+            undefined ||
+          valor === null
+        ) {
+          return
+        }
+
+        if (
+          valor instanceof Uint8Array
+        ) {
+          /*
+           * toRaw elimina el Proxy de Vue.
+           */
+          const bytes =
+            toRaw(
+              valor,
+            )
+
+          datosLogo[
+            clave
+          ] =
+            new Uint8Array(
+              bytes,
+            )
+
+          return
+        }
+
+        if (
+          valor instanceof ArrayBuffer
+        ) {
+          datosLogo[
+            clave
+          ] =
+            new Uint8Array(
+              valor,
+            )
+
+          return
+        }
+
+        datosLogo[
+          clave
+        ] =
+          copiarConfiguracion(
+            valor,
+          )
+      },
+    )
+
+    /*
+     * ======================================================
+     * GUARDAR DIRECTAMENTE EN FIRESTORE
+     * ======================================================
+     */
+
+    await actualizarConfiguracion(
+      'general',
+      datosLogo,
+    )
+
+    /*
+     * ======================================================
+     * ACTUALIZAR ESTADO LOCAL
+     * ======================================================
+     */
+
+    Object.entries(
+      datosLogo,
+    ).forEach(
+      ([
+        clave,
+        valor,
+      ]) => {
+        if (
+          valor instanceof Uint8Array
+        ) {
+          /*
+           * El estado de Vue puede tener su propia copia.
+           * Firestore ya recibió el objeto nativo anterior.
+           */
+          configuracion[
+            clave
+          ] =
+            new Uint8Array(
+              valor,
+            )
+
+          return
+        }
+
+        configuracion[
+          clave
+        ] =
+          copiarConfiguracion(
+            valor,
+          )
+      },
+    )
+
+    /*
+     * ======================================================
+     * ACTUALIZAR SNAPSHOT ORIGINAL
+     * ======================================================
+     */
+
+    limpiarObjeto(
+      configuracionOriginal,
+    )
+
+    Object.assign(
+      configuracionOriginal,
+      copiarConfiguracion(
+        configuracion,
+      ),
+    )
+
+    aplicarVariablesGlobales()
+
+    mensaje.value =
+      'Logo actualizado correctamente.'
+  } catch (
+    err
+  ) {
+    console.error(
+      'Error al guardar el logo:',
+      err,
+    )
+
+    error.value =
+      err?.message ||
+      'No fue posible actualizar el logo.'
+
+    mensaje.value = ''
+  } finally {
+    guardando.value =
+      false
+  }
 }
 
-/*
-|--------------------------------------------------------------------------
-| ACTUALIZAR PALETA
-|--------------------------------------------------------------------------
-*/
+/* =========================================================
+   ACTUALIZAR PALETA
+   ========================================================= */
 
-function actualizarPaleta(datos = {}) {
-  Object.entries(datos).forEach(
-    ([clave, valor]) => {
+function actualizarPaleta(
+  datos = {},
+) {
+  Object.entries(
+    datos,
+  ).forEach(
+    ([
+      clave,
+      valor,
+    ]) => {
       if (
-        camposColor.includes(clave) &&
-        esHexValido(valor)
+        camposColor.includes(
+          clave,
+        ) &&
+        esHexValido(
+          valor,
+        )
       ) {
-        configuracion[clave] =
-          normalizarHex(valor)
+        configuracion[
+          clave
+        ] =
+          normalizarHex(
+            valor,
+          )
       }
     },
   )
 
   /*
-   * La paleta completa se conserva internamente
-   * en Firebase, pero no se muestra como JSON
-   * al usuario.
+   * La paleta completa se conserva internamente.
    */
   if (
     datos.paleta &&
-    typeof datos.paleta === 'object'
+    typeof datos.paleta ===
+      'object'
   ) {
     configuracion.paleta =
       copiarConfiguracion(
@@ -601,14 +1160,14 @@ function actualizarPaleta(datos = {}) {
   aplicarVariablesGlobales()
 }
 
-/*
-|--------------------------------------------------------------------------
-| RESTAURAR CAMBIOS
-|--------------------------------------------------------------------------
-*/
+/* =========================================================
+   RESTAURAR CAMBIOS
+   ========================================================= */
 
 function restaurarCambios() {
-  if (guardando.value) {
+  if (
+    guardando.value
+  ) {
     return
   }
 
@@ -618,7 +1177,9 @@ function restaurarCambios() {
         configuracionOriginal,
       )
 
-    limpiarObjeto(configuracion)
+    limpiarObjeto(
+      configuracion,
+    )
 
     Object.assign(
       configuracion,
@@ -631,7 +1192,9 @@ function restaurarCambios() {
       'Cambios descartados correctamente.'
 
     error.value = ''
-  } catch (err) {
+  } catch (
+    err
+  ) {
     console.error(
       'Error al descartar cambios:',
       err,
@@ -645,22 +1208,29 @@ function restaurarCambios() {
   }
 }
 
-/*
-|--------------------------------------------------------------------------
-| GUARDAR CONFIGURACIÓN
-|--------------------------------------------------------------------------
-*/
+/* =========================================================
+   GUARDAR CONFIGURACIÓN
+   ========================================================= */
 
 async function guardarConfiguracion() {
-  if (guardando.value) {
+  if (
+    guardando.value
+  ) {
     return
   }
 
   try {
-    guardando.value = true
+    guardando.value =
+      true
+
     error.value = ''
+
     mensaje.value = ''
 
+    /*
+     * Crear una copia sin Proxies de Vue.
+     * Esto también conserva logoBlob como Uint8Array nativo.
+     */
     const datos =
       copiarConfiguracion(
         configuracion,
@@ -670,13 +1240,15 @@ async function guardarConfiguracion() {
 
     /*
      * Conservamos paleta como estructura interna.
-     * No se renderiza directamente.
      */
     datos.paleta = {
-      ...(datos.paleta &&
-      typeof datos.paleta === 'object'
-        ? datos.paleta
-        : {}),
+      ...(
+        datos.paleta &&
+        typeof datos.paleta ===
+          'object'
+          ? datos.paleta
+          : {}
+      ),
     }
 
     await actualizarConfiguracion(
@@ -690,37 +1262,49 @@ async function guardarConfiguracion() {
 
     Object.assign(
       configuracionOriginal,
-      copiarConfiguracion(datos),
+      copiarConfiguracion(
+        datos,
+      ),
     )
 
     aplicarVariablesGlobales()
 
     mensaje.value =
       'Configuración actualizada correctamente.'
-  } catch (err) {
-    console.error(err)
+  } catch (
+    err
+  ) {
+    console.error(
+      'Error al guardar configuración:',
+      err,
+    )
 
     error.value =
       err?.message ||
       'No fue posible guardar la configuración.'
   } finally {
-    guardando.value = false
+    guardando.value =
+      false
   }
 }
 
-/*
-|--------------------------------------------------------------------------
-| SUSCRIPCIÓN FIREBASE
-|--------------------------------------------------------------------------
-*/
+/* =========================================================
+   SUSCRIPCIÓN FIREBASE
+   ========================================================= */
 
 function iniciarSuscripcion() {
-  if (unsubscribeConfiguracion) {
+  if (
+    unsubscribeConfiguracion
+  ) {
     unsubscribeConfiguracion()
-    unsubscribeConfiguracion = null
+
+    unsubscribeConfiguracion =
+      null
   }
 
-  cargando.value = true
+  cargando.value =
+    true
+
   error.value = ''
 
   try {
@@ -729,8 +1313,11 @@ function iniciarSuscripcion() {
         'general',
 
         (datos) => {
-          cargando.value = false
-          conectadaTiempoReal.value = true
+          cargando.value =
+            false
+
+          conectadaTiempoReal.value =
+            true
 
           if (!datos) {
             limpiarObjeto(
@@ -753,21 +1340,31 @@ function iniciarSuscripcion() {
             return
           }
 
-          aplicarConfiguracion(datos)
+          aplicarConfiguracion(
+            datos,
+          )
         },
 
         (err) => {
-          cargando.value = false
-          conectadaTiempoReal.value = false
+          cargando.value =
+            false
+
+          conectadaTiempoReal.value =
+            false
 
           error.value =
             err?.message ||
             'No fue posible conectar con Firebase.'
         },
       )
-  } catch (err) {
-    cargando.value = false
-    conectadaTiempoReal.value = false
+  } catch (
+    err
+  ) {
+    cargando.value =
+      false
+
+    conectadaTiempoReal.value =
+      false
 
     error.value =
       err?.message ||
@@ -775,109 +1372,132 @@ function iniciarSuscripcion() {
   }
 }
 
-/*
-|--------------------------------------------------------------------------
-| WATCHERS DE COLOR
-|--------------------------------------------------------------------------
-*/
+/* =========================================================
+   WATCHERS DE COLOR
+   ========================================================= */
 
 watch(
-  () => configuracion.primary,
-  aplicarVariablesGlobales,
-)
-
-watch(
-  () => configuracion.primaryLight,
-  aplicarVariablesGlobales,
-)
-
-watch(
-  () => configuracion.primaryDark,
-  aplicarVariablesGlobales,
-)
-
-watch(
-  () => configuracion.secondary,
-  aplicarVariablesGlobales,
-)
-
-watch(
-  () => configuracion.secondaryLight,
-  aplicarVariablesGlobales,
-)
-
-watch(
-  () => configuracion.secondaryDark,
-  aplicarVariablesGlobales,
-)
-
-watch(
-  () => configuracion.accent,
-  aplicarVariablesGlobales,
-)
-
-watch(
-  () => configuracion.accentLight,
-  aplicarVariablesGlobales,
-)
-
-watch(
-  () => configuracion.accentDark,
-  aplicarVariablesGlobales,
-)
-
-watch(
-  () => configuracion.success,
-  aplicarVariablesGlobales,
-)
-
-watch(
-  () => configuracion.warning,
-  aplicarVariablesGlobales,
-)
-
-watch(
-  () => configuracion.danger,
-  aplicarVariablesGlobales,
-)
-
-/*
-|--------------------------------------------------------------------------
-| CONFIGURACIÓN EXISTENTE
-|--------------------------------------------------------------------------
-*/
-
-const existeConfiguracion = computed(
   () =>
-    Object.keys(configuracion)
-      .length > 0,
+    configuracion.primary,
+  aplicarVariablesGlobales,
 )
 
-/*
-|--------------------------------------------------------------------------
-| CICLO DE VIDA
-|--------------------------------------------------------------------------
-*/
+watch(
+  () =>
+    configuracion.primaryLight,
+  aplicarVariablesGlobales,
+)
+
+watch(
+  () =>
+    configuracion.primaryDark,
+  aplicarVariablesGlobales,
+)
+
+watch(
+  () =>
+    configuracion.secondary,
+  aplicarVariablesGlobales,
+)
+
+watch(
+  () =>
+    configuracion.secondaryLight,
+  aplicarVariablesGlobales,
+)
+
+watch(
+  () =>
+    configuracion.secondaryDark,
+  aplicarVariablesGlobales,
+)
+
+watch(
+  () =>
+    configuracion.accent,
+  aplicarVariablesGlobales,
+)
+
+watch(
+  () =>
+    configuracion.accentLight,
+  aplicarVariablesGlobales,
+)
+
+watch(
+  () =>
+    configuracion.accentDark,
+  aplicarVariablesGlobales,
+)
+
+watch(
+  () =>
+    configuracion.success,
+  aplicarVariablesGlobales,
+)
+
+watch(
+  () =>
+    configuracion.warning,
+  aplicarVariablesGlobales,
+)
+
+watch(
+  () =>
+    configuracion.danger,
+  aplicarVariablesGlobales,
+)
+
+/* =========================================================
+   CONFIGURACIÓN EXISTENTE
+   ========================================================= */
+
+const existeConfiguracion =
+  computed(
+    () =>
+      Object.keys(
+        configuracion,
+      ).length > 0,
+  )
+
+/* =========================================================
+   CICLO DE VIDA
+   ========================================================= */
 
 onMounted(() => {
   iniciarSuscripcion()
 })
 
 onUnmounted(() => {
-  if (unsubscribeConfiguracion) {
+  if (
+    unsubscribeConfiguracion
+  ) {
     unsubscribeConfiguracion()
-    unsubscribeConfiguracion = null
+
+    unsubscribeConfiguracion =
+      null
   }
 })
 </script>
 
 <template>
-  <section class="admin-configuracion">
+  <section
+    class="admin-configuracion"
+  >
 
-    <!-- ENCABEZADO -->
-    <header class="admin-configuracion__header">
+    <!-- ===================================================
+         ENCABEZADO
+         =================================================== -->
+
+    <header
+      class="admin-configuracion__header"
+    >
+
       <div>
-        <span class="admin-configuracion__eyebrow">
+
+        <span
+          class="admin-configuracion__eyebrow"
+        >
           SISTEMA
         </span>
 
@@ -889,13 +1509,18 @@ onUnmounted(() => {
           Administra la identidad visual y los datos generales
           de tu empresa.
         </p>
+
       </div>
 
-      <div class="admin-configuracion__realtime">
+      <div
+        class="admin-configuracion__realtime"
+      >
+
         <span
           class="admin-configuracion__realtime-dot"
           :class="{
-            'is-online': conectadaTiempoReal,
+            'is-online':
+              conectadaTiempoReal,
           }"
         ></span>
 
@@ -906,15 +1531,24 @@ onUnmounted(() => {
               : 'Conectando...'
           }}
         </span>
+
       </div>
+
     </header>
 
-    <!-- ESTADO DE CARGA -->
+    <!-- ===================================================
+         ESTADO DE CARGA
+         =================================================== -->
+
     <div
       v-if="cargando"
       class="admin-configuracion__state"
     >
-      <div class="admin-configuracion__spinner">
+
+      <div
+        class="admin-configuracion__spinner"
+      >
+
         <strong>
           Cargando configuración
         </strong>
@@ -922,15 +1556,22 @@ onUnmounted(() => {
         <span>
           Conectando con Firebase...
         </span>
+
       </div>
+
     </div>
 
-    <!-- ERROR -->
+    <!-- ===================================================
+         ERROR
+         =================================================== -->
+
     <div
       v-else-if="error"
       class="admin-configuracion__alert admin-configuracion__alert--error"
     >
+
       <div>
+
         <strong>
           No fue posible cargar la configuración
         </strong>
@@ -938,37 +1579,64 @@ onUnmounted(() => {
         <p>
           {{ error }}
         </p>
+
       </div>
 
       <button
         type="button"
         class="admin-configuracion__alert-action"
-        @click="iniciarSuscripcion"
+        @click="
+          iniciarSuscripcion
+        "
       >
         Reintentar
       </button>
+
     </div>
 
-    <template v-else>
+    <template
+      v-else
+    >
 
-      <!-- NAVEGACIÓN -->
-      <nav class="admin-configuracion__tabs">
+      <!-- =================================================
+           NAVEGACIÓN
+           ================================================= -->
+
+      <nav
+        class="admin-configuracion__tabs"
+      >
+
         <button
-          v-for="panel in paneles"
-          :key="panel.id"
+          v-for="
+            panel in paneles
+          "
+          :key="
+            panel.id
+          "
           type="button"
           class="admin-configuracion__tab"
           :class="{
             'is-active':
-              panelActivo === panel.id,
+              panelActivo ===
+              panel.id,
           }"
-          @click="cambiarPanel(panel.id)"
+          @click="
+            cambiarPanel(
+              panel.id,
+            )
+          "
         >
-          <span class="admin-configuracion__tab-icon">
+
+          <span
+            class="admin-configuracion__tab-icon"
+          >
             {{ panel.icono }}
           </span>
 
-          <span class="admin-configuracion__tab-content">
+          <span
+            class="admin-configuracion__tab-content"
+          >
+
             <strong>
               {{ panel.titulo }}
             </strong>
@@ -976,11 +1644,17 @@ onUnmounted(() => {
             <small>
               {{ panel.descripcion }}
             </small>
+
           </span>
+
         </button>
+
       </nav>
 
-      <!-- MENSAJE -->
+      <!-- =================================================
+           MENSAJE
+           ================================================= -->
+
       <div
         v-if="mensaje"
         class="admin-configuracion__alert admin-configuracion__alert--success"
@@ -988,53 +1662,115 @@ onUnmounted(() => {
         {{ mensaje }}
       </div>
 
-      <!-- CONTENIDO -->
+      <!-- =================================================
+           CONTENIDO
+           ================================================= -->
+
       <main
         v-if="existeConfiguracion"
         class="admin-configuracion__workspace"
       >
 
-        <!-- IDENTIDAD -->
+        <!-- ===============================================
+             IDENTIDAD
+             =============================================== -->
+
         <ConfiguracionIdentidad
-          v-if="panelActivo === 'identidad'"
-          :configuracion="configuracion"
-          :guardando="guardando"
-          @actualizar-logo="actualizarLogo"
-          @actualizar="actualizarConfiguracionLocal"
+          v-if="
+            panelActivo ===
+            'identidad'
+          "
+          :configuracion="
+            configuracion
+          "
+          :guardando="
+            guardando
+          "
+          @actualizar-logo="
+            actualizarLogo
+          "
+          @actualizar="
+            actualizarConfiguracionLocal
+          "
         />
 
-        <!-- APARIENCIA -->
+        <!-- ===============================================
+             APARIENCIA
+             =============================================== -->
+
         <ConfiguracionApariencia
-          v-else-if="panelActivo === 'apariencia'"
-          :configuracion="configuracion"
-          :colores-predeterminados="coloresPredeterminados"
-          :obtener-texto-contraste="obtenerTextoContraste"
-          :contraste-entre="contrasteEntre"
-          :obtener-nivel-contraste="obtenerNivelContraste"
-          :obtener-degradado="obtenerDegradado"
-          :obtener-familia-color="obtenerFamiliaColor"
-          @actualizar-color="actualizarColor"
-          @actualizar-paleta="actualizarPaleta"
+          v-else-if="
+            panelActivo ===
+            'apariencia'
+          "
+          :configuracion="
+            configuracion
+          "
+          :colores-predeterminados="
+            coloresPredeterminados
+          "
+          :obtener-texto-contraste="
+            obtenerTextoContraste
+          "
+          :contraste-entre="
+            contrasteEntre
+          "
+          :obtener-nivel-contraste="
+            obtenerNivelContraste
+          "
+          :obtener-degradado="
+            obtenerDegradado
+          "
+          :obtener-familia-color="
+            obtenerFamiliaColor
+          "
+          @actualizar-color="
+            actualizarColor
+          "
+          @actualizar-paleta="
+            actualizarPaleta
+          "
         />
 
-        <!-- DATOS GENERALES -->
+        <!-- ===============================================
+             DATOS GENERALES
+             =============================================== -->
+
         <ConfiguracionDatos
-          v-else-if="panelActivo === 'datos'"
-          :configuracion="configuracion"
-          :campos-color="camposColor"
-          @actualizar="actualizarConfiguracionLocal"
+          v-else-if="
+            panelActivo ===
+            'datos'
+          "
+          :configuracion="
+            configuracion
+          "
+          :campos-color="
+            camposColor
+          "
+          @actualizar="
+            actualizarConfiguracionLocal
+          "
         />
 
       </main>
 
-      <!-- ACCIONES -->
-      <footer class="admin-configuracion__actions">
+      <!-- =================================================
+           ACCIONES
+           ================================================= -->
+
+      <footer
+        class="admin-configuracion__actions"
+      >
 
         <button
           type="button"
           class="admin-configuracion__button admin-configuracion__button--secondary"
-          :disabled="guardando"
-          @click="restaurarCambios"
+          :disabled="
+            guardando
+          "
+          @click="
+            restaurarCambios
+          "
         >
           Descartar cambios
         </button>
@@ -1042,20 +1778,33 @@ onUnmounted(() => {
         <button
           type="button"
           class="admin-configuracion__button admin-configuracion__button--primary"
-          :disabled="guardando"
-          @click="guardarConfiguracion"
+          :disabled="
+            guardando
+          "
+          @click="
+            guardarConfiguracion
+          "
         >
-          <span v-if="guardando">
+
+          <span
+            v-if="
+              guardando
+            "
+          >
             Guardando...
           </span>
 
-          <span v-else>
+          <span
+            v-else
+          >
             Guardar configuración
           </span>
+
         </button>
 
       </footer>
 
     </template>
+
   </section>
 </template>

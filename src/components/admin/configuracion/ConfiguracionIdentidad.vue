@@ -3,18 +3,8 @@ import {
   computed,
   onBeforeUnmount,
   ref,
+  watch,
 } from 'vue'
-
-import {
-  getApp,
-} from 'firebase/app'
-
-import {
-  getStorage,
-  ref as storageRef,
-  uploadBytes,
-  getDownloadURL,
-} from 'firebase/storage'
 
 import EditorLogo from './EditorLogo.vue'
 
@@ -30,18 +20,11 @@ const emit = defineEmits([
 ])
 
 /* =========================================================
-   FIREBASE STORAGE
-   ========================================================= */
-
-const storage = getStorage(
-  getApp(),
-)
-
-/* =========================================================
    REFERENCIAS Y ESTADO
    ========================================================= */
 
-const inputLogo = ref(null)
+const inputLogo =
+  ref(null)
 
 const imagenProcesando =
   ref(false)
@@ -58,27 +41,46 @@ const editorActivo =
 const imagenSeleccionada =
   ref(null)
 
+/*
+ * URL temporal creada a partir del Blob almacenado
+ * en Firestore.
+ */
+const logoBlobUrl =
+  ref('')
+
 /* =========================================================
    RECURSOS ACTUALES
    ========================================================= */
 
-const logoActual = computed(() => {
-  return (
-    props.configuracion?.logoUrl ||
-    props.configuracion?.logoPngUrl ||
-    '/img/logo.jpg'
-  )
-})
+const logoActual =
+  computed(() => {
+    return (
+      logoBlobUrl.value ||
+      props.configuracion
+        ?.logoUrl ||
+      props.configuracion
+        ?.logoPngUrl ||
+      props.configuracion
+        ?.logoIcoUrl ||
+      ''
+    )
+  })
 
-const faviconActual = computed(() => {
-  return (
-    props.configuracion?.faviconUrl ||
-    props.configuracion?.logoIcoUrl ||
-    props.configuracion?.logoPngUrl ||
-    props.configuracion?.logoUrl ||
-    '/favicon.ico'
-  )
-})
+const faviconActual =
+  computed(() => {
+    return (
+      logoBlobUrl.value ||
+      props.configuracion
+        ?.faviconUrl ||
+      props.configuracion
+        ?.logoIcoUrl ||
+      props.configuracion
+        ?.logoPngUrl ||
+      props.configuracion
+        ?.logoUrl ||
+      ''
+    )
+  })
 
 /* =========================================================
    TIPOS DE ARCHIVO
@@ -106,7 +108,7 @@ const extensionesPermitidas = [
 ]
 
 /* =========================================================
-   VALIDACIÓN DE ARCHIVO
+   VALIDACIÓN
    ========================================================= */
 
 function esImagenPermitida(
@@ -116,10 +118,15 @@ function esImagenPermitida(
     return false
   }
 
+  const tipo =
+    String(
+      archivo.type || '',
+    ).toLowerCase()
+
   const tipoValido =
-    !archivo.type ||
+    !tipo ||
     tiposPermitidos.includes(
-      archivo.type,
+      tipo,
     )
 
   const nombre =
@@ -129,7 +136,9 @@ function esImagenPermitida(
 
   const extensionValida =
     extensionesPermitidas.some(
-      (extension) =>
+      (
+        extension,
+      ) =>
         nombre.endsWith(
           extension,
         ),
@@ -142,15 +151,219 @@ function esImagenPermitida(
 }
 
 /* =========================================================
+   CONVERSIÓN DE BYTES
+   ========================================================= */
+
+/*
+ * Firestore puede entregar los bytes como Uint8Array.
+ *
+ * También soportamos:
+ *
+ * - ArrayBuffer
+ * - objeto Firebase Bytes con toUint8Array()
+ * - Base64 de versiones anteriores
+ */
+
+function convertirAUint8Array(
+  valor,
+) {
+  if (
+    !valor
+  ) {
+    return null
+  }
+
+  if (
+    valor instanceof Uint8Array
+  ) {
+    return valor
+  }
+
+  if (
+    valor instanceof ArrayBuffer
+  ) {
+    return new Uint8Array(
+      valor,
+    )
+  }
+
+  if (
+    typeof valor
+      ?.toUint8Array ===
+    'function'
+  ) {
+    return valor.toUint8Array()
+  }
+
+  if (
+    typeof valor ===
+    'string'
+  ) {
+    try {
+      const binario =
+        window.atob(
+          valor,
+        )
+
+      const bytes =
+        new Uint8Array(
+          binario.length,
+        )
+
+      for (
+        let i = 0;
+        i <
+        binario.length;
+        i += 1
+      ) {
+        bytes[i] =
+          binario.charCodeAt(
+            i,
+          )
+      }
+
+      return bytes
+    } catch {
+      return null
+    }
+  }
+
+  /*
+   * Soporte adicional para estructuras
+   * serializadas que contengan bytes.
+   */
+  if (
+    Array.isArray(
+      valor,
+    )
+  ) {
+    try {
+      return new Uint8Array(
+        valor,
+      )
+    } catch {
+      return null
+    }
+  }
+
+  if (
+    Array.isArray(
+      valor?._values,
+    )
+  ) {
+    try {
+      return new Uint8Array(
+        valor._values,
+      )
+    } catch {
+      return null
+    }
+  }
+
+  return null
+}
+
+/* =========================================================
+   LIBERAR URL DEL BLOB
+   ========================================================= */
+
+function liberarLogoBlobUrl() {
+  if (
+    logoBlobUrl.value
+  ) {
+    URL.revokeObjectURL(
+      logoBlobUrl.value,
+    )
+  }
+
+  logoBlobUrl.value =
+    ''
+}
+
+/* =========================================================
+   CARGAR LOGO DESDE FIRESTORE
+   ========================================================= */
+
+async function cargarLogoBlob(
+  valor,
+) {
+  liberarLogoBlobUrl()
+
+  const bytes =
+    convertirAUint8Array(
+      valor,
+    )
+
+  if (
+    !bytes ||
+    bytes.byteLength <= 0
+  ) {
+    return
+  }
+
+  const mimeType =
+    props.configuracion
+      ?.logoMimeType ||
+    'image/jpeg'
+
+  try {
+    const blob =
+      new Blob(
+        [bytes],
+        {
+          type:
+            mimeType,
+        },
+      )
+
+    logoBlobUrl.value =
+      URL.createObjectURL(
+        blob,
+      )
+  } catch (
+    error
+  ) {
+    console.error(
+      'No fue posible crear la vista previa del logo almacenado en Firestore:',
+      error,
+    )
+
+    logoBlobUrl.value =
+      ''
+  }
+}
+
+watch(
+  () =>
+    props.configuracion
+      ?.logoBlob,
+  (valor) => {
+    cargarLogoBlob(
+      valor,
+    )
+  },
+  {
+    immediate: true,
+  },
+)
+
+/* =========================================================
    SELECCIONAR ARCHIVO
    ========================================================= */
 
 function seleccionarArchivo() {
   if (
-    imagenProcesando.value
+    imagenProcesando.value ||
+    editorActivo.value
   ) {
     return
   }
+
+  imagenError.value =
+    ''
+
+  imagenMensaje.value =
+    ''
 
   inputLogo.value?.click()
 }
@@ -159,7 +372,16 @@ function seleccionarArchivo() {
    MANEJAR ARCHIVO
    ========================================================= */
 
-function manejarArchivo(event) {
+function manejarArchivo(
+  event,
+) {
+  if (
+    imagenProcesando.value ||
+    editorActivo.value
+  ) {
+    return
+  }
+
   const archivo =
     event?.target?.files?.[0]
 
@@ -167,12 +389,11 @@ function manejarArchivo(event) {
     return
   }
 
-  imagenError.value = ''
-  imagenMensaje.value = ''
+  imagenError.value =
+    ''
 
-  /* -------------------------------------------------------
-     Validar formato
-     ------------------------------------------------------- */
+  imagenMensaje.value =
+    ''
 
   if (
     !esImagenPermitida(
@@ -182,62 +403,68 @@ function manejarArchivo(event) {
     imagenError.value =
       'Selecciona una imagen PNG, JPG, WEBP, GIF, SVG o ICO.'
 
-    if (event?.target) {
-      event.target.value = ''
+    if (
+      event?.target
+    ) {
+      event.target.value =
+        ''
     }
 
     return
   }
 
-  /* -------------------------------------------------------
-     Validar tamaño
-     ------------------------------------------------------- */
-
+  /*
+   * Aunque el archivo original pueda ser grande,
+   * posteriormente el EditorLogo debe generar
+   * el JPG final para Firestore.
+   */
   const maximo =
     15 * 1024 * 1024
 
   if (
-    archivo.size > maximo
+    archivo.size >
+    maximo
   ) {
     imagenError.value =
       'La imagen no puede superar los 15 MB.'
 
-    if (event?.target) {
-      event.target.value = ''
+    if (
+      event?.target
+    ) {
+      event.target.value =
+        ''
     }
 
     return
   }
 
-  /* -------------------------------------------------------
-     Cerrar selección anterior
-     ------------------------------------------------------- */
-
   if (
-    imagenSeleccionada.value
-      ?.url
+    imagenSeleccionada
+      .value?.url
   ) {
     URL.revokeObjectURL(
-      imagenSeleccionada.value
+      imagenSeleccionada
+        .value
         .url,
     )
   }
 
-  /* -------------------------------------------------------
-     Crear preview local
-     ------------------------------------------------------- */
-
+  /*
+   * Preview completamente local.
+   */
   const url =
     URL.createObjectURL(
       archivo,
     )
 
-  imagenSeleccionada.value = {
-    archivo,
-    url,
-  }
+  imagenSeleccionada.value =
+    {
+      archivo,
+      url,
+    }
 
-  editorActivo.value = true
+  editorActivo.value =
+    true
 }
 
 /* =========================================================
@@ -246,11 +473,12 @@ function manejarArchivo(event) {
 
 function cerrarEditor() {
   if (
-    imagenSeleccionada.value
-      ?.url
+    imagenSeleccionada
+      .value?.url
   ) {
     URL.revokeObjectURL(
-      imagenSeleccionada.value
+      imagenSeleccionada
+        .value
         .url,
     )
   }
@@ -261,19 +489,175 @@ function cerrarEditor() {
   editorActivo.value =
     false
 
-  if (inputLogo.value) {
+  if (
+    inputLogo.value
+  ) {
     inputLogo.value.value =
       ''
   }
 }
 
 /* =========================================================
-   NOMBRE ÚNICO PARA STORAGE
+   CONFIGURACIÓN DEL LOGO
    ========================================================= */
 
-function obtenerNombreLogo() {
-  return (
-    `configuracion/logo/logo-${Date.now()}.png`
+/*
+ * Ya no existe una ruta física dentro de public/.
+ *
+ * El recurso principal ahora vive en:
+ *
+ * configuracion/general.logoBlob
+ *
+ * de Firestore.
+ */
+
+const RUTA_LOGO =
+  'firestore:configuracion/general.logoBlob'
+
+const MIME_LOGO =
+  'image/jpeg'
+
+/* =========================================================
+   VALIDAR TAMAÑO PARA FIRESTORE
+   ========================================================= */
+
+/*
+ * Firestore tiene un límite de 1 MiB por documento.
+ *
+ * Dejamos margen para el resto de campos de
+ * configuracion/general.
+ */
+const MAXIMO_LOGO_FIRESTORE =
+  700 * 1024
+
+/* =========================================================
+   CONVERTIR BLOB A UINT8ARRAY
+   ========================================================= */
+
+async function blobAUint8Array(
+  blob,
+) {
+  if (
+    !(blob instanceof Blob)
+  ) {
+    throw new Error(
+      'El editor no generó una imagen válida.',
+    )
+  }
+
+  const buffer =
+    await blob.arrayBuffer()
+
+  const bytes =
+    new Uint8Array(
+      buffer,
+    )
+
+  if (
+    bytes.byteLength <= 0
+  ) {
+    throw new Error(
+      'El editor generó una imagen vacía.',
+    )
+  }
+
+  return bytes
+}
+
+/* =========================================================
+   EMITIR CONFIGURACIÓN
+   ========================================================= */
+
+function emitirConfiguracionLogo(
+  datos,
+  version,
+  bytes,
+) {
+  emit(
+    'actualizar-logo',
+    {
+      /*
+       * NUEVO:
+       * bytes binarios directamente en Firestore.
+       */
+      logoBlob:
+        bytes,
+
+      /*
+       * Tipo MIME utilizado para reconstruir
+       * la imagen en el navegador.
+       */
+      logoMimeType:
+        MIME_LOGO,
+
+      /*
+       * Mantenemos los campos existentes para
+       * no romper la estructura actual.
+       *
+       * Las vistas nuevas deben priorizar logoBlob.
+       */
+      logoUrl:
+        props.configuracion
+          ?.logoUrl ||
+        '',
+
+      logoPngUrl:
+        props.configuracion
+          ?.logoPngUrl ||
+        '',
+
+      logoIcoUrl:
+        props.configuracion
+          ?.logoIcoUrl ||
+        '',
+
+      faviconUrl:
+        props.configuracion
+          ?.faviconUrl ||
+        '',
+
+      logoVersion:
+        version,
+
+      logoEditor:
+        {
+          aspecto:
+            datos?.aspecto ??
+            null,
+
+          zoom:
+            datos?.zoom ??
+            null,
+
+          rotacion:
+            datos?.rotacion ??
+            0,
+
+          flipX:
+            datos?.flipX ??
+            false,
+
+          flipY:
+            datos?.flipY ??
+            false,
+
+          formato:
+            'jpg',
+
+          almacenamiento:
+            'firestore',
+
+          campo:
+            'configuracion/general.logoBlob',
+
+          actualizado:
+            new Date()
+              .toISOString(),
+        },
+
+      logoStoragePath:
+        RUTA_LOGO,
+    },
   )
 }
 
@@ -294,14 +678,16 @@ async function guardarImagen(
   imagenProcesando.value =
     true
 
-  imagenError.value = ''
-  imagenMensaje.value = ''
+  imagenError.value =
+    ''
+
+  imagenMensaje.value =
+    ''
 
   try {
-    /* -----------------------------------------------------
-       Validar Blob
-       ----------------------------------------------------- */
-
+    /*
+     * 1. Validar el Blob.
+     */
     if (
       !(datos.blob instanceof Blob)
     ) {
@@ -310,146 +696,94 @@ async function guardarImagen(
       )
     }
 
-    /* -----------------------------------------------------
-       Crear referencia Firebase Storage
-       ----------------------------------------------------- */
-
-    const nombreArchivo =
-      obtenerNombreLogo()
-
-    const referencia =
-      storageRef(
-        storage,
-        nombreArchivo,
+    if (
+      datos.blob.size <= 0
+    ) {
+      throw new Error(
+        'El editor generó una imagen vacía.',
       )
-
-    /* -----------------------------------------------------
-       Subir PNG directamente
-       a Firebase Storage
-       ----------------------------------------------------- */
-
-    const metadata = {
-      contentType:
-        'image/png',
-
-      cacheControl:
-        'public,max-age=31536000,immutable',
     }
 
-    const resultadoUpload =
-      await uploadBytes(
-        referencia,
+    /*
+     * 2. Convertir directamente a bytes.
+     *
+     * No se utiliza:
+     *
+     * /__admin/logo
+     * public/img/logo.jpg
+     * File System Access API
+     * Firebase Storage
+     */
+    imagenMensaje.value =
+      'Preparando logo para Firestore...'
+
+    const bytes =
+      await blobAUint8Array(
         datos.blob,
-        metadata,
       )
 
+    /*
+     * 3. Verificar tamaño.
+     *
+     * El documento entero de Firestore también
+     * contiene el resto de configuraciones.
+     */
     if (
-      !resultadoUpload?.ref
+      bytes.byteLength >
+      MAXIMO_LOGO_FIRESTORE
     ) {
       throw new Error(
-        'Firebase Storage no devolvió una referencia válida.',
+        'El logo recortado supera 700 KB. Reduce su tamaño o resolución antes de guardarlo.',
       )
     }
 
-    /* -----------------------------------------------------
-       Obtener URL pública
-       ----------------------------------------------------- */
-
-    const logoUrl =
-      await getDownloadURL(
-        resultadoUpload.ref,
-      )
-
-    if (
-      !logoUrl
-    ) {
-      throw new Error(
-        'Firebase Storage no devolvió la URL del logotipo.',
-      )
-    }
-
-    /* -----------------------------------------------------
-       Versión del recurso
-       ----------------------------------------------------- */
-
-    const logoVersion =
+    /*
+     * 4. Nueva versión.
+     */
+    const version =
       Date.now()
 
-    /* -----------------------------------------------------
-       Actualizar configuración
-       -----------------------------------------------------
+    /*
+     * 5. Actualizar configuración.
+     *
+     * El componente padre deberá escribir
+     * logoBlob como bytes directamente en Firestore.
+     */
+    imagenMensaje.value =
+      'Guardando logo en Firestore...'
 
-       El padre de este componente continúa siendo
-       responsable de guardar estos datos en:
-
-         configuracion/general
-
-       Este componente solamente genera/sube el recurso
-       y emite la información actualizada.
-       ----------------------------------------------------- */
-
-    emit(
-      'actualizar-logo',
-      {
-        logoUrl,
-        logoPngUrl:
-          logoUrl,
-
-        /*
-         * No generamos ICO artificialmente.
-         *
-         * El mismo PNG puede utilizarse como favicon
-         * moderno del navegador.
-         */
-        logoIcoUrl:
-          logoUrl,
-
-        faviconUrl:
-          logoUrl,
-
-        logoVersion,
-
-        /*
-         * Conservamos información del editor.
-         * Esto permite mantener registrada la edición
-         * realizada aunque no sea necesaria para mostrar
-         * el logo.
-         */
-        logoEditor: {
-          aspecto:
-            datos.aspecto ??
-            null,
-
-          zoom:
-            datos.zoom ??
-            null,
-
-          rotacion:
-            datos.rotacion ??
-            0,
-
-          flipX:
-            datos.flipX ??
-            false,
-
-          flipY:
-            datos.flipY ??
-            false,
-        },
-
-        /*
-         * Ruta interna de Firebase Storage.
-         */
-        logoStoragePath:
-          nombreArchivo,
-      },
+    emitirConfiguracionLogo(
+      datos,
+      version,
+      bytes,
     )
 
-    imagenMensaje.value =
-      'Logo actualizado correctamente. Guarda la configuración para confirmar los cambios.'
+    /*
+     * 6. Actualizar inmediatamente la vista local.
+     */
+    liberarLogoBlobUrl()
 
+    logoBlobUrl.value =
+      URL.createObjectURL(
+        new Blob(
+          [bytes],
+          {
+            type:
+              MIME_LOGO,
+          },
+        ),
+      )
+
+    /*
+     * 7. Cerrar editor.
+     */
     cerrarEditor()
-  } catch (error) {
+
+    imagenMensaje.value =
+      'Logo guardado correctamente en Firestore.'
+  } catch (
+    error
+  ) {
     console.error(
       'Error procesando logo:',
       error,
@@ -457,7 +791,7 @@ async function guardarImagen(
 
     imagenError.value =
       error?.message ||
-      'No fue posible guardar el logo en Firebase Storage.'
+      'No fue posible guardar el logo.'
   } finally {
     imagenProcesando.value =
       false
@@ -470,17 +804,23 @@ async function guardarImagen(
 
 onBeforeUnmount(() => {
   if (
-    imagenSeleccionada.value
-      ?.url
+    imagenSeleccionada
+      .value?.url
   ) {
     URL.revokeObjectURL(
-      imagenSeleccionada.value
+      imagenSeleccionada
+        .value
         .url,
     )
   }
 
   imagenSeleccionada.value =
     null
+
+  editorActivo.value =
+    false
+
+  liberarLogoBlobUrl()
 })
 </script>
 
@@ -571,8 +911,10 @@ onBeforeUnmount(() => {
           ref="inputLogo"
           type="file"
           hidden
-          accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml,image/x-icon"
-          @change="manejarArchivo"
+          accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml,image/x-icon,image/vnd.microsoft.icon"
+          @change="
+            manejarArchivo
+          "
         />
 
         <!-- =================================================
@@ -588,10 +930,35 @@ onBeforeUnmount(() => {
           >
 
             <img
-              :src="logoActual"
+              v-if="
+                logoActual
+              "
+              :src="
+                logoActual
+              "
               alt="Logotipo actual"
               loading="lazy"
             />
+
+            <span
+              v-else
+              aria-hidden="true"
+            >
+              {{
+                (
+                  configuracion
+                    .logoTexto ||
+                  configuracion
+                    .nombreEmpresa ||
+                  'IA'
+                )
+                  .slice(
+                    0,
+                    2,
+                  )
+                  .toUpperCase()
+              }}
+            </span>
 
           </div>
 
@@ -607,27 +974,38 @@ onBeforeUnmount(() => {
 
             <strong>
               {{
-                configuracion.logoVersion
+                configuracion
+                  .logoVersion
                   ? `Versión ${configuracion.logoVersion}`
                   : 'Recurso activo'
               }}
             </strong>
 
             <p>
-              El mismo recurso puede utilizarse en
-              Header, Sidebar y Footer.
+              El recurso se almacena directamente
+              en Firestore como:
+              <strong>
+                configuracion/general.logoBlob
+              </strong>
             </p>
 
             <button
               type="button"
               class="admin-configuracion__button admin-configuracion__button--primary"
-              :disabled="imagenProcesando"
-              @click="seleccionarArchivo"
+              :disabled="
+                imagenProcesando ||
+                editorActivo
+              "
+              @click="
+                seleccionarArchivo
+              "
             >
               {{
                 imagenProcesando
                   ? 'Procesando...'
-                  : 'Seleccionar imagen'
+                  : editorActivo
+                    ? 'Editor abierto...'
+                    : 'Seleccionar imagen'
               }}
             </button>
 
@@ -644,19 +1022,19 @@ onBeforeUnmount(() => {
         >
 
           <span>
-            WEBP
-          </span>
-
-          <span>
-            PNG
-          </span>
-
-          <span>
             JPG
           </span>
 
           <span>
-            FAVICON
+            Firestore
+          </span>
+
+          <span>
+            Favicon
+          </span>
+
+          <span>
+            Realtime
           </span>
 
         </div>
@@ -666,11 +1044,15 @@ onBeforeUnmount(() => {
              ================================================= -->
 
         <div
-          v-if="imagenMensaje"
+          v-if="
+            imagenMensaje
+          "
           class="admin-configuracion__inline-message admin-configuracion__inline-message--success"
           role="status"
         >
-          {{ imagenMensaje }}
+          {{
+            imagenMensaje
+          }}
         </div>
 
         <!-- =================================================
@@ -678,11 +1060,15 @@ onBeforeUnmount(() => {
              ================================================= -->
 
         <div
-          v-if="imagenError"
+          v-if="
+            imagenError
+          "
           class="admin-configuracion__inline-message admin-configuracion__inline-message--error"
           role="alert"
         >
-          {{ imagenError }}
+          {{
+            imagenError
+          }}
         </div>
 
       </article>
@@ -731,7 +1117,8 @@ onBeforeUnmount(() => {
 
             <span>
               {{
-                configuracion.nombreEmpresa ||
+                configuracion
+                  .nombreEmpresa ||
                 'Mi empresa'
               }}
             </span>
@@ -743,10 +1130,35 @@ onBeforeUnmount(() => {
           >
 
             <img
-              :src="faviconActual"
+              v-if="
+                faviconActual
+              "
+              :src="
+                faviconActual
+              "
               alt="Favicon actual"
               loading="lazy"
             />
+
+            <span
+              v-else
+              aria-hidden="true"
+            >
+              {{
+                (
+                  configuracion
+                    .logoTexto ||
+                  configuracion
+                    .nombreEmpresa ||
+                  'IA'
+                )
+                  .slice(
+                    0,
+                    2,
+                  )
+                  .toUpperCase()
+              }}
+            </span>
 
           </div>
 
@@ -761,13 +1173,15 @@ onBeforeUnmount(() => {
         >
 
           <strong>
-            Recurso generado
+            Almacenamiento Firebase
           </strong>
 
           <span>
-            El PNG recortado se almacena directamente
-            en Firebase Storage y puede utilizarse
-            también como favicon.
+            El logotipo se guarda como datos binarios
+            directamente en
+            configuracion/general.logoBlob,
+            sin Firebase Storage, sin permisos adicionales
+            y sin modificar archivos del proyecto.
           </span>
 
         </div>
@@ -777,23 +1191,33 @@ onBeforeUnmount(() => {
     </div>
 
     <!-- ===================================================
-         EDITOR DE LOGO
+         EDITOR
          =================================================== -->
 
-    <EditorLogo
-      v-if="
-        editorActivo &&
-        imagenSeleccionada
-      "
-      :imagen-url="
-        imagenSeleccionada.url
-      "
-      :procesando="
-        imagenProcesando
-      "
-      @cancelar="cerrarEditor"
-      @guardar="guardarImagen"
-    />
+    <Teleport
+      to="body"
+    >
+
+      <EditorLogo
+        v-if="
+          editorActivo &&
+          imagenSeleccionada
+        "
+        :imagen-url="
+          imagenSeleccionada.url
+        "
+        :procesando="
+          imagenProcesando
+        "
+        @cancelar="
+          cerrarEditor
+        "
+        @guardar="
+          guardarImagen
+        "
+      />
+
+    </Teleport>
 
   </section>
 </template>

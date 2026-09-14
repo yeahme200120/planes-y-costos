@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "cors": "^2.8.6",
-    "cropperjs": "^2.2.0",
+    "cropperjs": "^1.6.2",
     "express": "^5.2.1",
     "firebase": "^12.18.0",
     "multer": "^2.3.0",

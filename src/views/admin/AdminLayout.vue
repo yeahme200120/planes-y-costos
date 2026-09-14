@@ -5,6 +5,7 @@ import {
   onMounted,
   onUnmounted,
   ref,
+  watch,
 } from 'vue'
 
 import {
@@ -16,51 +17,772 @@ import {
   useRoute,
 } from 'vue-router'
 
-import { auth } from '../../config/firebase'
-import { cerrarSesion } from '../../services/authService'
-import { useContactosNuevos } from '../../composables/useContactosNuevos.js'
+import {
+  auth,
+} from '../../config/firebase'
 
-const router = useRouter()
-const route = useRoute()
+import {
+  cerrarSesion,
+} from '../../services/authService'
+
+import {
+  suscribirConfiguracionAdmin,
+} from '../../services/adminService'
+
+import {
+  useContactosNuevos,
+} from '../../composables/useContactosNuevos.js'
+
+const router =
+  useRouter()
+
+const route =
+  useRoute()
 
 // =========================================================
 // ESTADO
 // =========================================================
 
-const usuario = ref(null)
-const cerrandoSesion = ref(false)
-const menuAbierto = ref(false)
-const cargandoRuta = ref(false)
-const errorSesion = ref(null)
+const usuario =
+  ref(null)
 
-const sidebarRef = ref(null)
-const menuButtonRef = ref(null)
+const cerrandoSesion =
+  ref(false)
 
-let unsubscribeAuth = null
-let timeoutErrorSesion = null
+const menuAbierto =
+  ref(false)
 
-let componenteActivo = false
+const cargandoRuta =
+  ref(false)
+
+const errorSesion =
+  ref(null)
+
+const sidebarRef =
+  ref(null)
+
+const menuButtonRef =
+  ref(null)
+
+/*
+ * Configuración global de la empresa.
+ *
+ * Se mantiene reactiva y se actualiza mediante
+ * Firestore en tiempo real.
+ */
+const configuracion =
+  ref({})
+
+/*
+ * URL temporal para logoBlob.
+ *
+ * Firestore devuelve Bytes.
+ * Se convierte a Blob URL para poder
+ * utilizarlo en <img>.
+ */
+const logoBlobUrl =
+  ref('')
+
+/*
+ * URL temporal para el favicon.
+ *
+ * Se mantiene separada de logoBlobUrl
+ * para no compartir ni revocar accidentalmente
+ * recursos que estén siendo utilizados.
+ */
+const faviconBlobUrl =
+  ref('')
+
+let unsubscribeAuth =
+  null
+
+let unsubscribeConfiguracion =
+  null
+
+let timeoutErrorSesion =
+  null
+
+let componenteActivo =
+  false
 
 // =========================================================
 // CONTACTOS NUEVOS
 // =========================================================
 
 const {
-  cantidad: contactosNuevos,
-} = useContactosNuevos()
+  cantidad:
+    contactosNuevos,
+} =
+  useContactosNuevos()
+
+// =========================================================
+// UTILIDADES DE LOGO
+// =========================================================
+
+function obtenerBytesLogo(
+  valor,
+) {
+  if (
+    valor ===
+      null ||
+    valor ===
+      undefined
+  ) {
+    return null
+  }
+
+  /*
+   * Firebase Firestore Bytes.
+   */
+  if (
+    typeof valor.toUint8Array ===
+      'function'
+  ) {
+    try {
+      const bytes =
+        valor.toUint8Array()
+
+      if (
+        bytes instanceof Uint8Array
+      ) {
+        return new Uint8Array(
+          bytes,
+        )
+      }
+    } catch (error) {
+      console.error(
+        'Error convirtiendo Firestore Bytes:',
+        error,
+      )
+    }
+  }
+
+  /*
+   * Uint8Array nativo.
+   */
+  if (
+    valor instanceof Uint8Array
+  ) {
+    return new Uint8Array(
+      valor,
+    )
+  }
+
+  /*
+   * ArrayBuffer.
+   */
+  if (
+    valor instanceof ArrayBuffer
+  ) {
+    return new Uint8Array(
+      valor,
+    )
+  }
+
+  /*
+   * Otros TypedArray / DataView.
+   */
+  if (
+    ArrayBuffer.isView(valor)
+  ) {
+    return new Uint8Array(
+      valor.buffer,
+      valor.byteOffset,
+      valor.byteLength,
+    )
+  }
+
+  /*
+   * Array normal de bytes.
+   */
+  if (
+    Array.isArray(valor)
+  ) {
+    try {
+      return new Uint8Array(
+        valor,
+      )
+    } catch (error) {
+      console.error(
+        'Error convirtiendo array de bytes del logo:',
+        error,
+      )
+
+      return null
+    }
+  }
+
+  /*
+   * Compatibilidad con estructuras
+   * que contengan los bytes en data.
+   */
+  if (
+    typeof valor ===
+      'object' &&
+    valor.data
+  ) {
+    return obtenerBytesLogo(
+      valor.data,
+    )
+  }
+
+  return null
+}
+
+function limpiarLogoBlobUrl() {
+  if (
+    logoBlobUrl.value
+  ) {
+    try {
+      URL.revokeObjectURL(
+        logoBlobUrl.value,
+      )
+    } catch {
+      // No hacer nada.
+    }
+
+    logoBlobUrl.value =
+      ''
+  }
+}
+
+function limpiarFaviconBlobUrl() {
+  if (
+    faviconBlobUrl.value
+  ) {
+    try {
+      URL.revokeObjectURL(
+        faviconBlobUrl.value,
+      )
+    } catch {
+      // No hacer nada.
+    }
+
+    faviconBlobUrl.value =
+      ''
+  }
+}
+
+function actualizarLogoBlob(
+  datos = {},
+) {
+  limpiarLogoBlobUrl()
+
+  const logoBlob =
+    datos?.logoBlob
+
+  const bytes =
+    obtenerBytesLogo(
+      logoBlob,
+    )
+
+  if (
+    !bytes ||
+    bytes.byteLength <= 0
+  ) {
+    return
+  }
+
+  const mimeType =
+    typeof datos?.logoMimeType ===
+        'string' &&
+    datos.logoMimeType.trim()
+      ? datos.logoMimeType.trim()
+      : 'image/jpeg'
+
+  try {
+    const blob =
+      new Blob(
+        [bytes],
+        {
+          type: mimeType,
+        },
+      )
+
+    logoBlobUrl.value =
+      URL.createObjectURL(
+        blob,
+      )
+  } catch (error) {
+    console.error(
+      'Error creando URL temporal del logo:',
+      error,
+    )
+
+    logoBlobUrl.value =
+      ''
+  }
+}
+
+/*
+|--------------------------------------------------------------------------
+| FAVICON
+|--------------------------------------------------------------------------
+*/
+
+/**
+ * Obtiene el <link rel="icon"> existente.
+ *
+ * Si no existe, lo crea.
+ */
+function obtenerElementoFavicon() {
+  let elemento =
+    document.querySelector(
+      'link[rel="icon"]',
+    )
+
+  if (
+    !elemento
+  ) {
+    elemento =
+      document.createElement(
+        'link',
+      )
+
+    elemento.rel =
+      'icon'
+
+    document.head.appendChild(
+      elemento,
+    )
+  }
+
+  return elemento
+}
+
+/**
+ * Actualiza el favicon utilizando
+ * preferentemente logoBlob.
+ */
+function actualizarFavicon(
+  datos = {},
+) {
+  if (
+    typeof document ===
+      'undefined'
+  ) {
+    return
+  }
+
+  const elemento =
+    obtenerElementoFavicon()
+
+  limpiarFaviconBlobUrl()
+
+  const bytes =
+    obtenerBytesLogo(
+      datos?.logoBlob,
+    )
+
+  /*
+   * ---------------------------------------------------------
+   * PRIORIDAD 1: logoBlob de Firestore
+   * ---------------------------------------------------------
+   */
+  if (
+    bytes &&
+    bytes.byteLength > 0
+  ) {
+    const mimeType =
+      typeof datos?.logoMimeType ===
+          'string' &&
+      datos.logoMimeType.trim()
+        ? datos.logoMimeType.trim()
+        : 'image/jpeg'
+
+    try {
+      const blob =
+        new Blob(
+          [bytes],
+          {
+            type: mimeType,
+          },
+        )
+
+      faviconBlobUrl.value =
+        URL.createObjectURL(
+          blob,
+        )
+
+      elemento.type =
+        mimeType
+
+      /*
+       * Se utiliza una nueva blob URL
+       * cada vez que cambia el logo.
+       */
+      elemento.href =
+        faviconBlobUrl.value
+
+      /*
+       * Se conserva la versión por
+       * compatibilidad y depuración.
+       */
+      elemento.setAttribute(
+        'data-logo-version',
+        String(
+          datos?.logoVersion ||
+            Date.now(),
+        ),
+      )
+
+      /*
+       * Algunos navegadores mantienen en
+       * memoria el favicon anterior.
+       *
+       * Reinsertarlo fuerza la actualización
+       * del recurso sin recargar la página.
+       */
+      const clon =
+        elemento.cloneNode(true)
+
+      elemento.parentNode?.replaceChild(
+        clon,
+        elemento,
+      )
+
+      return
+    } catch (error) {
+      console.error(
+        'Error actualizando favicon desde logoBlob:',
+        error,
+      )
+    }
+  }
+
+  /*
+   * ---------------------------------------------------------
+   * PRIORIDAD 2: faviconUrl
+   * ---------------------------------------------------------
+   */
+  const faviconUrl =
+    datos?.faviconUrl ||
+    datos?.logoIcoUrl ||
+    datos?.logoPngUrl ||
+    datos?.logoUrl ||
+    '/img/logo.jpg'
+
+  const version =
+    datos?.logoVersion
+
+  let urlFinal =
+    faviconUrl
+
+  if (
+    version
+  ) {
+    const separador =
+      faviconUrl.includes('?')
+        ? '&'
+        : '?'
+
+    urlFinal =
+      `${faviconUrl}${separador}v=${version}`
+  }
+
+  elemento.type =
+    datos?.faviconMimeType ||
+    datos?.logoMimeType ||
+    ''
+
+  elemento.href =
+    urlFinal
+
+  elemento.setAttribute(
+    'data-logo-version',
+    String(
+      version ||
+        Date.now(),
+    ),
+  )
+}
+
+/**
+ * Favicon inicial.
+ *
+ * Permite que la aplicación respete
+ * el favicon que ya exista en index.html
+ * cuando todavía no ha llegado Firebase.
+ */
+function inicializarFavicon() {
+  if (
+    typeof document ===
+      'undefined'
+  ) {
+    return
+  }
+
+  const elemento =
+    obtenerElementoFavicon()
+
+  if (
+    !elemento.getAttribute(
+      'href',
+    )
+  ) {
+    elemento.href =
+      '/img/logo.jpg'
+  }
+}
+
+const logoSidebar =
+  computed(() => {
+    const config =
+      configuracion.value ||
+      {}
+
+    /*
+     * PRIORIDAD 1:
+     * Logo almacenado directamente
+     * como Bytes en Firestore.
+     */
+    if (
+      logoBlobUrl.value
+    ) {
+      return logoBlobUrl.value
+    }
+
+    /*
+     * PRIORIDAD 2:
+     * Compatibilidad con la configuración
+     * anterior basada en URLs.
+     */
+    const url =
+      config.logoUrl ||
+      config.logoPngUrl ||
+      config.logoIcoUrl ||
+      '/img/logo.jpg'
+
+    const version =
+      config.logoVersion
+
+    if (
+      !version
+    ) {
+      return url
+    }
+
+    const separador =
+      url.includes('?')
+        ? '&'
+        : '?'
+
+    return `${url}${separador}v=${version}`
+  })
+
+const nombreEmpresa =
+  computed(() => {
+    return (
+      configuracion
+        .value
+        ?.nombreEmpresa ||
+      'Landing Admin'
+    )
+  })
+
+// =========================================================
+// CONFIGURACIÓN GLOBAL
+// =========================================================
+
+function aplicarConfiguracion(
+  datos = {},
+) {
+  configuracion.value =
+    datos || {}
+
+  /*
+   * Actualizar inmediatamente
+   * el logo del sidebar.
+   */
+  actualizarLogoBlob(
+    configuracion.value,
+  )
+
+  /*
+   * Actualizar inmediatamente
+   * el favicon del navegador.
+   */
+  actualizarFavicon(
+    configuracion.value,
+  )
+
+  /*
+   * Actualizar título si cambia
+   * la empresa.
+   */
+  if (
+    datos?.nombreEmpresa
+  ) {
+    document.title =
+      datos.nombreEmpresa
+  }
+}
+
+function iniciarConfiguracion() {
+  if (
+    typeof unsubscribeConfiguracion ===
+      'function'
+  ) {
+    unsubscribeConfiguracion()
+
+    unsubscribeConfiguracion =
+      null
+  }
+
+  try {
+    unsubscribeConfiguracion =
+      suscribirConfiguracionAdmin(
+        'general',
+
+        (datos) => {
+          if (
+            !componenteActivo
+          ) {
+            return
+          }
+
+          aplicarConfiguracion(
+            datos || {},
+          )
+        },
+
+        (error) => {
+          console.error(
+            'Error sincronizando configuración del sidebar:',
+            error,
+          )
+        },
+      )
+  } catch (error) {
+    console.error(
+      'No fue posible iniciar la configuración del sidebar:',
+      error,
+    )
+  }
+}
+
+/*
+ * También escuchamos el evento global
+ * enviado por App.vue o por otras vistas.
+ *
+ * Esto permite actualización inmediata
+ * sin esperar una navegación.
+ */
+function manejarConfiguracionGlobal(
+  event,
+) {
+  if (
+    !componenteActivo
+  ) {
+    return
+  }
+
+  const datos =
+    event?.detail
+
+  if (
+    !datos ||
+    typeof datos !==
+      'object'
+  ) {
+    return
+  }
+
+  aplicarConfiguracion(
+    datos,
+  )
+}
+
+// =========================================================
+// WATCHER DE SEGURIDAD PARA LOGO Y FAVICON
+// =========================================================
+
+watch(
+  () =>
+    configuracion
+      .value
+      ?.logoBlob,
+  () => {
+    if (
+      !componenteActivo
+    ) {
+      return
+    }
+
+    actualizarLogoBlob(
+      configuracion.value,
+    )
+
+    actualizarFavicon(
+      configuracion.value,
+    )
+  },
+)
+
+// =========================================================
+// WATCHER DE VERSIÓN
+// =========================================================
+
+watch(
+  () =>
+    configuracion
+      .value
+      ?.logoVersion,
+  () => {
+    if (
+      !componenteActivo
+    ) {
+      return
+    }
+
+    /*
+     * La versión permite actualizar el
+     * favicon aunque el navegador tenga
+     * cacheado el recurso anterior.
+     */
+    actualizarFavicon(
+      configuracion.value,
+    )
+  },
+)
 
 // =========================================================
 // CICLO DE VIDA
 // =========================================================
 
 onMounted(() => {
-  componenteActivo = true
+  componenteActivo =
+    true
 
+  /*
+   * Mantener favicon existente
+   * mientras Firebase responde.
+   */
+  inicializarFavicon()
+
+  /*
+   * Configuración realtime.
+   */
+  iniciarConfiguracion()
+
+  /*
+   * Escuchar actualización global.
+   */
+  window.addEventListener(
+    'configuracion-global-actualizada',
+    manejarConfiguracionGlobal,
+  )
+
+  /*
+   * Firebase Auth.
+   */
   unsubscribeAuth =
     onAuthStateChanged(
       auth,
       (usuarioActual) => {
-        if (!componenteActivo) {
+        if (
+          !componenteActivo
+        ) {
           return
         }
 
@@ -70,73 +792,106 @@ onMounted(() => {
         usuario.value =
           usuarioActual
 
-        if (usuarioActual) {
+        if (
+          usuarioActual
+        ) {
           limpiarErrorSesion()
+
           return
         }
 
-        if (usuarioAnterior) {
+        if (
+          usuarioAnterior
+        ) {
           mostrarErrorSesion(
-            'Tu sesión ha expirado. Por favor, inicia sesión nuevamente.'
+            'Tu sesión ha expirado. Por favor, inicia sesión nuevamente.',
           )
         }
       },
       (error) => {
         console.error(
           'Error observando autenticación:',
-          error
+          error,
         )
 
-        if (!componenteActivo) {
+        if (
+          !componenteActivo
+        ) {
           return
         }
 
         mostrarErrorSesion(
           obtenerMensajeError(
             error,
-            'No fue posible verificar el estado de la sesión.'
-          )
+            'No fue posible verificar el estado de la sesión.',
+          ),
         )
-      }
+      },
     )
 
   document.addEventListener(
     'keydown',
-    manejarTecla
+    manejarTecla,
   )
 
   document.addEventListener(
     'click',
-    manejarClickFuera
+    manejarClickFuera,
   )
 })
 
 onUnmounted(() => {
-  componenteActivo = false
+  componenteActivo =
+    false
 
   if (
     typeof unsubscribeAuth ===
-    'function'
+      'function'
   ) {
     unsubscribeAuth()
   }
 
-  unsubscribeAuth = null
+  unsubscribeAuth =
+    null
+
+  if (
+    typeof unsubscribeConfiguracion ===
+      'function'
+  ) {
+    unsubscribeConfiguracion()
+  }
+
+  unsubscribeConfiguracion =
+    null
+
+  window.removeEventListener(
+    'configuracion-global-actualizada',
+    manejarConfiguracionGlobal,
+  )
 
   document.removeEventListener(
     'keydown',
-    manejarTecla
+    manejarTecla,
   )
 
   document.removeEventListener(
     'click',
-    manejarClickFuera
+    manejarClickFuera,
   )
 
-  if (timeoutErrorSesion) {
-    clearTimeout(timeoutErrorSesion)
-    timeoutErrorSesion = null
+  if (
+    timeoutErrorSesion
+  ) {
+    clearTimeout(
+      timeoutErrorSesion,
+    )
+
+    timeoutErrorSesion =
+      null
   }
+
+  limpiarLogoBlobUrl()
+  limpiarFaviconBlobUrl()
 })
 
 // =========================================================
@@ -145,7 +900,7 @@ onUnmounted(() => {
 
 function obtenerMensajeError(
   error,
-  fallback
+  fallback,
 ) {
   if (
     error instanceof Error &&
@@ -156,8 +911,10 @@ function obtenerMensajeError(
 
   if (
     error &&
-    typeof error === 'object' &&
-    typeof error.message === 'string' &&
+    typeof error ===
+      'object' &&
+    typeof error.message ===
+      'string' &&
     error.message
   ) {
     return error.message
@@ -167,40 +924,62 @@ function obtenerMensajeError(
 }
 
 function limpiarErrorSesion() {
-  errorSesion.value = null
+  errorSesion.value =
+    null
 
-  if (timeoutErrorSesion) {
-    clearTimeout(timeoutErrorSesion)
-    timeoutErrorSesion = null
+  if (
+    timeoutErrorSesion
+  ) {
+    clearTimeout(
+      timeoutErrorSesion,
+    )
+
+    timeoutErrorSesion =
+      null
   }
 }
 
 function mostrarErrorSesion(
   mensaje,
-  duracion = 6000
+  duracion = 6000,
 ) {
-  errorSesion.value = mensaje
+  errorSesion.value =
+    mensaje
 
-  if (timeoutErrorSesion) {
-    clearTimeout(timeoutErrorSesion)
+  if (
+    timeoutErrorSesion
+  ) {
+    clearTimeout(
+      timeoutErrorSesion,
+    )
   }
 
   timeoutErrorSesion =
-    window.setTimeout(() => {
-      if (!componenteActivo) {
-        return
-      }
+    window.setTimeout(
+      () => {
+        if (
+          !componenteActivo
+        ) {
+          return
+        }
 
-      errorSesion.value = null
-      timeoutErrorSesion = null
-    }, duracion)
+        errorSesion.value =
+          null
+
+        timeoutErrorSesion =
+          null
+      },
+      duracion,
+    )
 }
 
 // =========================================================
 // NAVEGACIÓN Y MENÚ
 // =========================================================
 
-function manejarTecla(event) {
+function manejarTecla(
+  event,
+) {
   if (
     event.key === 'Escape' &&
     menuAbierto.value
@@ -219,12 +998,17 @@ function manejarTecla(event) {
     event.altKey
   ) {
     event.preventDefault()
+
     alternarMenu()
   }
 }
 
-function manejarClickFuera(event) {
-  if (!menuAbierto.value) {
+function manejarClickFuera(
+  event,
+) {
+  if (
+    !menuAbierto.value
+  ) {
     return
   }
 
@@ -236,27 +1020,34 @@ function manejarClickFuera(event) {
 
   if (
     sidebar &&
-    !sidebar.contains(event.target) &&
+    !sidebar.contains(
+      event.target,
+    ) &&
     menuButton &&
-    !menuButton.contains(event.target)
+    !menuButton.contains(
+      event.target,
+    )
   ) {
     cerrarMenu()
   }
 }
 
 function cerrarMenu() {
-  menuAbierto.value = false
+  menuAbierto.value =
+    false
 }
 
 function alternarMenu() {
   menuAbierto.value =
     !menuAbierto.value
 
-  if (menuAbierto.value) {
+  if (
+    menuAbierto.value
+  ) {
     nextTick(() => {
       const firstLink =
         document.querySelector(
-          '.admin-sidebar__link'
+          '.admin-sidebar__link',
         )
 
       firstLink?.focus()
@@ -264,40 +1055,55 @@ function alternarMenu() {
   }
 }
 
-async function navegar(ruta) {
-  if (cargandoRuta.value) {
+async function navegar(
+  ruta,
+) {
+  if (
+    cargandoRuta.value
+  ) {
     return
   }
 
-  if (route.path === ruta) {
+  if (
+    route.path === ruta
+  ) {
     cerrarMenu()
+
     return
   }
 
-  cargandoRuta.value = true
+  cargandoRuta.value =
+    true
 
   cerrarMenu()
 
   try {
-    await router.push(ruta)
+    await router.push(
+      ruta,
+    )
   } catch (error) {
     console.error(
       'Error de navegación:',
-      error
+      error,
     )
 
-    if (componenteActivo) {
+    if (
+      componenteActivo
+    ) {
       mostrarErrorSesion(
         obtenerMensajeError(
           error,
-          'No fue posible realizar la navegación.'
+          'No fue posible realizar la navegación.',
         ),
-        5000
+        5000,
       )
     }
   } finally {
-    if (componenteActivo) {
-      cargandoRuta.value = false
+    if (
+      componenteActivo
+    ) {
+      cargandoRuta.value =
+        false
     }
   }
 }
@@ -308,7 +1114,7 @@ function irALanding() {
   window.open(
     '/',
     '_blank',
-    'noopener,noreferrer'
+    'noopener,noreferrer',
   )
 }
 
@@ -317,21 +1123,26 @@ function irALanding() {
 // =========================================================
 
 async function salir() {
-  if (cerrandoSesion.value) {
+  if (
+    cerrandoSesion.value
+  ) {
     return
   }
 
   const confirmar =
     window.confirm(
-      '¿Estás seguro de que deseas cerrar sesión?\n\nLos cambios no guardados se perderán.'
+      '¿Estás seguro de que deseas cerrar sesión?\n\nLos cambios no guardados se perderán.',
     )
 
-  if (!confirmar) {
+  if (
+    !confirmar
+  ) {
     return
   }
 
   try {
-    cerrandoSesion.value = true
+    cerrandoSesion.value =
+      true
 
     limpiarErrorSesion()
 
@@ -339,31 +1150,38 @@ async function salir() {
 
     await cerrarSesion()
 
-    if (!componenteActivo) {
+    if (
+      !componenteActivo
+    ) {
       return
     }
 
     await router.replace(
-      '/admin/login'
+      '/admin/login',
     )
   } catch (err) {
     console.error(
       'Error al cerrar sesión:',
-      err
+      err,
     )
 
-    if (componenteActivo) {
+    if (
+      componenteActivo
+    ) {
       mostrarErrorSesion(
         obtenerMensajeError(
           err,
-          'Ocurrió un error al cerrar sesión.'
+          'Ocurrió un error al cerrar sesión.',
         ),
-        5000
+        5000,
       )
     }
   } finally {
-    if (componenteActivo) {
-      cerrandoSesion.value = false
+    if (
+      componenteActivo
+    ) {
+      cerrandoSesion.value =
+        false
     }
   }
 }
@@ -372,33 +1190,45 @@ async function salir() {
 // COMPUTADAS
 // =========================================================
 
-const nombreUsuario = computed(() => {
-  if (!usuario.value) {
-    return 'Administrador'
-  }
+const nombreUsuario =
+  computed(() => {
+    if (
+      !usuario.value
+    ) {
+      return 'Administrador'
+    }
 
-  return (
-    usuario.value.displayName ||
-    usuario.value.email ||
-    'Administrador'
-  )
-})
+    return (
+      usuario.value
+        .displayName ||
+      usuario.value
+        .email ||
+      'Administrador'
+    )
+  })
 
-const emailUsuario = computed(() => {
-  return usuario.value?.email || ''
-})
+const emailUsuario =
+  computed(() => {
+    return (
+      usuario.value?.email ||
+      ''
+    )
+  })
 
-const inicialUsuario = computed(() => {
-  const nombre =
-    usuario.value?.displayName ||
-    usuario.value?.email ||
-    'A'
+const inicialUsuario =
+  computed(() => {
+    const nombre =
+      usuario.value
+        ?.displayName ||
+      usuario.value
+        ?.email ||
+      'A'
 
-  return nombre
-    .trim()
-    .charAt(0)
-    .toUpperCase()
-})
+    return nombre
+      .trim()
+      .charAt(0)
+      .toUpperCase()
+  })
 </script>
 
 <template>
@@ -413,7 +1243,9 @@ const inicialUsuario = computed(() => {
       role="banner"
     >
 
-      <div class="admin-layout__header-left">
+      <div
+        class="admin-layout__header-left"
+      >
 
         <button
           ref="menuButtonRef"
@@ -424,15 +1256,22 @@ const inicialUsuario = computed(() => {
               ? 'Cerrar menú'
               : 'Abrir menú'
           "
-          :aria-expanded="menuAbierto"
+          :aria-expanded="
+            menuAbierto
+          "
           aria-controls="admin-sidebar"
           :class="{
-            'is-active': menuAbierto,
+            'is-active':
+              menuAbierto,
           }"
-          @click="alternarMenu"
+          @click="
+            alternarMenu
+          "
         >
           <span
-            v-if="!menuAbierto"
+            v-if="
+              !menuAbierto
+            "
             aria-hidden="true"
           >
             ☰
@@ -447,24 +1286,34 @@ const inicialUsuario = computed(() => {
         </button>
 
         <div>
-          <p class="admin-layout__eyebrow">
+
+          <p
+            class="admin-layout__eyebrow"
+          >
             Administración
           </p>
 
-          <h1 class="admin-layout__title">
+          <h1
+            class="admin-layout__title"
+          >
             Panel administrativo
           </h1>
 
-          <p class="admin-layout__subtitle">
+          <p
+            class="admin-layout__subtitle"
+          >
             Gestión de contenido de la landing page.
           </p>
+
         </div>
 
       </div>
 
       <!-- ACCIONES DEL HEADER -->
 
-      <div class="admin-layout__header-actions">
+      <div
+        class="admin-layout__header-actions"
+      >
 
         <!-- Perfil -->
 
@@ -481,13 +1330,19 @@ const inicialUsuario = computed(() => {
             {{ inicialUsuario }}
           </div>
 
-          <div class="admin-layout__user-info">
+          <div
+            class="admin-layout__user-info"
+          >
 
-            <span class="admin-layout__user-label">
+            <span
+              class="admin-layout__user-label"
+            >
               Sesión activa
             </span>
 
-            <strong class="admin-layout__user-name">
+            <strong
+              class="admin-layout__user-name"
+            >
               {{ nombreUsuario }}
             </strong>
 
@@ -501,9 +1356,13 @@ const inicialUsuario = computed(() => {
           type="button"
           class="admin-button admin-button--secondary"
           title="Abrir la landing page en una nueva pestaña"
-          @click="irALanding"
+          @click="
+            irALanding
+          "
         >
-          <span aria-hidden="true">
+          <span
+            aria-hidden="true"
+          >
             🌐
           </span>
 
@@ -515,11 +1374,15 @@ const inicialUsuario = computed(() => {
         <button
           type="button"
           class="admin-button admin-button--danger"
-          :disabled="cerrandoSesion"
+          :disabled="
+            cerrandoSesion
+          "
           @click="salir"
         >
           <span
-            v-if="cerrandoSesion"
+            v-if="
+              cerrandoSesion
+            "
             aria-hidden="true"
           >
             ⏳
@@ -532,6 +1395,7 @@ const inicialUsuario = computed(() => {
                 : 'Cerrar sesión'
             }}
           </span>
+
         </button>
 
       </div>
@@ -541,7 +1405,9 @@ const inicialUsuario = computed(() => {
          CUERPO
          =================================================== -->
 
-    <div class="admin-layout__body">
+    <div
+      class="admin-layout__body"
+    >
 
       <!-- SIDEBAR -->
 
@@ -559,24 +1425,53 @@ const inicialUsuario = computed(() => {
 
         <!-- BRAND -->
 
-        <div class="admin-sidebar__brand">
+        <div
+          class="admin-sidebar__brand"
+        >
 
-          <div class="admin-sidebar__logo">
+          <div
+            class="admin-sidebar__logo"
+          >
+
             <img
               class="logo-image"
-              src="/img/logo.jpg"
-              alt="Logo"
+              :src="
+                logoSidebar
+              "
+              :alt="
+                `Logo de ${nombreEmpresa}`
+              "
+              loading="eager"
+              @error="
+                (event) => {
+                  if (
+                    event.target.src.endsWith(
+                      '/img/logo.jpg'
+                    )
+                  ) {
+                    return
+                  }
+
+                  event.target.src =
+                    '/img/logo.jpg'
+                }
+              "
             >
+
           </div>
 
           <div>
+
             <strong>
-              Landing Admin
+              {{
+                nombreEmpresa
+              }}
             </strong>
 
             <span>
               Gestión de contenido
             </span>
+
           </div>
 
         </div>
@@ -588,7 +1483,9 @@ const inicialUsuario = computed(() => {
           aria-label="Navegación administrativa"
         >
 
-          <p class="admin-sidebar__label">
+          <p
+            class="admin-sidebar__label"
+          >
             PRINCIPAL
           </p>
 
@@ -609,7 +1506,9 @@ const inicialUsuario = computed(() => {
                 : undefined
             "
             @click="
-              navegar('/admin/dashboard')
+              navegar(
+                '/admin/dashboard',
+              )
             "
           >
             <span
@@ -622,9 +1521,12 @@ const inicialUsuario = computed(() => {
             <span>
               Dashboard
             </span>
+
           </button>
 
-          <p class="admin-sidebar__label">
+          <p
+            class="admin-sidebar__label"
+          >
             CONTENIDO
           </p>
 
@@ -636,20 +1538,23 @@ const inicialUsuario = computed(() => {
             :class="{
               'admin-sidebar__link--active':
                 route.path.startsWith(
-                  '/admin/planes'
+                  '/admin/planes',
                 ),
             }"
             :aria-current="
               route.path.startsWith(
-                '/admin/planes'
+                '/admin/planes',
               )
                 ? 'page'
                 : undefined
             "
             @click="
-              navegar('/admin/planes')
+              navegar(
+                '/admin/planes',
+              )
             "
           >
+
             <span
               class="admin-sidebar__icon"
               aria-hidden="true"
@@ -660,6 +1565,7 @@ const inicialUsuario = computed(() => {
             <span>
               Planes
             </span>
+
           </button>
 
           <!-- Secciones -->
@@ -670,20 +1576,23 @@ const inicialUsuario = computed(() => {
             :class="{
               'admin-sidebar__link--active':
                 route.path.startsWith(
-                  '/admin/secciones'
+                  '/admin/secciones',
                 ),
             }"
             :aria-current="
               route.path.startsWith(
-                '/admin/secciones'
+                '/admin/secciones',
               )
                 ? 'page'
                 : undefined
             "
             @click="
-              navegar('/admin/secciones')
+              navegar(
+                '/admin/secciones',
+              )
             "
           >
+
             <span
               class="admin-sidebar__icon"
               aria-hidden="true"
@@ -694,6 +1603,7 @@ const inicialUsuario = computed(() => {
             <span>
               Secciones
             </span>
+
           </button>
 
           <!-- Contenido -->
@@ -704,20 +1614,23 @@ const inicialUsuario = computed(() => {
             :class="{
               'admin-sidebar__link--active':
                 route.path.startsWith(
-                  '/admin/contenido'
+                  '/admin/contenido',
                 ),
             }"
             :aria-current="
               route.path.startsWith(
-                '/admin/contenido'
+                '/admin/contenido',
               )
                 ? 'page'
                 : undefined
             "
             @click="
-              navegar('/admin/contenido')
+              navegar(
+                '/admin/contenido',
+              )
             "
           >
+
             <span
               class="admin-sidebar__icon"
               aria-hidden="true"
@@ -725,9 +1638,12 @@ const inicialUsuario = computed(() => {
               ◈
             </span>
 
-            <span class="admin-sidebar__link-text">
+            <span
+              class="admin-sidebar__link-text"
+            >
               Contenido
             </span>
+
           </button>
 
           <!-- Contactos -->
@@ -738,20 +1654,23 @@ const inicialUsuario = computed(() => {
             :class="{
               'admin-sidebar__link--active':
                 route.path.startsWith(
-                  '/admin/contactos'
+                  '/admin/contactos',
                 ),
             }"
             :aria-current="
               route.path.startsWith(
-                '/admin/contactos'
+                '/admin/contactos',
               )
                 ? 'page'
                 : undefined
             "
             @click="
-              navegar('/admin/contactos')
+              navegar(
+                '/admin/contactos',
+              )
             "
           >
+
             <span
               class="admin-sidebar__icon"
               aria-hidden="true"
@@ -759,14 +1678,20 @@ const inicialUsuario = computed(() => {
               ✉
             </span>
 
-            <span class="admin-sidebar__link-text">
+            <span
+              class="admin-sidebar__link-text"
+            >
               Contactos
             </span>
 
             <span
-              v-if="contactosNuevos > 0"
+              v-if="
+                contactosNuevos > 0
+              "
               class="admin-sidebar__badge"
-              :aria-label="`${contactosNuevos} contactos nuevos`"
+              :aria-label="
+                `${contactosNuevos} contactos nuevos`
+              "
             >
               {{
                 contactosNuevos > 99
@@ -774,9 +1699,12 @@ const inicialUsuario = computed(() => {
                   : contactosNuevos
               }}
             </span>
+
           </button>
 
-          <p class="admin-sidebar__label">
+          <p
+            class="admin-sidebar__label"
+          >
             SISTEMA
           </p>
 
@@ -788,20 +1716,23 @@ const inicialUsuario = computed(() => {
             :class="{
               'admin-sidebar__link--active':
                 route.path.startsWith(
-                  '/admin/usuarios'
+                  '/admin/usuarios',
                 ),
             }"
             :aria-current="
               route.path.startsWith(
-                '/admin/usuarios'
+                '/admin/usuarios',
               )
                 ? 'page'
                 : undefined
             "
             @click="
-              navegar('/admin/usuarios')
+              navegar(
+                '/admin/usuarios',
+              )
             "
           >
+
             <span
               class="admin-sidebar__icon"
               aria-hidden="true"
@@ -809,9 +1740,12 @@ const inicialUsuario = computed(() => {
               👥
             </span>
 
-            <span class="admin-sidebar__link-text">
+            <span
+              class="admin-sidebar__link-text"
+            >
               Usuarios
             </span>
+
           </button>
 
           <!-- Configuración -->
@@ -822,20 +1756,23 @@ const inicialUsuario = computed(() => {
             :class="{
               'admin-sidebar__link--active':
                 route.path.startsWith(
-                  '/admin/configuracion'
+                  '/admin/configuracion',
                 ),
             }"
             :aria-current="
               route.path.startsWith(
-                '/admin/configuracion'
+                '/admin/configuracion',
               )
                 ? 'page'
                 : undefined
             "
             @click="
-              navegar('/admin/configuracion')
+              navegar(
+                '/admin/configuracion',
+              )
             "
           >
+
             <span
               class="admin-sidebar__icon"
               aria-hidden="true"
@@ -846,21 +1783,31 @@ const inicialUsuario = computed(() => {
             <span>
               Configuración
             </span>
+
           </button>
 
         </nav>
 
         <!-- FOOTER SIDEBAR -->
 
-        <div class="admin-sidebar__footer">
+        <div
+          class="admin-sidebar__footer"
+        >
 
           <button
             type="button"
             class="admin-sidebar__logout"
-            :disabled="cerrandoSesion"
-            @click="salir"
+            :disabled="
+              cerrandoSesion
+            "
+            @click="
+              salir
+            "
           >
-            <span aria-hidden="true">
+
+            <span
+              aria-hidden="true"
+            >
               ↪
             </span>
 
@@ -871,6 +1818,7 @@ const inicialUsuario = computed(() => {
                   : 'Cerrar sesión'
               }}
             </span>
+
           </button>
 
         </div>
@@ -879,17 +1827,27 @@ const inicialUsuario = computed(() => {
 
       <!-- OVERLAY -->
 
-      <transition name="fade">
+      <transition
+        name="fade"
+      >
 
         <div
-          v-if="menuAbierto"
+          v-if="
+            menuAbierto
+          "
           class="admin-layout__overlay"
           role="button"
           tabindex="0"
           aria-label="Cerrar menú"
-          @click="cerrarMenu"
-          @keydown.enter="cerrarMenu"
-          @keydown.space.prevent="cerrarMenu"
+          @click="
+            cerrarMenu
+          "
+          @keydown.enter="
+            cerrarMenu
+          "
+          @keydown.space.prevent="
+            cerrarMenu
+          "
         ></div>
 
       </transition>
@@ -897,57 +1855,79 @@ const inicialUsuario = computed(() => {
       <!-- CONTENIDO -->
 
       <main
-  class="admin-layout__content"
-  tabindex="-1"
->
+        class="admin-layout__content"
+        tabindex="-1"
+      >
 
-  <div
-    v-if="cargandoRuta"
-    class="admin-layout__loading"
-    aria-live="polite"
-  >
-    <span
-      class="admin-spinner"
-      aria-hidden="true"
-    ></span>
+        <div
+          v-if="
+            cargandoRuta
+          "
+          class="admin-layout__loading"
+          aria-live="polite"
+        >
 
-    Cargando...
-  </div>
+          <span
+            class="admin-spinner"
+            aria-hidden="true"
+          ></span>
 
-  <div
-    v-if="errorSesion"
-    class="admin-alert admin-alert--error"
-    role="alert"
-  >
-    <span aria-hidden="true">
-      ⚠️
-    </span>
+          Cargando...
 
-    {{ errorSesion }}
+        </div>
 
-    <button
-      type="button"
-      class="admin-alert__close"
-      aria-label="Cerrar mensaje"
-      @click="limpiarErrorSesion"
-    >
-      ✕
-    </button>
-  </div>
+        <div
+          v-if="
+            errorSesion
+          "
+          class="admin-alert admin-alert--error"
+          role="alert"
+        >
 
-  <RouterView v-slot="{ Component }">
-    <transition
-      name="fade-slide"
-      mode="out-in"
-    >
-      <component
-        :is="Component"
-        :key="route.fullPath"
-      />
-    </transition>
-  </RouterView>
+          <span
+            aria-hidden="true"
+          >
+            ⚠️
+          </span>
 
-</main>
+          {{
+            errorSesion
+          }}
+
+          <button
+            type="button"
+            class="admin-alert__close"
+            aria-label="Cerrar mensaje"
+            @click="
+              limpiarErrorSesion
+            "
+          >
+            ✕
+          </button>
+
+        </div>
+
+        <RouterView
+          v-slot="{ Component }"
+        >
+
+          <transition
+            name="fade-slide"
+            mode="out-in"
+          >
+
+            <component
+              :is="Component"
+              :key="
+                route.fullPath
+              "
+            />
+
+          </transition>
+
+        </RouterView>
+
+      </main>
 
     </div>
 

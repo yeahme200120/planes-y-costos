@@ -1,11 +1,14 @@
 <script setup>
 import {
-  computed,
   nextTick,
+  onBeforeUnmount,
   onMounted,
   ref,
   watch,
 } from 'vue'
+
+import Cropper from 'cropperjs'
+import 'cropperjs/dist/cropper.css'
 
 const props = defineProps({
   imagenUrl: {
@@ -24,625 +27,725 @@ const emit = defineEmits([
   'guardar',
 ])
 
-const cropCanvas = ref(null)
-const imagenCargada = ref(null)
+const imagenElemento =
+  ref(null)
 
-const imagenZoom = ref(1)
-const imagenRotacion = ref(0)
+const cropper =
+  ref(null)
 
-const flipX = ref(false)
-const flipY = ref(false)
+const cropAspecto =
+  ref('original')
 
-const cropAspecto = ref('original')
+const imagenZoom =
+  ref(1)
 
-const cropX = ref(0)
-const cropY = ref(0)
+const inicializando =
+  ref(false)
 
-const arrastrando = ref(false)
-const punteroX = ref(0)
-const punteroY = ref(0)
+const aspectos = [
+  {
+    valor: 'original',
+    etiqueta: 'Original',
+  },
+  {
+    valor: '1:1',
+    etiqueta: '1:1',
+  },
+  {
+    valor: '4:3',
+    etiqueta: '4:3',
+  },
+  {
+    valor: '16:9',
+    etiqueta: '16:9',
+  },
+]
 
-const editorWidth = 720
-const editorHeight = 430
-const editorMargin = 24
+/* =========================================================
+   ASPECT RATIO
+   ========================================================= */
 
-const areaWidth = computed(
-  () => editorWidth - editorMargin * 2,
-)
+function obtenerAspectRatio() {
+  switch (
+    cropAspecto.value
+  ) {
+    case '1:1':
+      return 1
 
-const areaHeight = computed(
-  () => editorHeight - editorMargin * 2,
-)
+    case '4:3':
+      return 4 / 3
 
-const cropWidth = computed(() => {
-  if (cropAspecto.value === '1:1') {
-    return Math.min(
-      areaWidth.value,
-      areaHeight.value,
-    )
-  }
+    case '16:9':
+      return 16 / 9
 
-  if (cropAspecto.value === '4:3') {
-    const ratio = 4 / 3
-
-    return Math.min(
-      areaWidth.value,
-      areaHeight.value * ratio,
-    )
-  }
-
-  if (cropAspecto.value === '16:9') {
-    const ratio = 16 / 9
-
-    return Math.min(
-      areaWidth.value,
-      areaHeight.value * ratio,
-    )
-  }
-
-  return areaWidth.value
-})
-
-const cropHeight = computed(() => {
-  if (cropAspecto.value === '1:1') {
-    return cropWidth.value
-  }
-
-  if (cropAspecto.value === '4:3') {
-    return cropWidth.value * (3 / 4)
-  }
-
-  if (cropAspecto.value === '16:9') {
-    return cropWidth.value * (9 / 16)
-  }
-
-  return areaHeight.value
-})
-
-const cropLeft = computed(
-  () =>
-    (editorWidth - cropWidth.value) / 2,
-)
-
-const cropTop = computed(
-  () =>
-    (editorHeight - cropHeight.value) / 2,
-)
-
-const estiloCrop = computed(() => ({
-  left: `${cropLeft.value}px`,
-  top: `${cropTop.value}px`,
-  width: `${cropWidth.value}px`,
-  height: `${cropHeight.value}px`,
-}))
-
-function cargarImagen() {
-  if (!props.imagenUrl) {
-    imagenCargada.value = null
-    return
-  }
-
-  const imagen = new Image()
-
-  imagen.onload = () => {
-    imagenCargada.value = imagen
-
-    cropX.value = 0
-    cropY.value = 0
-
-    nextTick(dibujarEditor)
-  }
-
-  imagen.onerror = () => {
-    imagenCargada.value = null
-  }
-
-  /*
-   * Si la imagen proviene de Firebase Storage o de otro
-   * dominio, permite que Canvas pueda utilizarla.
-   */
-  imagen.crossOrigin = 'anonymous'
-
-  imagen.src = props.imagenUrl
-}
-
-function obtenerTransformacionImagen() {
-  const imagen = imagenCargada.value
-
-  if (!imagen) {
-    return null
-  }
-
-  const angulo =
-    ((imagenRotacion.value % 360) + 360) % 360
-
-  const rotada =
-    angulo === 90 ||
-    angulo === 270
-
-  const ancho =
-    rotada
-      ? imagen.naturalHeight
-      : imagen.naturalWidth
-
-  const alto =
-    rotada
-      ? imagen.naturalWidth
-      : imagen.naturalHeight
-
-  const escalaBase = Math.max(
-    cropWidth.value / ancho,
-    cropHeight.value / alto,
-  )
-
-  const escala =
-    escalaBase * imagenZoom.value
-
-  return {
-    ancho,
-    alto,
-    escala,
+    case 'original':
+    default:
+      return NaN
   }
 }
 
-function dibujarEditor() {
-  const canvas = cropCanvas.value
-  const imagen = imagenCargada.value
+/* =========================================================
+   DESTRUIR CROPPER
+   ========================================================= */
 
-  if (!canvas || !imagen) {
-    return
-  }
-
-  const ctx = canvas.getContext('2d')
-
-  if (!ctx) {
-    return
-  }
-
-  canvas.width = editorWidth
-  canvas.height = editorHeight
-
-  ctx.clearRect(
-    0,
-    0,
-    editorWidth,
-    editorHeight,
-  )
-
-  /*
-   * Fondo del editor.
-   * Se utiliza el color del sistema para mantener
-   * el editor integrado con el panel.
-   */
-  ctx.fillStyle = '#111827'
-
-  ctx.fillRect(
-    0,
-    0,
-    editorWidth,
-    editorHeight,
-  )
-
-  const transformacion =
-    obtenerTransformacionImagen()
-
-  if (!transformacion) {
-    return
-  }
-
-  ctx.save()
-
-  ctx.translate(
-    editorWidth / 2 + cropX.value,
-    editorHeight / 2 + cropY.value,
-  )
-
-  ctx.rotate(
-    (imagenRotacion.value * Math.PI) / 180,
-  )
-
-  ctx.scale(
-    flipX.value ? -1 : 1,
-    flipY.value ? -1 : 1,
-  )
-
-  const ancho =
-    imagen.naturalWidth *
-    transformacion.escala
-
-  const alto =
-    imagen.naturalHeight *
-    transformacion.escala
-
-  ctx.drawImage(
-    imagen,
-    -ancho / 2,
-    -alto / 2,
-    ancho,
-    alto,
-  )
-
-  ctx.restore()
-
-  /*
-   * Máscara exterior.
-   */
-  ctx.save()
-
-  ctx.fillStyle =
-    'rgba(0, 0, 0, 0.58)'
-
-  ctx.beginPath()
-
-  ctx.rect(
-    0,
-    0,
-    editorWidth,
-    editorHeight,
-  )
-
-  ctx.rect(
-    cropLeft.value,
-    cropTop.value,
-    cropWidth.value,
-    cropHeight.value,
-  )
-
-  ctx.fill('evenodd')
-
-  ctx.restore()
-
-  /*
-   * Marco de recorte.
-   */
-  ctx.save()
-
-  ctx.strokeStyle =
-    'rgba(255, 255, 255, 0.95)'
-
-  ctx.lineWidth = 2
-
-  ctx.strokeRect(
-    cropLeft.value,
-    cropTop.value,
-    cropWidth.value,
-    cropHeight.value,
-  )
-
-  /*
-   * Regla de tercios.
-   */
-  ctx.strokeStyle =
-    'rgba(255, 255, 255, 0.30)'
-
-  ctx.lineWidth = 1
-
-  for (let i = 1; i < 3; i++) {
-    const x =
-      cropLeft.value +
-      (cropWidth.value / 3) * i
-
-    const y =
-      cropTop.value +
-      (cropHeight.value / 3) * i
-
-    ctx.beginPath()
-
-    ctx.moveTo(
-      x,
-      cropTop.value,
-    )
-
-    ctx.lineTo(
-      x,
-      cropTop.value + cropHeight.value,
-    )
-
-    ctx.stroke()
-
-    ctx.beginPath()
-
-    ctx.moveTo(
-      cropLeft.value,
-      y,
-    )
-
-    ctx.lineTo(
-      cropLeft.value + cropWidth.value,
-      y,
-    )
-
-    ctx.stroke()
-  }
-
-  ctx.restore()
-}
-
-function iniciarArrastre(event) {
-  if (props.procesando) {
-    return
-  }
-
-  arrastrando.value = true
-
-  punteroX.value =
-    event.clientX
-
-  punteroY.value =
-    event.clientY
-
-  event.currentTarget?.setPointerCapture?.(
-    event.pointerId,
-  )
-}
-
-function moverImagen(event) {
+function destruirCropper() {
   if (
-    !arrastrando.value ||
+    !cropper.value
+  ) {
+    return
+  }
+
+  try {
+    cropper.value.destroy()
+  } catch (error) {
+    console.warn(
+      'No fue posible destruir correctamente el editor de imagen.',
+      error,
+    )
+  }
+
+  cropper.value =
+    null
+}
+
+/* =========================================================
+   ASPECT RATIO
+   ========================================================= */
+
+function aplicarAspecto() {
+  if (
+    !cropper.value
+  ) {
+    return
+  }
+
+  try {
+    cropper.value.setAspectRatio(
+      obtenerAspectRatio(),
+    )
+  } catch (error) {
+    console.warn(
+      'No fue posible aplicar la proporción seleccionada.',
+      error,
+    )
+  }
+}
+
+/* =========================================================
+   ZOOM
+   ========================================================= */
+
+function aplicarZoom() {
+  if (
+    !cropper.value ||
     props.procesando
   ) {
     return
   }
 
-  cropX.value +=
-    event.clientX - punteroX.value
+  const zoom =
+    Math.min(
+      3,
+      Math.max(
+        0.5,
+        Number(
+          imagenZoom.value,
+        ) || 1,
+      ),
+    )
 
-  cropY.value +=
-    event.clientY - punteroY.value
-
-  punteroX.value =
-    event.clientX
-
-  punteroY.value =
-    event.clientY
-
-  dibujarEditor()
-}
-
-function terminarArrastre(event) {
-  arrastrando.value = false
+  imagenZoom.value =
+    zoom
 
   try {
-    event?.currentTarget?.releasePointerCapture?.(
-      event.pointerId,
+    cropper.value.zoomTo(
+      zoom,
+    )
+  } catch (error) {
+    console.warn(
+      'No fue posible aplicar el zoom.',
+      error,
+    )
+  }
+}
+
+/* =========================================================
+   OPCIONES CROPPER
+   ========================================================= */
+
+function obtenerOpcionesCropper() {
+  return {
+    viewMode: 1,
+
+    dragMode: 'move',
+
+    responsive: true,
+
+    restore: true,
+
+    checkCrossOrigin: true,
+
+    checkOrientation: true,
+
+    background: false,
+
+    autoCrop: true,
+
+    movable: true,
+
+    zoomable: true,
+
+    rotatable: false,
+
+    scalable: false,
+
+    cropBoxMovable: true,
+
+    cropBoxResizable: true,
+
+    toggleDragModeOnDblclick:
+      false,
+
+    aspectRatio:
+      obtenerAspectRatio(),
+
+    minContainerWidth:
+      320,
+
+    minContainerHeight:
+      320,
+
+    ready() {
+      inicializarZoom()
+    },
+
+    zoom(event) {
+      const ratio =
+        Number(
+          event.detail?.ratio,
+        )
+
+      if (
+        Number.isFinite(
+          ratio,
+        )
+      ) {
+        imagenZoom.value =
+          Math.min(
+            3,
+            Math.max(
+              0.5,
+              ratio,
+            ),
+          )
+      }
+    },
+  }
+}
+
+/* =========================================================
+   ZOOM INICIAL
+   ========================================================= */
+
+function inicializarZoom() {
+  if (
+    !cropper.value
+  ) {
+    return
+  }
+
+  try {
+    cropper.value.zoomTo(
+      imagenZoom.value,
     )
   } catch {
-    // El puntero puede haber sido liberado
-    // automáticamente por el navegador.
+    /*
+     * Cropper puede seguir inicializándose.
+     */
   }
 }
 
-function manejarWheel(event) {
-  if (props.procesando) {
+/* =========================================================
+   CARGAR IMAGEN
+   ========================================================= */
+
+async function cargarImagen() {
+  destruirCropper()
+
+  if (
+    !props.imagenUrl
+  ) {
     return
   }
 
-  event.preventDefault()
+  inicializando.value =
+    true
 
-  const incremento =
-    event.deltaY > 0
-      ? -0.05
-      : 0.05
+  await nextTick()
 
-  imagenZoom.value = Math.min(
-    3,
-    Math.max(
-      0.5,
-      imagenZoom.value + incremento,
-    ),
-  )
-}
-
-function rotar(direccion) {
-  if (props.procesando) {
-    return
-  }
-
-  imagenRotacion.value =
-    (
-      imagenRotacion.value +
-      direccion +
-      360
-    ) % 360
-
-  dibujarEditor()
-}
-
-function restaurar() {
-  if (props.procesando) {
-    return
-  }
-
-  imagenZoom.value = 1
-  imagenRotacion.value = 0
-
-  flipX.value = false
-  flipY.value = false
-
-  cropX.value = 0
-  cropY.value = 0
-
-  cropAspecto.value = 'original'
-
-  dibujarEditor()
-}
-
-function generarRecorte() {
-  const imagen = imagenCargada.value
+  const imagen =
+    imagenElemento.value
 
   if (!imagen) {
-    return null
+    inicializando.value =
+      false
+
+    return
   }
 
-  const escalaSalida = Math.min(
-    1600 / cropWidth.value,
-    1600 / cropHeight.value,
-  )
+  try {
+    /*
+     * Esperar a que la imagen termine de cargar
+     * cuando todavía no está disponible.
+     */
+    if (
+      !imagen.complete ||
+      imagen.naturalWidth === 0
+    ) {
+      await new Promise(
+        (
+          resolve,
+          reject,
+        ) => {
+          const manejarCarga =
+            () => {
+              limpiarListeners()
+              resolve()
+            }
 
-  const salidaWidth =
-    Math.max(
-      1,
-      Math.round(
-        cropWidth.value * escalaSalida,
-      ),
+          const manejarError =
+            () => {
+              limpiarListeners()
+
+              reject(
+                new Error(
+                  'No fue posible cargar la imagen seleccionada.',
+                ),
+              )
+            }
+
+          const limpiarListeners =
+            () => {
+              imagen.removeEventListener(
+                'load',
+                manejarCarga,
+              )
+
+              imagen.removeEventListener(
+                'error',
+                manejarError,
+              )
+            }
+
+          imagen.addEventListener(
+            'load',
+            manejarCarga,
+            {
+              once: true,
+            },
+          )
+
+          imagen.addEventListener(
+            'error',
+            manejarError,
+            {
+              once: true,
+            },
+          )
+        },
+      )
+    }
+
+    cropper.value =
+      new Cropper(
+        imagen,
+        obtenerOpcionesCropper(),
+      )
+  } catch (error) {
+    console.error(
+      'No fue posible inicializar el editor de imagen.',
+      error,
     )
 
-  const salidaHeight =
+    cropper.value =
+      null
+  } finally {
+    inicializando.value =
+      false
+  }
+}
+
+/* =========================================================
+   SELECCIONAR ASPECTO
+   ========================================================= */
+
+function seleccionarAspecto(
+  aspecto,
+) {
+  if (
+    props.procesando ||
+    cropAspecto.value ===
+      aspecto
+  ) {
+    return
+  }
+
+  cropAspecto.value =
+    aspecto
+
+  nextTick(() => {
+    aplicarAspecto()
+  })
+}
+
+/* =========================================================
+   DISMINUIR ZOOM
+   ========================================================= */
+
+function disminuirZoom() {
+  if (
+    props.procesando
+  ) {
+    return
+  }
+
+  imagenZoom.value =
     Math.max(
-      1,
+      0.5,
       Math.round(
-        cropHeight.value * escalaSalida,
-      ),
+        (
+          imagenZoom.value -
+          0.05
+        ) * 100,
+      ) / 100,
     )
+
+  aplicarZoom()
+}
+
+/* =========================================================
+   AUMENTAR ZOOM
+   ========================================================= */
+
+function aumentarZoom() {
+  if (
+    props.procesando
+  ) {
+    return
+  }
+
+  imagenZoom.value =
+    Math.min(
+      3,
+      Math.round(
+        (
+          imagenZoom.value +
+          0.05
+        ) * 100,
+      ) / 100,
+    )
+
+  aplicarZoom()
+}
+
+/* =========================================================
+   AJUSTAR ZOOM
+   ========================================================= */
+
+function ajustarZoom(
+  event,
+) {
+  if (
+    props.procesando
+  ) {
+    return
+  }
+
+  imagenZoom.value =
+    Number(
+      event.target.value,
+    )
+
+  aplicarZoom()
+}
+
+/* =========================================================
+   RESTAURAR
+   ========================================================= */
+
+function restaurar() {
+  if (
+    props.procesando ||
+    !cropper.value
+  ) {
+    return
+  }
+
+  cropAspecto.value =
+    'original'
+
+  imagenZoom.value =
+    1
+
+  try {
+    cropper.value.reset()
+  } catch (error) {
+    console.warn(
+      'No fue posible restaurar el editor.',
+      error,
+    )
+  }
+
+  nextTick(() => {
+    aplicarAspecto()
+    aplicarZoom()
+  })
+}
+
+/* =========================================================
+   GENERAR RECORTE
+   ========================================================= */
+
+async function generarRecorte() {
+  if (
+    !cropper.value
+  ) {
+    throw new Error(
+      'El editor de imagen no está listo.',
+    )
+  }
 
   const canvas =
-    document.createElement('canvas')
+    cropper.value.getCroppedCanvas({
+      /*
+       * Limitamos la resolución para mantener
+       * el tamaño final del logo razonable.
+       */
+      maxWidth: 1600,
+      maxHeight: 1600,
 
-  canvas.width = salidaWidth
-  canvas.height = salidaHeight
+      /*
+       * JPG no conserva transparencia.
+       * El fondo será blanco.
+       */
+      fillColor: '#ffffff',
 
-  const ctx =
-    canvas.getContext('2d')
+      imageSmoothingEnabled:
+        true,
 
-  if (!ctx) {
-    return null
+      imageSmoothingQuality:
+        'high',
+    })
+
+  if (!canvas) {
+    throw new Error(
+      'No se pudo generar el recorte.',
+    )
   }
 
   /*
-   * Fondo blanco.
-   * Para un logo PNG también podemos conservar
-   * transparencia si posteriormente quieres
-   * cambiar esta opción.
+   * Convertimos directamente a JPG.
+   *
+   * Calidad 0.92:
+   * buen equilibrio entre calidad visual
+   * y tamaño del documento de Firestore.
    */
-  ctx.fillStyle = '#FFFFFF'
+  const blob =
+    await new Promise(
+      (
+        resolve,
+        reject,
+      ) => {
+        canvas.toBlob(
+          (resultado) => {
+            if (!resultado) {
+              reject(
+                new Error(
+                  'No se pudo convertir el recorte a JPG.',
+                ),
+              )
 
-  ctx.fillRect(
-    0,
-    0,
-    salidaWidth,
-    salidaHeight,
-  )
+              return
+            }
 
-  const transformacion =
-    obtenerTransformacionImagen()
+            resolve(
+              resultado,
+            )
+          },
+          'image/jpeg',
+          0.92,
+        )
+      },
+    )
 
-  if (!transformacion) {
-    return null
+  if (
+    !(blob instanceof Blob)
+  ) {
+    throw new Error(
+      'El resultado del editor no es un Blob válido.',
+    )
   }
 
-  ctx.save()
-
-  ctx.translate(
-    salidaWidth / 2 -
-      cropX.value * escalaSalida,
-
-    salidaHeight / 2 -
-      cropY.value * escalaSalida,
-  )
-
-  ctx.rotate(
-    (imagenRotacion.value * Math.PI) / 180,
-  )
-
-  ctx.scale(
-    flipX.value ? -1 : 1,
-    flipY.value ? -1 : 1,
-  )
-
-  const ancho =
-    imagen.naturalWidth *
-    transformacion.escala *
-    escalaSalida
-
-  const alto =
-    imagen.naturalHeight *
-    transformacion.escala *
-    escalaSalida
-
-  ctx.drawImage(
-    imagen,
-    -ancho / 2,
-    -alto / 2,
-    ancho,
-    alto,
-  )
-
-  ctx.restore()
-
-  return new Promise((resolve) => {
-    canvas.toBlob(
-      (blob) => {
-        resolve(blob)
-      },
-      'image/png',
-      0.95,
+  if (
+    blob.size <= 0
+  ) {
+    throw new Error(
+      'El JPG generado está vacío.',
     )
-  })
+  }
+
+  /*
+   * Algunos navegadores pueden devolver
+   * un MIME diferente.
+   *
+   * Normalizamos explícitamente el Blob
+   * a image/jpeg.
+   */
+  if (
+    blob.type !==
+    'image/jpeg'
+  ) {
+    console.warn(
+      'El navegador devolvió un MIME distinto:',
+      blob.type,
+    )
+
+    const buffer =
+      await blob.arrayBuffer()
+
+    return new Blob(
+      [buffer],
+      {
+        type:
+          'image/jpeg',
+      },
+    )
+  }
+
+  return blob
 }
+
+/* =========================================================
+   GUARDAR
+   ========================================================= */
 
 async function guardar() {
-  if (props.procesando) {
+  if (
+    props.procesando ||
+    inicializando.value
+  ) {
     return
   }
 
-  const blob =
-    await generarRecorte()
+  try {
+    const blob =
+      await generarRecorte()
 
-  if (!blob) {
-    return
+    if (!blob) {
+      return
+    }
+
+    /*
+     * No se guarda directamente aquí.
+     *
+     * EditorLogo solamente genera el recurso.
+     *
+     * ConfiguracionIdentidad.vue recibe el Blob,
+     * lo transforma a Uint8Array y lo envía a
+     * Firestore.
+     */
+    emit(
+      'guardar',
+      {
+        blob,
+
+        aspecto:
+          cropAspecto.value,
+
+        zoom:
+          imagenZoom.value,
+
+        /*
+         * Se conservan para mantener
+         * compatibilidad con el contrato actual.
+         */
+        rotacion: 0,
+
+        flipX: false,
+
+        flipY: false,
+      },
+    )
+  } catch (error) {
+    console.error(
+      'No fue posible generar el logo:',
+      error,
+    )
   }
-
-  emit('guardar', {
-    blob,
-
-    aspecto:
-      cropAspecto.value,
-
-    zoom:
-      imagenZoom.value,
-
-    rotacion:
-      imagenRotacion.value,
-
-    flipX:
-      flipX.value,
-
-    flipY:
-      flipY.value,
-  })
 }
 
-watch(
-  () => props.imagenUrl,
-  cargarImagen,
-)
+/* =========================================================
+   CANCELAR
+   ========================================================= */
+
+function cancelar() {
+  if (
+    props.procesando
+  ) {
+    return
+  }
+
+  emit(
+    'cancelar',
+  )
+}
+
+/* =========================================================
+   WATCH IMAGEN
+   ========================================================= */
 
 watch(
-  [
-    cropAspecto,
-    imagenZoom,
-    imagenRotacion,
-    flipX,
-    flipY,
-    cropX,
-    cropY,
-  ],
-  () => {
-    nextTick(dibujarEditor)
+  () =>
+    props.imagenUrl,
+  async () => {
+    await nextTick()
+
+    await cargarImagen()
   },
 )
+
+/* =========================================================
+   MOUNTED
+   ========================================================= */
 
 onMounted(() => {
   cargarImagen()
 })
+
+/* =========================================================
+   UNMOUNTED
+   ========================================================= */
+
+onBeforeUnmount(() => {
+  destruirCropper()
+})
 </script>
 
 <template>
-  <div class="admin-configuracion__editor">
+  <div
+    class="admin-configuracion__editor"
+  >
+
+    <!-- ===================================================
+         HEADER
+         =================================================== -->
+
     <div
       class="admin-configuracion__editor-header"
     >
+
       <div>
+
         <span
           class="admin-configuracion__section-kicker"
         >
@@ -654,54 +757,76 @@ onMounted(() => {
         </h3>
 
         <p>
-          Arrastra la imagen para cambiar
-          su posición y utiliza las
-          herramientas para ajustarla.
+          Arrastra la imagen para
+          posicionarla y utiliza el
+          control de zoom para ajustar
+          el encuadre.
         </p>
+
       </div>
 
       <button
         type="button"
         class="admin-configuracion__icon-button"
-        :disabled="procesando"
-        @click="$emit('cancelar')"
+        :disabled="
+          procesando
+        "
+        @click="
+          cancelar
+        "
       >
         ×
       </button>
+
     </div>
+
+    <!-- ===================================================
+         BODY
+         =================================================== -->
 
     <div
       class="admin-configuracion__editor-body"
     >
-      <div
-        class="admin-configuracion__canvas-wrapper"
-      >
-        <canvas
-          ref="cropCanvas"
-          class="admin-configuracion__crop-canvas"
-          :class="{
-            'is-processing': procesando,
-          }"
-          @pointerdown="iniciarArrastre"
-          @pointermove="moverImagen"
-          @pointerup="terminarArrastre"
-          @pointercancel="terminarArrastre"
-          @pointerleave="terminarArrastre"
-          @wheel="manejarWheel"
-        ></canvas>
 
-        <div
-          class="admin-configuracion__crop-frame"
-          :style="estiloCrop"
-        ></div>
+      <!-- =================================================
+           CROPPER
+           ================================================= -->
+
+      <div
+        class="admin-configuracion__canvas-wrapper admin-configuracion__cropper-wrapper"
+        :class="{
+          'is-processing':
+            procesando ||
+            inicializando,
+        }"
+      >
+
+        <img
+          ref="imagenElemento"
+          :src="
+            imagenUrl
+          "
+          alt="Imagen para recortar"
+          class="admin-configuracion__crop-image"
+          draggable="false"
+        >
+
       </div>
+
+      <!-- =================================================
+           CONTROLES
+           ================================================= -->
 
       <aside
         class="admin-configuracion__editor-controls"
       >
+
+        <!-- PROPORCIÓN -->
+
         <div
           class="admin-configuracion__control-group"
         >
+
           <span
             class="admin-configuracion__control-title"
           >
@@ -711,142 +836,177 @@ onMounted(() => {
           <div
             class="admin-configuracion__segmented"
           >
+
             <button
-              v-for="aspecto in [
-                'original',
-                '1:1',
-                '4:3',
-                '16:9',
-              ]"
-              :key="aspecto"
+              v-for="
+                aspecto in aspectos
+              "
+              :key="
+                aspecto.valor
+              "
               type="button"
-              :disabled="procesando"
+              :disabled="
+                procesando
+              "
               :class="{
                 'is-active':
-                  cropAspecto === aspecto,
+                  cropAspecto ===
+                  aspecto.valor,
               }"
               @click="
-                cropAspecto = aspecto
+                seleccionarAspecto(
+                  aspecto.valor,
+                )
               "
             >
-              {{ aspecto }}
+              {{
+                aspecto.etiqueta
+              }}
             </button>
+
           </div>
+
         </div>
+
+        <!-- ZOOM -->
 
         <div
           class="admin-configuracion__control-group"
         >
+
           <div
             class="admin-configuracion__range-label"
           >
-            <span>Zoom</span>
+
+            <span>
+              Zoom
+            </span>
 
             <strong>
-              {{ Math.round(
-                imagenZoom * 100,
-              ) }}%
+              {{
+                Math.round(
+                  imagenZoom *
+                    100,
+                )
+              }}%
             </strong>
+
           </div>
 
-          <input
-            v-model.number="imagenZoom"
-            type="range"
-            min="0.5"
-            max="3"
-            step="0.05"
-            :disabled="procesando"
-          />
-        </div>
-
-        <div
-          class="admin-configuracion__control-group"
-        >
           <div
-            class="admin-configuracion__range-label"
+            class="admin-configuracion__zoom-control"
           >
-            <span>Rotación</span>
 
-            <strong>
-              {{ imagenRotacion }}°
-            </strong>
+            <button
+              type="button"
+              class="admin-configuracion__editor-control-button"
+              :disabled="
+                procesando ||
+                imagenZoom <=
+                  0.5
+              "
+              @click="
+                disminuirZoom
+              "
+            >
+              −
+            </button>
+
+            <input
+              :value="
+                imagenZoom
+              "
+              type="range"
+              min="0.5"
+              max="3"
+              step="0.05"
+              :disabled="
+                procesando
+              "
+              @input="
+                ajustarZoom
+              "
+            >
+
+            <button
+              type="button"
+              class="admin-configuracion__editor-control-button"
+              :disabled="
+                procesando ||
+                imagenZoom >=
+                  3
+              "
+              @click="
+                aumentarZoom
+              "
+            >
+              +
+            </button>
+
           </div>
 
-          <input
-            v-model.number="imagenRotacion"
-            type="range"
-            min="0"
-            max="359"
-            step="1"
-            :disabled="procesando"
-          />
         </div>
+
+        <!-- INFORMACIÓN -->
 
         <div
           class="admin-configuracion__control-group"
         >
+
           <span
             class="admin-configuracion__control-title"
           >
-            Transformación
+            Ajuste
           </span>
 
-          <div
-            class="admin-configuracion__editor-buttons"
+          <p
+            class="admin-configuracion__editor-help"
           >
-            <button
-              type="button"
-              :disabled="procesando"
-              @click="rotar(-90)"
-            >
-              ↶ Rotar
-            </button>
+            Puedes mover la imagen,
+            ampliar o reducir su tamaño
+            y modificar el área de recorte
+            desde los bordes del marco.
+          </p>
 
-            <button
-              type="button"
-              :disabled="procesando"
-              @click="rotar(90)"
-            >
-              ↷ Rotar
-            </button>
-
-            <button
-              type="button"
-              :disabled="procesando"
-              @click="flipX = !flipX"
-            >
-              ↔ Espejo X
-            </button>
-
-            <button
-              type="button"
-              :disabled="procesando"
-              @click="flipY = !flipY"
-            >
-              ↕ Espejo Y
-            </button>
-          </div>
         </div>
+
+        <!-- RESTAURAR -->
 
         <button
           type="button"
           class="admin-configuracion__reset-editor"
-          :disabled="procesando"
-          @click="restaurar"
+          :disabled="
+            procesando ||
+            !cropper
+          "
+          @click="
+            restaurar
+          "
         >
           Restaurar ajustes
         </button>
+
       </aside>
+
     </div>
+
+    <!-- ===================================================
+         FOOTER
+         =================================================== -->
 
     <footer
       class="admin-configuracion__editor-footer"
     >
+
       <button
         type="button"
         class="admin-configuracion__button admin-configuracion__button--secondary"
-        :disabled="procesando"
-        @click="$emit('cancelar')"
+        :disabled="
+          procesando
+        "
+        @click="
+          cancelar
+        "
       >
         Cancelar
       </button>
@@ -854,8 +1014,14 @@ onMounted(() => {
       <button
         type="button"
         class="admin-configuracion__button admin-configuracion__button--primary"
-        :disabled="procesando"
-        @click="guardar"
+        :disabled="
+          procesando ||
+          inicializando ||
+          !cropper
+        "
+        @click="
+          guardar
+        "
       >
         {{
           procesando
@@ -863,6 +1029,8 @@ onMounted(() => {
             : 'Usar este logo'
         }}
       </button>
+
     </footer>
+
   </div>
 </template>

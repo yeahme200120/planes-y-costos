@@ -1,5 +1,6 @@
 import {
   addDoc,
+  Bytes,
   collection,
   deleteDoc,
   doc,
@@ -115,8 +116,7 @@ function booleanoSeguro(
     }
   }
 
-  return valor ??
-    valorDefecto
+  return valor ?? valorDefecto
 }
 
 /**
@@ -127,14 +127,119 @@ function textoSeguro(
   valorDefecto = ''
 ) {
   if (
-    valor ===
-      undefined ||
+    valor === undefined ||
     valor === null
   ) {
     return valorDefecto
   }
 
   return String(valor)
+}
+
+/**
+ * Prepara recursivamente los datos
+ * para que Firestore reciba valores
+ * compatibles.
+ *
+ * En particular:
+ *
+ * Uint8Array -> Firestore Bytes
+ *
+ * Esto es necesario para guardar
+ * imágenes binarias directamente
+ * dentro de un documento Firestore.
+ */
+function prepararDatosFirestore(
+  valor
+) {
+  /*
+   * Ya es un tipo Bytes de Firestore.
+   */
+  if (
+    valor instanceof Bytes
+  ) {
+    return valor
+  }
+
+  /*
+   * Uint8Array:
+   * convertirlo explícitamente a Bytes.
+   */
+  if (
+    valor instanceof Uint8Array
+  ) {
+    return Bytes.fromUint8Array(
+      new Uint8Array(valor)
+    )
+  }
+
+  /*
+   * ArrayBuffer.
+   */
+  if (
+    valor instanceof ArrayBuffer
+  ) {
+    return Bytes.fromUint8Array(
+      new Uint8Array(valor)
+    )
+  }
+
+  /*
+   * Otros TypedArray / DataView.
+   */
+  if (
+    ArrayBuffer.isView(valor)
+  ) {
+    return Bytes.fromUint8Array(
+      new Uint8Array(
+        valor.buffer,
+        valor.byteOffset,
+        valor.byteLength
+      )
+    )
+  }
+
+  /*
+   * Arrays normales.
+   */
+  if (
+    Array.isArray(valor)
+  ) {
+    return valor.map(
+      prepararDatosFirestore
+    )
+  }
+
+  /*
+   * Objetos planos.
+   *
+   * No hacemos JSON.stringify porque
+   * eso destruiría tipos especiales
+   * de Firestore.
+   */
+  if (
+    valor !== null &&
+    typeof valor === 'object'
+  ) {
+    const resultado = {}
+
+    Object.entries(valor).forEach(
+      ([clave, contenido]) => {
+        resultado[clave] =
+          prepararDatosFirestore(
+            contenido
+          )
+      }
+    )
+
+    return resultado
+  }
+
+  /*
+   * Strings, números, boolean,
+   * null, undefined, etc.
+   */
+  return valor
 }
 
 /*
@@ -173,12 +278,6 @@ export async function obtenerSeccionAdmin(
 /**
  * Suscripción en tiempo real
  * a una sección.
- *
- * Escucha:
- *
- * secciones/{sectionId}
- *
- * Devuelve unsubscribe.
  */
 export function suscribirSeccionAdmin(
   sectionId,
@@ -232,9 +331,7 @@ export async function actualizarSeccion(
 
   await updateDoc(
     ref,
-    {
-      ...datos,
-    }
+    prepararDatosFirestore(datos)
   )
 
   return obtenerSeccionAdmin(
@@ -244,9 +341,6 @@ export async function actualizarSeccion(
 
 /**
  * Crea o actualiza una sección.
- *
- * merge evita eliminar campos
- * existentes que no fueron enviados.
  */
 export async function guardarSeccion(
   sectionId,
@@ -260,9 +354,7 @@ export async function guardarSeccion(
 
   await setDoc(
     ref,
-    {
-      ...datos,
-    },
+    prepararDatosFirestore(datos),
     {
       merge: true,
     }
@@ -309,8 +401,14 @@ export async function obtenerConfiguracionAdmin(
 /**
  * Actualiza la configuración.
  *
- * Usa merge para conservar
- * configuraciones existentes.
+ * Convierte automáticamente:
+ *
+ * logoBlob: Uint8Array
+ *          ↓
+ * Firestore Bytes
+ *
+ * merge conserva los demás
+ * campos existentes.
  */
 export async function actualizarConfiguracion(
   configId = 'general',
@@ -322,11 +420,14 @@ export async function actualizarConfiguracion(
     configId
   )
 
+  const datosFirestore =
+    prepararDatosFirestore(
+      datos
+    )
+
   await setDoc(
     ref,
-    {
-      ...datos,
-    },
+    datosFirestore,
     {
       merge: true,
     }
@@ -400,10 +501,8 @@ function normalizarCaracteristicas(
     return caracteristicas
       .map((item) => {
         if (
-          item ===
-            null ||
-          item ===
-            undefined
+          item === null ||
+          item === undefined
         ) {
           return ''
         }
@@ -414,7 +513,7 @@ function normalizarCaracteristicas(
         ) {
           if (
             item.texto !==
-              undefined
+            undefined
           ) {
             return String(
               item.texto
@@ -423,7 +522,7 @@ function normalizarCaracteristicas(
 
           if (
             item.nombre !==
-              undefined
+            undefined
           ) {
             return String(
               item.nombre
@@ -481,8 +580,7 @@ function normalizarCaracteristicas(
   }
 
   if (
-    caracteristicas !==
-      null &&
+    caracteristicas !== null &&
     typeof caracteristicas ===
       'object'
   ) {
@@ -491,7 +589,7 @@ function normalizarCaracteristicas(
     )
       .map((item) =>
         typeof item ===
-          'string'
+        'string'
           ? item.trim()
           : String(
               item
@@ -517,13 +615,12 @@ function normalizarCaracteristicas(
 }
 
 /**
- * Prepara datos de un plan
- * para creación.
+ * Prepara datos de un plan.
  */
 function prepararPlan(
   datos
 ) {
-  return {
+  return prepararDatosFirestore({
     ...datos,
 
     caracteristicas:
@@ -554,16 +651,12 @@ function prepararPlan(
         datos.destacado,
         false
       ),
-  }
+  })
 }
 
 /**
  * Prepara únicamente los campos
  * enviados para actualización.
- *
- * Esto evita que actualizarPlan()
- * sobrescriba accidentalmente
- * campos no incluidos.
  */
 function prepararPlanActualizacion(
   datos
@@ -634,7 +727,9 @@ function prepararPlanActualizacion(
       )
   }
 
-  return resultado
+  return prepararDatosFirestore(
+    resultado
+  )
 }
 
 /**
@@ -899,12 +994,6 @@ export async function obtenerElementosAdmin(
 /**
  * Suscripción en tiempo real
  * a todos los elementos.
- *
- * Colecciones:
- *
- * soluciones
- * caracteristicas
- * faq
  */
 export function suscribirElementosAdmin(
   coleccion,
@@ -1014,7 +1103,9 @@ function prepararElemento(
       )
   }
 
-  return resultado
+  return prepararDatosFirestore(
+    resultado
+  )
 }
 
 /**
@@ -1126,24 +1217,6 @@ export async function cambiarEstadoElementoAdmin(
 |--------------------------------------------------------------------------
 | USUARIOS
 |--------------------------------------------------------------------------
-|
-| Colección:
-|
-| usuarios/{documentId}
-|
-| Campos:
-|
-| activo
-| email
-| isUser
-| nombre
-| rol
-|
-| isUser contiene el UID
-| relacionado con Firebase
-| Authentication.
-|
-|--------------------------------------------------------------------------
 */
 
 /**
@@ -1238,9 +1311,6 @@ export async function obtenerUsuarioAdmin(
 
 /**
  * Crea un nuevo usuario.
- *
- * Firestore genera automáticamente
- * el ID del documento.
  */
 export async function crearUsuarioAdmin(
   datos
@@ -1293,9 +1363,6 @@ export async function crearUsuarioAdmin(
 
 /**
  * Actualiza un usuario.
- *
- * No modifica campos que no
- * sean enviados explícitamente.
  */
 export async function actualizarUsuarioAdmin(
   usuarioId,
@@ -1375,7 +1442,9 @@ export async function actualizarUsuarioAdmin(
 
   await updateDoc(
     ref,
-    datosActualizados
+    prepararDatosFirestore(
+      datosActualizados
+    )
   )
 
   return obtenerUsuarioAdmin(
@@ -1385,11 +1454,6 @@ export async function actualizarUsuarioAdmin(
 
 /**
  * Elimina el documento del usuario.
- *
- * IMPORTANTE:
- *
- * Esto NO elimina la cuenta
- * de Firebase Authentication.
  */
 export async function eliminarUsuarioAdmin(
   usuarioId
