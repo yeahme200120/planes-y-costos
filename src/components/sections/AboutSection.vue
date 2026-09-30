@@ -1,5 +1,7 @@
 <script setup>
 import { computed } from 'vue'
+import SectionBackground from './SectionBackground.vue'
+import { medioTieneContenido, medioEsFondo } from '../../services/mediaService.js'
 
 const props = defineProps({
   contenido: {
@@ -113,8 +115,10 @@ const tieneContenido = computed(() => {
     v-if="activo"
     id="nosotros"
     class="section about"
+    style="position: relative;"
     aria-labelledby="about-title"
   >
+    <SectionBackground :medio="contenido?.medio" />
     <div class="container">
 
       <div

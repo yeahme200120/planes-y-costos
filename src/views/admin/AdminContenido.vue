@@ -24,6 +24,10 @@ const colecciones = [
     nombre: 'Características',
   },
   {
+    id: 'beneficios',
+    nombre: 'Beneficios',
+  },
+  {
     id: 'faq',
     nombre: 'Preguntas frecuentes',
   },
@@ -318,7 +322,7 @@ async function guardarElemento() {
     }
 
     /*
-     * SOLUCIONES / CARACTERÍSTICAS
+     * SOLUCIONES / CARACTERÍSTICAS / BENEFICIOS
      */
     else {
       datos = {

@@ -1,8 +1,6 @@
 <script setup>
-import {
-  computed,
-} from 'vue'
-
+import { computed } from 'vue'
+import SectionBackground from './SectionBackground.vue'
 import SolutionCard from './SolutionCard.vue'
 
 const props = defineProps({
@@ -188,9 +186,40 @@ const obtenerClaveItem = (item, index) => {
     v-if="activo"
     id="soluciones"
     class="section solutions"
+    style="position: relative;"
     aria-labelledby="solutions-title"
   >
-    <div class="container solutions__container">
+    <!-- Fondo absoluto (detrás de todo) -->
+    <SectionBackground
+      v-if="contenido?.medio?.posicion === 'fondo'"
+      :medio="contenido?.medio"
+    />
+
+    <div
+      class="container solutions__container"
+      :class="{
+        'solutions__container--with-media':
+          contenido?.medio?.url ||
+          contenido?.medio?.medioBlob ||
+          contenido?.medio?.embedUrl,
+        'solutions__container--media-right':
+          contenido?.medio?.posicion === 'derecha',
+        'solutions__container--media-left':
+          contenido?.medio?.posicion === 'izquierda',
+      }"
+    >
+
+      <!-- Media lateral / flotante dentro del container -->
+      <SectionBackground
+        v-if="
+          contenido?.medio?.posicion !== 'fondo' &&
+          (contenido?.medio?.url ||
+           contenido?.medio?.medioBlob ||
+           contenido?.medio?.embedUrl)
+        "
+        :medio="contenido?.medio"
+        class="solutions__media"
+      />
 
       <!-- =========================================================
            ENCABEZADO

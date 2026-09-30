@@ -1,4 +1,4 @@
-<script setup>
+﻿<script setup>
 import {
   onMounted,
   onUnmounted,
@@ -1684,1188 +1684,156 @@ onUnmounted(() => {
 })
 </script>
 
+
+
+
 <template>
-  <section
-    class="admin-secciones"
-    data-theme="global"
-  >
+  <section class="secciones-index">
 
-    <!-- HEADER DEL ADMIN -->
-    <header
-      class="admin-secciones__header"
-    >
-
+    <header class="secciones-index__header">
       <div>
-        <p
-          class="admin-secciones__eyebrow"
-        >
-          Administración
-        </p>
-
-        <h2
-          class="admin-secciones__title"
-        >
-          Secciones
-        </h2>
-
-        <p
-          class="admin-secciones__description"
-        >
-          Modifica el contenido general
-          de las secciones de la landing
-          page.
+        <p class="secciones-index__eyebrow">ADMINISTRACIÓN</p>
+        <h1 class="secciones-index__title">Secciones</h1>
+        <p class="secciones-index__desc">
+          Selecciona una sección para editar su contenido, campos y fondo visual.
         </p>
       </div>
-
-      <div
-        class="admin-secciones__realtime"
-        :class="{
-          'admin-secciones__realtime--online':
-            conectadaTiempoReal
-        }"
-      >
-        <span
-          class="admin-secciones__realtime-dot"
-          aria-hidden="true"
-        ></span>
-
-        <span>
-          {{
-            conectadaTiempoReal
-              ? 'Tiempo real activo'
-              : 'Conectando...'
-          }}
-        </span>
-      </div>
-
     </header>
 
-    <!-- ERROR -->
-    <div
-      v-if="error"
-      class="admin-alert admin-alert--error"
-    >
-      <span>
-        {{ error }}
-      </span>
-
+    <div class="secciones-index__grid">
       <button
+        v-for="sec in [
+          { id: 'header',          nombre: 'Header',          icono: '◉', desc: 'Logotipo, CTA y navegación principal' },
+          { id: 'hero',            nombre: 'Hero',            icono: '⬡', desc: 'Título principal, descripción y botones de acción' },
+          { id: 'soluciones',      nombre: 'Soluciones',      icono: '◈', desc: 'Cards de soluciones con icono, título y descripción' },
+          { id: 'caracteristicas', nombre: 'Características', icono: '◇', desc: 'Lista de funcionalidades y beneficios técnicos' },
+          { id: 'beneficios',      nombre: 'Beneficios',      icono: '✦', desc: 'Ventajas y propuesta de valor del servicio' },
+          { id: 'planes',          nombre: 'Planes',          icono: '$',  desc: 'Encabezado de la sección de precios' },
+          { id: 'nosotros',        nombre: 'Nosotros',        icono: '⬤', desc: 'Historia, misión y presentación del equipo' },
+          { id: 'faq',             nombre: 'FAQ',             icono: '?',  desc: 'Preguntas frecuentes con preguntas y respuestas' },
+          { id: 'contacto',        nombre: 'Contacto',        icono: '✉', desc: 'Formulario de contacto y datos de la empresa' },
+          { id: 'footer',          nombre: 'Footer',          icono: '—',  desc: 'Copyright, redes sociales y navegación inferior' },
+        ]"
+        :key="sec.id"
         type="button"
-        class="admin-alert__close"
-        aria-label="Cerrar error"
-        @click="cerrarError"
+        class="secciones-index__card"
+        @click="$router.push(`/admin/secciones/${sec.id}`)"
       >
-        ×
-      </button>
-    </div>
-
-    <!-- MENSAJE -->
-    <div
-      v-if="mensaje"
-      class="admin-alert admin-alert--success"
-    >
-      <span>
-        {{ mensaje }}
-      </span>
-
-      <button
-        type="button"
-        class="admin-alert__close"
-        aria-label="Cerrar mensaje"
-        @click="cerrarMensaje"
-      >
-        ×
-      </button>
-    </div>
-
-    <!-- SELECTOR DE SECCIÓN -->
-    <div
-      class="admin-secciones__selector-card"
-    >
-      <div
-        class="admin-secciones__selector"
-      >
-        <label
-          for="seccion"
-          class="admin-secciones__label"
-        >
-          Sección
-        </label>
-
-        <select
-          id="seccion"
-          v-model="seccionSeleccionada"
-          class="admin-secciones__select"
-          :disabled="guardando"
-          @change="cambiarSeccion"
-        >
-          <option
-            v-for="seccion in secciones"
-            :key="seccion.id"
-            :value="seccion.id"
-          >
-            {{ seccion.nombre }}
-          </option>
-        </select>
-      </div>
-    </div>
-
-    <!-- LOADING -->
-    <div
-      v-if="cargando"
-      class="admin-layout__loading"
-    >
-      <span
-        class="admin-spinner"
-        aria-hidden="true"
-      ></span>
-
-      <span>
-        Sincronizando sección...
-      </span>
-    </div>
-
-    <!-- FORMULARIO -->
-    <form
-      v-else-if="
-        Object.keys(datos).length > 0
-      "
-      class="admin-secciones__form"
-      @submit.prevent="
-        guardarSeccion
-      "
-    >
-
-      <div
-        class="admin-secciones__form-header"
-      >
-        <div>
-          <h3>
-            {{
-              secciones.find(
-                (seccion) =>
-                  seccion.id ===
-                  seccionSeleccionada
-              )?.nombre ??
-              seccionSeleccionada
-            }}
-          </h3>
-
-          <p>
-            Los cambios se sincronizan
-            automáticamente con Firebase.
-          </p>
+        <span class="secciones-index__card-icon" aria-hidden="true">{{ sec.icono }}</span>
+        <div class="secciones-index__card-info">
+          <strong class="secciones-index__card-name">{{ sec.nombre }}</strong>
+          <span class="secciones-index__card-desc">{{ sec.desc }}</span>
         </div>
-
-        <span
-          v-if="datos.id"
-          class="admin-secciones__document-id"
-        >
-          ID: {{ datos.id }}
-        </span>
-      </div>
-
-      <div
-        class="admin-secciones__fields"
-      >
-
-        <template
-          v-for="(
-            valor,
-            campo
-          ) in datos"
-          :key="campo"
-        >
-
-          <div
-            v-if="campo !== 'id'"
-            class="admin-secciones__field"
-            :class="{
-              'admin-secciones__field--full':
-                esNavegacion(campo) ||
-                esItems(campo, valor),
-            }"
-          >
-
-            <label
-              :for="campo"
-              class="admin-secciones__label"
-            >
-              {{ campo }}
-            </label>
-
-            <!-- BOOLEAN -->
-            <div
-              v-if="
-                typeof valor ===
-                'boolean'
-              "
-              class="admin-secciones__boolean"
-            >
-              <label
-                class="admin-secciones__switch"
-              >
-                <input
-                  :id="campo"
-                  v-model="
-                    datos[campo]
-                  "
-                  type="checkbox"
-                  :disabled="guardando"
-                >
-
-                <span
-                  class="admin-secciones__switch-slider"
-                ></span>
-
-                <span>
-                  {{
-                    datos[campo]
-                      ? 'Activo'
-                      : 'Inactivo'
-                  }}
-                </span>
-              </label>
-            </div>
-
-            <!-- NUMBER -->
-            <div
-              v-else-if="
-                typeof valor ===
-                'number'
-              "
-            >
-              <input
-                :id="campo"
-                v-model.number="
-                  datos[campo]
-                "
-                class="admin-secciones__input"
-                type="number"
-                :disabled="guardando"
-              >
-            </div>
-
-            <!-- NAVEGACIÓN -->
-            <div
-              v-else-if="
-                esNavegacion(campo) &&
-                Array.isArray(valor)
-              "
-              class="admin-secciones__navigation"
-            >
-
-              <div
-                v-for="(
-                  item,
-                  indice
-                ) in datos.navegacion"
-                :key="indice"
-                class="admin-secciones__navigation-item"
-              >
-
-                <div
-                  class="admin-secciones__navigation-header"
-                >
-
-                  <div>
-                    <strong>
-                      Elemento
-                      {{ indice + 1 }}
-                    </strong>
-
-                    <span>
-                      {{
-                        item.texto ||
-                        'Sin texto'
-                      }}
-                    </span>
-                  </div>
-
-                  <div
-                    class="admin-secciones__navigation-actions"
-                  >
-
-                    <button
-                      type="button"
-                      class="admin-secciones__navigation-button"
-                      :disabled="
-                        guardando ||
-                        indice === 0
-                      "
-                      title="Subir"
-                      @click="
-                        moverNavegacion(
-                          indice,
-                          -1
-                        )
-                      "
-                    >
-                      ↑
-                    </button>
-
-                    <button
-                      type="button"
-                      class="admin-secciones__navigation-button"
-                      :disabled="
-                        guardando ||
-                        indice ===
-                          datos
-                            .navegacion
-                            .length -
-                            1
-                      "
-                      title="Bajar"
-                      @click="
-                        moverNavegacion(
-                          indice,
-                          1
-                        )
-                      "
-                    >
-                      ↓
-                    </button>
-
-                    <button
-                      type="button"
-                      class="admin-secciones__navigation-button admin-secciones__navigation-button--danger"
-                      :disabled="guardando"
-                      title="Eliminar"
-                      @click="
-                        eliminarNavegacion(
-                          indice
-                        )
-                      "
-                    >
-                      ×
-                    </button>
-
-                  </div>
-                </div>
-
-                <div
-                  class="admin-secciones__navigation-fields"
-                >
-
-                  <!-- TEXTO -->
-                  <div
-                    class="admin-secciones__navigation-field"
-                  >
-                    <label
-                      :for="`navegacion-${indice}-texto`"
-                      class="admin-secciones__label"
-                    >
-                      Texto
-                    </label>
-
-                    <input
-                      :id="`navegacion-${indice}-texto`"
-                      :value="
-                        item.texto ??
-                        ''
-                      "
-                      class="admin-secciones__input"
-                      type="text"
-                      :disabled="guardando"
-                      @input="
-                        actualizarNavegacionCampo(
-                          indice,
-                          'texto',
-                          $event
-                            .target
-                            .value
-                        )
-                      "
-                    >
-                  </div>
-
-                  <!-- URL -->
-                  <div
-                    class="admin-secciones__navigation-field"
-                  >
-                    <label
-                      :for="`navegacion-${indice}-url`"
-                      class="admin-secciones__label"
-                    >
-                      URL
-                    </label>
-
-                    <input
-                      :id="`navegacion-${indice}-url`"
-                      :value="
-                        item.url ??
-                        ''
-                      "
-                      class="admin-secciones__input"
-                      type="text"
-                      :disabled="guardando"
-                      @input="
-                        actualizarNavegacionCampo(
-                          indice,
-                          'url',
-                          $event
-                            .target
-                            .value
-                        )
-                      "
-                    >
-                  </div>
-
-                  <!-- ORDEN -->
-                  <div
-                    class="admin-secciones__navigation-field"
-                  >
-                    <label
-                      :for="`navegacion-${indice}-orden`"
-                      class="admin-secciones__label"
-                    >
-                      Orden
-                    </label>
-
-                    <input
-                      :id="`navegacion-${indice}-orden`"
-                      :value="
-                        item.orden ??
-                        1
-                      "
-                      class="admin-secciones__input"
-                      type="number"
-                      min="1"
-                      max="999"
-                      :disabled="guardando"
-                      @input="
-                        actualizarNavegacionCampo(
-                          indice,
-                          'orden',
-                          $event
-                            .target
-                            .value
-                        )
-                      "
-                    >
-                  </div>
-
-                  <!-- ACTIVO -->
-                  <div
-                    class="admin-secciones__navigation-field"
-                  >
-                    <label
-                      class="admin-secciones__label"
-                    >
-                      Estado
-                    </label>
-
-                    <label
-                      class="admin-secciones__switch"
-                    >
-                      <input
-                        :checked="
-                          item.activo ===
-                          true
-                        "
-                        type="checkbox"
-                        :disabled="
-                          guardando
-                        "
-                        @change="
-                          actualizarNavegacionCampo(
-                            indice,
-                            'activo',
-                            $event
-                              .target
-                              .checked
-                          )
-                        "
-                      >
-
-                      <span
-                        class="admin-secciones__switch-slider"
-                      ></span>
-
-                      <span>
-                        {{
-                          item.activo ===
-                          true
-                            ? 'Activo'
-                            : 'Inactivo'
-                        }}
-                      </span>
-                    </label>
-                  </div>
-
-                </div>
-
-              </div>
-
-              <button
-                type="button"
-                class="admin-secciones__navigation-add"
-                :disabled="guardando"
-                @click="
-                  agregarNavegacion
-                "
-              >
-                + Agregar elemento
-              </button>
-
-              <small
-                class="admin-secciones__hint"
-              >
-                Configura los elementos del menú
-                de navegación.
-              </small>
-
-            </div>
-
-            <!-- ITEMS ESTRUCTURADOS -->
-            <div
-              v-else-if="
-                esItems(
-                  campo,
-                  valor
-                )
-              "
-              class="admin-secciones__items"
-            >
-
-              <div
-                v-if="
-                  valor.length === 0
-                "
-                class="admin-secciones__empty-items"
-              >
-                <p>
-                  No hay elementos configurados.
-                </p>
-              </div>
-
-              <div
-                v-for="(
-                  item,
-                  indice
-                ) in valor"
-                :key="indice"
-                class="admin-secciones__item"
-              >
-
-                <div
-                  class="admin-secciones__item-header"
-                >
-
-                  <div>
-                    <strong>
-                      Elemento
-                      {{ indice + 1 }}
-                    </strong>
-
-                    <span
-                      v-if="
-                        item.titulo
-                      "
-                    >
-                      {{
-                        item.titulo
-                      }}
-                    </span>
-                  </div>
-
-                  <div
-                    class="admin-secciones__item-actions"
-                  >
-
-                    <button
-                      type="button"
-                      class="admin-secciones__navigation-button"
-                      :disabled="
-                        guardando ||
-                        indice === 0
-                      "
-                      title="Subir"
-                      @click="
-                        moverItem(
-                          campo,
-                          indice,
-                          -1
-                        )
-                      "
-                    >
-                      ↑
-                    </button>
-
-                    <button
-                      type="button"
-                      class="admin-secciones__navigation-button"
-                      :disabled="
-                        guardando ||
-                        indice ===
-                          valor.length -
-                            1
-                      "
-                      title="Bajar"
-                      @click="
-                        moverItem(
-                          campo,
-                          indice,
-                          1
-                        )
-                      "
-                    >
-                      ↓
-                    </button>
-
-                    <button
-                      type="button"
-                      class="admin-secciones__navigation-button admin-secciones__navigation-button--danger"
-                      :disabled="
-                        guardando
-                      "
-                      title="Eliminar"
-                      @click="
-                        eliminarItem(
-                          campo,
-                          indice
-                        )
-                      "
-                    >
-                      ×
-                    </button>
-
-                  </div>
-                </div>
-
-                <div
-                  class="admin-secciones__item-fields"
-                >
-
-                  <template
-                    v-for="
-                      itemCampo in obtenerCamposItem(
-                        item
-                      )
-                    "
-                    :key="
-                      itemCampo
-                    "
-                  >
-
-                    <!-- BOOLEAN ITEM -->
-                    <div
-                      v-if="
-                        esBooleano(
-                          item[
-                            itemCampo
-                          ]
-                        )
-                      "
-                      class="admin-secciones__item-field"
-                    >
-                      <label
-                        class="admin-secciones__label"
-                      >
-                        {{ itemCampo }}
-                      </label>
-
-                      <label
-                        class="admin-secciones__switch"
-                      >
-                        <input
-                          :checked="
-                            item[
-                              itemCampo
-                            ] === true
-                          "
-                          type="checkbox"
-                          :disabled="
-                            guardando
-                          "
-                          @change="
-                            actualizarItemCampo(
-                              indice,
-                              itemCampo,
-                              $event
-                                .target
-                                .checked
-                            )
-                          "
-                        >
-
-                        <span
-                          class="admin-secciones__switch-slider"
-                        ></span>
-
-                        <span>
-                          {{
-                            item[
-                              itemCampo
-                            ]
-                              ? 'Activo'
-                              : 'Inactivo'
-                          }}
-                        </span>
-                      </label>
-                    </div>
-
-                    <!-- NUMBER ITEM -->
-                    <div
-                      v-else-if="
-                        esNumero(
-                          item[
-                            itemCampo
-                          ]
-                        )
-                      "
-                      class="admin-secciones__item-field"
-                    >
-                      <label
-                        :for="`item-${indice}-${itemCampo}`"
-                        class="admin-secciones__label"
-                      >
-                        {{ itemCampo }}
-                      </label>
-
-                      <input
-                        :id="`item-${indice}-${itemCampo}`"
-                        :value="
-                          item[
-                            itemCampo
-                          ]
-                        "
-                        class="admin-secciones__input"
-                        type="number"
-                        :disabled="
-                          guardando
-                        "
-                        @input="
-                          actualizarItemCampo(
-                            indice,
-                            itemCampo,
-                            $event
-                              .target
-                              .value
-                          )
-                        "
-                      >
-                    </div>
-
-                    <!-- ARRAY ITEM -->
-                    <div
-                      v-else-if="
-                        Array.isArray(
-                          item[
-                            itemCampo
-                          ]
-                        )
-                      "
-                      class="admin-secciones__item-field admin-secciones__item-field--full"
-                    >
-                      <label
-                        :for="`item-${indice}-${itemCampo}`"
-                        class="admin-secciones__label"
-                      >
-                        {{ itemCampo }}
-                      </label>
-
-                      <textarea
-                        :id="`item-${indice}-${itemCampo}`"
-                        class="admin-secciones__textarea"
-                        rows="5"
-                        :value="
-                          JSON.stringify(
-                            item[
-                              itemCampo
-                            ],
-                            null,
-                            2
-                          )
-                        "
-                        :disabled="
-                          guardando
-                        "
-                        @input="
-                          (() => {
-                            try {
-                              item[
-                                itemCampo
-                              ] =
-                                JSON.parse(
-                                  $event
-                                    .target
-                                    .value
-                                )
-                            } catch {
-                              // Espera JSON válido.
-                            }
-                          })()
-                        "
-                      ></textarea>
-
-                      <small
-                        class="admin-secciones__hint"
-                      >
-                        Array JSON válido.
-                      </small>
-                    </div>
-
-                    <!-- OBJECT ITEM -->
-                    <div
-                      v-else-if="
-                        esObjeto(
-                          item[
-                            itemCampo
-                          ]
-                        )
-                      "
-                      class="admin-secciones__item-field admin-secciones__item-field--full"
-                    >
-                      <label
-                        :for="`item-${indice}-${itemCampo}`"
-                        class="admin-secciones__label"
-                      >
-                        {{ itemCampo }}
-                      </label>
-
-                      <textarea
-                        :id="`item-${indice}-${itemCampo}`"
-                        class="admin-secciones__textarea admin-secciones__textarea--code"
-                        rows="8"
-                        :value="
-                          JSON.stringify(
-                            item[
-                              itemCampo
-                            ],
-                            null,
-                            2
-                          )
-                        "
-                        :disabled="
-                          guardando
-                        "
-                        @input="
-                          (() => {
-                            try {
-                              item[
-                                itemCampo
-                              ] =
-                                JSON.parse(
-                                  $event
-                                    .target
-                                    .value
-                                )
-                            } catch {
-                              // Espera JSON válido.
-                            }
-                          })()
-                        "
-                      ></textarea>
-
-                      <small
-                        class="admin-secciones__hint"
-                      >
-                        Objeto JSON válido.
-                      </small>
-                    </div>
-
-                    <!-- STRING ITEM -->
-                    <div
-                      v-else
-                      class="admin-secciones__item-field"
-                      :class="{
-                        'admin-secciones__item-field--full':
-                          esTextoLargo(
-                            item[
-                              itemCampo
-                            ]
-                          ),
-                      }"
-                    >
-                      <label
-                        :for="`item-${indice}-${itemCampo}`"
-                        class="admin-secciones__label"
-                      >
-                        {{ itemCampo }}
-                      </label>
-
-                      <textarea
-                        v-if="
-                          esTextoLargo(
-                            item[
-                              itemCampo
-                            ]
-                          )
-                        "
-                        :id="`item-${indice}-${itemCampo}`"
-                        :value="
-                          item[
-                            itemCampo
-                          ] ??
-                          ''
-                        "
-                        class="admin-secciones__textarea"
-                        rows="5"
-                        :disabled="
-                          guardando
-                        "
-                        @input="
-                          actualizarItemCampo(
-                            indice,
-                            itemCampo,
-                            $event
-                              .target
-                              .value
-                          )
-                        "
-                      ></textarea>
-
-                      <input
-                        v-else
-                        :id="`item-${indice}-${itemCampo}`"
-                        :value="
-                          item[
-                            itemCampo
-                          ] ??
-                          ''
-                        "
-                        class="admin-secciones__input"
-                        type="text"
-                        :disabled="
-                          guardando
-                        "
-                        @input="
-                          actualizarItemCampo(
-                            indice,
-                            itemCampo,
-                            $event
-                              .target
-                              .value
-                          )
-                        "
-                      >
-                    </div>
-
-                  </template>
-
-                </div>
-
-              </div>
-
-              <button
-                type="button"
-                class="admin-secciones__navigation-add"
-                :disabled="guardando"
-                @click="
-                  agregarItem(campo)
-                "
-              >
-                + Agregar elemento
-              </button>
-
-              <small
-                class="admin-secciones__hint"
-              >
-                Los elementos se editan como
-                campos estructurados y se conservan
-                los campos adicionales de Firebase.
-              </small>
-
-            </div>
-
-            <!-- ARRAY NORMAL -->
-            <div
-              v-else-if="
-                Array.isArray(valor)
-              "
-            >
-              <textarea
-                :id="campo"
-                class="admin-secciones__textarea"
-                rows="6"
-                :value="
-                  valor
-                    .map(
-                      (item) =>
-                        typeof item ===
-                          'object' &&
-                        item !== null
-                          ? JSON.stringify(
-                              item
-                            )
-                          : String(
-                              item ??
-                                ''
-                            )
-                    )
-                    .join('\n')
-                "
-                :disabled="
-                  guardando
-                "
-                @input="
-                  datos[campo] =
-                    $event
-                      .target
-                      .value
-                      .split('\n')
-                      .map(
-                        (item) =>
-                          item.trim()
-                      )
-                      .filter(
-                        Boolean
-                      )
-                "
-              ></textarea>
-
-              <small
-                class="admin-secciones__hint"
-              >
-                Un elemento por línea.
-              </small>
-            </div>
-
-            <!-- OBJECT -->
-            <div
-              v-else-if="
-                typeof valor ===
-                  'object' &&
-                valor !== null
-              "
-            >
-              <textarea
-                :id="campo"
-                class="admin-secciones__textarea admin-secciones__textarea--code"
-                rows="10"
-                :value="
-                  JSON.stringify(
-                    valor,
-                    null,
-                    2
-                  )
-                "
-                :disabled="
-                  guardando
-                "
-                @input="
-                  (() => {
-                    try {
-                      datos[campo] =
-                        JSON.parse(
-                          $event
-                            .target
-                            .value
-                        )
-                    } catch {
-                      // Esperar JSON válido.
-                    }
-                  })()
-                "
-              ></textarea>
-
-              <small
-                class="admin-secciones__hint"
-              >
-                Formato JSON válido.
-              </small>
-            </div>
-
-            <!-- STRING -->
-            <div v-else>
-              <textarea
-                v-if="
-                  String(valor).length >
-                  100
-                "
-                :id="campo"
-                v-model="
-                  datos[campo]
-                "
-                class="admin-secciones__textarea"
-                rows="6"
-                :disabled="
-                  guardando
-                "
-              ></textarea>
-
-              <input
-                v-else
-                :id="campo"
-                v-model="
-                  datos[campo]
-                "
-                class="admin-secciones__input"
-                type="text"
-                :disabled="
-                  guardando
-                "
-              >
-            </div>
-
-          </div>
-
-        </template>
-
-      </div>
-
-      <!-- ACCIONES -->
-      <footer
-        class="admin-secciones__actions"
-      >
-
-        <div
-          class="admin-secciones__sync-status"
-        >
-          <span
-            class="admin-secciones__realtime-dot"
-            :class="{
-              'admin-secciones__realtime-dot--active':
-                conectadaTiempoReal
-            }"
-          ></span>
-
-          {{
-            conectadaTiempoReal
-              ? 'Sincronizado en tiempo real'
-              : 'Sincronizando...'
-          }}
-        </div>
-
-        <button
-          type="submit"
-          class="admin-secciones__save"
-          :disabled="
-            guardando ||
-            !conectadaTiempoReal
-          "
-        >
-          {{
-            guardando
-              ? 'Guardando...'
-              : 'Guardar sección'
-          }}
-        </button>
-
-      </footer>
-
-    </form>
-
-    <!-- SECCIÓN NO ENCONTRADA -->
-    <div
-      v-else-if="!cargando"
-      class="admin-secciones__empty"
-    >
-      <h3>
-        Sección no encontrada
-      </h3>
-
-      <p>
-        El documento
-        <strong>
-          secciones/{{
-            seccionSeleccionada
-          }}
-        </strong>
-        no existe en Firebase.
-      </p>
+        <span class="secciones-index__card-arrow" aria-hidden="true">›</span>
+      </button>
     </div>
 
   </section>
 </template>
+
+<style scoped>
+.secciones-index {
+  padding: 1.5rem 2rem 3rem;
+  max-width: 800px;
+}
+
+.secciones-index__header {
+  margin-bottom: 1.5rem;
+}
+
+.secciones-index__eyebrow {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--color-primary);
+  margin: 0 0 0.25rem;
+}
+
+.secciones-index__title {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--color-text);
+  margin: 0 0 0.4rem;
+}
+
+.secciones-index__desc {
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+.secciones-index__grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.secciones-index__card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  text-align: left;
+  transition:
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast),
+    background var(--transition-fast);
+  width: 100%;
+}
+
+.secciones-index__card:hover {
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-sm);
+  background: var(--color-surface-alt);
+}
+
+.secciones-index__card-icon {
+  font-size: 1.3rem;
+  color: var(--color-primary);
+  width: 2rem;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.secciones-index__card-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.secciones-index__card-name {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.secciones-index__card-desc {
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.secciones-index__card-arrow {
+  font-size: 1.2rem;
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+  transition: transform var(--transition-fast), color var(--transition-fast);
+}
+
+.secciones-index__card:hover .secciones-index__card-arrow {
+  transform: translateX(3px);
+  color: var(--color-primary);
+}
+
+@media (max-width: 600px) {
+  .secciones-index { padding: 1rem; }
+}
+</style>

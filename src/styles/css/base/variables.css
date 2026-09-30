@@ -105,6 +105,92 @@
 
 
   /* =======================================================
+     TEXTO SOBRE DEGRADADOS — PRIMARY
+     =======================================================
+     Valores por defecto mientras JS calcula los correctos.
+     Se sobreescriben dinámicamente desde themeService.
+     ======================================================= */
+
+  --gradient-primary-text: #ffffff;
+  --gradient-primary-text-76: rgba(255, 255, 255, 0.76);
+  --gradient-primary-text-68: rgba(255, 255, 255, 0.68);
+  --gradient-primary-text-58: rgba(255, 255, 255, 0.58);
+  --gradient-primary-text-56: rgba(255, 255, 255, 0.56);
+  --gradient-primary-text-50: rgba(255, 255, 255, 0.50);
+  --gradient-primary-text-46: rgba(255, 255, 255, 0.46);
+  --gradient-primary-text-38: rgba(255, 255, 255, 0.38);
+  --gradient-primary-text-12: rgba(255, 255, 255, 0.12);
+  --gradient-primary-text-10: rgba(255, 255, 255, 0.10);
+  --gradient-primary-text-9:  rgba(255, 255, 255, 0.09);
+  --gradient-primary-text-6:  rgba(255, 255, 255, 0.06);
+  --gradient-primary-text-5:  rgba(255, 255, 255, 0.05);
+  --gradient-primary-text-4:  rgba(255, 255, 255, 0.04);
+
+
+  /* =======================================================
+     TEXTO SOBRE DEGRADADOS — ACCENT
+     ======================================================= */
+
+  --gradient-accent-text: #ffffff;
+  --gradient-accent-text-76: rgba(255, 255, 255, 0.76);
+  --gradient-accent-text-68: rgba(255, 255, 255, 0.68);
+  --gradient-accent-text-58: rgba(255, 255, 255, 0.58);
+  --gradient-accent-text-56: rgba(255, 255, 255, 0.56);
+  --gradient-accent-text-50: rgba(255, 255, 255, 0.50);
+  --gradient-accent-text-46: rgba(255, 255, 255, 0.46);
+  --gradient-accent-text-38: rgba(255, 255, 255, 0.38);
+  --gradient-accent-text-12: rgba(255, 255, 255, 0.12);
+  --gradient-accent-text-10: rgba(255, 255, 255, 0.10);
+  --gradient-accent-text-9:  rgba(255, 255, 255, 0.09);
+  --gradient-accent-text-6:  rgba(255, 255, 255, 0.06);
+  --gradient-accent-text-5:  rgba(255, 255, 255, 0.05);
+  --gradient-accent-text-4:  rgba(255, 255, 255, 0.04);
+
+
+  /* =======================================================
+     TEXTO SOBRE DEGRADADOS — DARK
+     ======================================================= */
+
+  --gradient-dark-text: #ffffff;
+  --gradient-dark-text-76: rgba(255, 255, 255, 0.76);
+  --gradient-dark-text-68: rgba(255, 255, 255, 0.68);
+  --gradient-dark-text-58: rgba(255, 255, 255, 0.58);
+  --gradient-dark-text-56: rgba(255, 255, 255, 0.56);
+  --gradient-dark-text-50: rgba(255, 255, 255, 0.50);
+  --gradient-dark-text-46: rgba(255, 255, 255, 0.46);
+  --gradient-dark-text-38: rgba(255, 255, 255, 0.38);
+  --gradient-dark-text-12: rgba(255, 255, 255, 0.12);
+  --gradient-dark-text-10: rgba(255, 255, 255, 0.10);
+  --gradient-dark-text-9:  rgba(255, 255, 255, 0.09);
+  --gradient-dark-text-6:  rgba(255, 255, 255, 0.06);
+  --gradient-dark-text-5:  rgba(255, 255, 255, 0.05);
+  --gradient-dark-text-4:  rgba(255, 255, 255, 0.04);
+
+
+  /* =======================================================
+     TEXTO SOBRE DEGRADADOS — SOFT
+     =======================================================
+     Este degradado es claro, así que el texto por defecto
+     es oscuro en lugar de blanco.
+     ======================================================= */
+
+  --gradient-soft-text: #172033;
+  --gradient-soft-text-76: rgba(23, 32, 51, 0.76);
+  --gradient-soft-text-68: rgba(23, 32, 51, 0.68);
+  --gradient-soft-text-58: rgba(23, 32, 51, 0.58);
+  --gradient-soft-text-56: rgba(23, 32, 51, 0.56);
+  --gradient-soft-text-50: rgba(23, 32, 51, 0.50);
+  --gradient-soft-text-46: rgba(23, 32, 51, 0.46);
+  --gradient-soft-text-38: rgba(23, 32, 51, 0.38);
+  --gradient-soft-text-12: rgba(23, 32, 51, 0.12);
+  --gradient-soft-text-10: rgba(23, 32, 51, 0.10);
+  --gradient-soft-text-9:  rgba(23, 32, 51, 0.09);
+  --gradient-soft-text-6:  rgba(23, 32, 51, 0.06);
+  --gradient-soft-text-5:  rgba(23, 32, 51, 0.05);
+  --gradient-soft-text-4:  rgba(23, 32, 51, 0.04);
+
+
+  /* =======================================================
      RADIOS
      ======================================================= */
 

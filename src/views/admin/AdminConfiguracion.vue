@@ -104,6 +104,12 @@ const camposColor = [
   'success',
   'danger',
   'warning',
+  // Overrides de texto sobre degradados
+  'primaryGradientText',
+  'secondaryGradientText',
+  'accentGradientText',
+  'darkGradientText',
+  'softGradientText',
 ]
 
 /* =========================================================
@@ -205,7 +211,7 @@ function copiarConfiguracion(objeto) {
       valorRaw.buffer.slice(
         valorRaw.byteOffset,
         valorRaw.byteOffset +
-          valorRaw.byteLength,
+        valorRaw.byteLength,
       ),
     )
   }
@@ -225,7 +231,7 @@ function copiarConfiguracion(objeto) {
 
   if (
     typeof valorRaw ===
-      'object'
+    'object'
   ) {
     const copia = {}
 
@@ -256,6 +262,47 @@ function limpiarObjeto(
       delete objeto[clave]
     },
   )
+}
+
+/* =========================================================
+   NOTIFICAR AL LAYOUT (logo sidebar + favicon)
+   ========================================================= */
+
+/*
+ * Este evento es escuchado por AdminLayout.vue
+ * para actualizar inmediatamente:
+ *
+ *   - logo del sidebar
+ *   - favicon del navegador
+ *
+ * Sin esto, los cambios de logo / paleta no se reflejan
+ * en caliente en el layout administrativo.
+ */
+function notificarConfiguracionGlobal() {
+  if (
+    typeof window === 'undefined'
+  ) {
+    return
+  }
+
+  try {
+    window.dispatchEvent(
+      new CustomEvent(
+        'configuracion-global-actualizada',
+        {
+          detail:
+            copiarConfiguracion(
+              configuracion,
+            ),
+        },
+      ),
+    )
+  } catch (err) {
+    console.error(
+      'No fue posible notificar la configuración global:',
+      err,
+    )
+  }
 }
 
 /* =========================================================
@@ -315,7 +362,7 @@ function valorColor(
 ) {
   const valor =
     configuracion[
-      campo
+    campo
     ]
 
   if (
@@ -330,7 +377,7 @@ function valorColor(
 
   return (
     coloresPredeterminados[
-      campo
+    campo
     ] ||
     '#FFFFFF'
   )
@@ -414,25 +461,25 @@ function obtenerLuminancia(
       return valor <=
         0.03928
         ? valor /
-          12.92
+        12.92
         : Math.pow(
-            (
-              valor +
-              0.055
-            ) /
-              1.055,
-            2.4,
-          )
+          (
+            valor +
+            0.055
+          ) /
+          1.055,
+          2.4,
+        )
     },
   )
 
   return (
     0.2126 *
-      canales[0] +
+    canales[0] +
     0.7152 *
-      canales[1] +
+    canales[1] +
     0.0722 *
-      canales[2]
+    canales[2]
   )
 }
 
@@ -862,7 +909,7 @@ function actualizarConfiguracionLocal(
     ]) => {
       if (
         valor ===
-          undefined ||
+        undefined ||
         valor === null
       ) {
         return
@@ -899,6 +946,8 @@ function actualizarConfiguracionLocal(
   )
 
   aplicarVariablesGlobales()
+
+  notificarConfiguracionGlobal()
 }
 
 /* =========================================================
@@ -932,6 +981,8 @@ function actualizarColor({
     color
 
   aplicarVariablesGlobales()
+
+  notificarConfiguracionGlobal()
 }
 
 /* =========================================================
@@ -972,7 +1023,7 @@ async function actualizarLogo(
       ]) => {
         if (
           valor ===
-            undefined ||
+          undefined ||
           valor === null
         ) {
           return
@@ -1090,10 +1141,19 @@ async function actualizarLogo(
 
     aplicarVariablesGlobales()
 
+    /*
+     * NOTIFICAR AL LAYOUT
+     *
+     * Esto actualiza inmediatamente el logo del sidebar
+     * y el favicon del navegador sin esperar a que llegue
+     * el snapshot de Firebase.
+     */
+    notificarConfiguracionGlobal()
+
     mensaje.value =
       'Logo actualizado correctamente.'
   } catch (
-    err
+  err
   ) {
     console.error(
       'Error al guardar el logo:',
@@ -1149,7 +1209,7 @@ function actualizarPaleta(
   if (
     datos.paleta &&
     typeof datos.paleta ===
-      'object'
+    'object'
   ) {
     configuracion.paleta =
       copiarConfiguracion(
@@ -1158,6 +1218,8 @@ function actualizarPaleta(
   }
 
   aplicarVariablesGlobales()
+
+  notificarConfiguracionGlobal()
 }
 
 /* =========================================================
@@ -1188,12 +1250,14 @@ function restaurarCambios() {
 
     aplicarVariablesGlobales()
 
+    notificarConfiguracionGlobal()
+
     mensaje.value =
       'Cambios descartados correctamente.'
 
     error.value = ''
   } catch (
-    err
+  err
   ) {
     console.error(
       'Error al descartar cambios:',
@@ -1244,7 +1308,7 @@ async function guardarConfiguracion() {
     datos.paleta = {
       ...(
         datos.paleta &&
-        typeof datos.paleta ===
+          typeof datos.paleta ===
           'object'
           ? datos.paleta
           : {}
@@ -1269,10 +1333,15 @@ async function guardarConfiguracion() {
 
     aplicarVariablesGlobales()
 
+    /*
+     * NOTIFICAR AL LAYOUT
+     */
+    notificarConfiguracionGlobal()
+
     mensaje.value =
       'Configuración actualizada correctamente.'
   } catch (
-    err
+  err
   ) {
     console.error(
       'Error al guardar configuración:',
@@ -1358,7 +1427,7 @@ function iniciarSuscripcion() {
         },
       )
   } catch (
-    err
+  err
   ) {
     cargando.value =
       false
@@ -1481,23 +1550,17 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <section
-    class="admin-configuracion"
-  >
+  <section class="admin-configuracion">
 
     <!-- ===================================================
          ENCABEZADO
          =================================================== -->
 
-    <header
-      class="admin-configuracion__header"
-    >
+    <header class="admin-configuracion__header">
 
       <div>
 
-        <span
-          class="admin-configuracion__eyebrow"
-        >
+        <span class="admin-configuracion__eyebrow">
           SISTEMA
         </span>
 
@@ -1512,17 +1575,12 @@ onUnmounted(() => {
 
       </div>
 
-      <div
-        class="admin-configuracion__realtime"
-      >
+      <div class="admin-configuracion__realtime">
 
-        <span
-          class="admin-configuracion__realtime-dot"
-          :class="{
-            'is-online':
-              conectadaTiempoReal,
-          }"
-        ></span>
+        <span class="admin-configuracion__realtime-dot" :class="{
+          'is-online':
+            conectadaTiempoReal,
+        }"></span>
 
         <span>
           {{
@@ -1540,14 +1598,9 @@ onUnmounted(() => {
          ESTADO DE CARGA
          =================================================== -->
 
-    <div
-      v-if="cargando"
-      class="admin-configuracion__state"
-    >
+    <div v-if="cargando" class="admin-configuracion__state">
 
-      <div
-        class="admin-configuracion__spinner"
-      >
+      <div class="admin-configuracion__spinner">
 
         <strong>
           Cargando configuración
@@ -1565,10 +1618,7 @@ onUnmounted(() => {
          ERROR
          =================================================== -->
 
-    <div
-      v-else-if="error"
-      class="admin-configuracion__alert admin-configuracion__alert--error"
-    >
+    <div v-else-if="error" class="admin-configuracion__alert admin-configuracion__alert--error">
 
       <div>
 
@@ -1582,60 +1632,40 @@ onUnmounted(() => {
 
       </div>
 
-      <button
-        type="button"
-        class="admin-configuracion__alert-action"
-        @click="
-          iniciarSuscripcion
-        "
-      >
+      <button type="button" class="admin-configuracion__alert-action" @click="
+        iniciarSuscripcion
+      ">
         Reintentar
       </button>
 
     </div>
 
-    <template
-      v-else
-    >
+    <template v-else>
 
       <!-- =================================================
            NAVEGACIÓN
            ================================================= -->
 
-      <nav
-        class="admin-configuracion__tabs"
-      >
+      <nav class="admin-configuracion__tabs">
 
-        <button
-          v-for="
-            panel in paneles
-          "
-          :key="
-            panel.id
-          "
-          type="button"
-          class="admin-configuracion__tab"
-          :class="{
+        <button v-for="
+panel in paneles
+          " :key="panel.id
+            " type="button" class="admin-configuracion__tab" :class="{
             'is-active':
               panelActivo ===
               panel.id,
-          }"
-          @click="
+          }" @click="
             cambiarPanel(
               panel.id,
             )
-          "
-        >
+            ">
 
-          <span
-            class="admin-configuracion__tab-icon"
-          >
+          <span class="admin-configuracion__tab-icon">
             {{ panel.icono }}
           </span>
 
-          <span
-            class="admin-configuracion__tab-content"
-          >
+          <span class="admin-configuracion__tab-content">
 
             <strong>
               {{ panel.titulo }}
@@ -1655,10 +1685,7 @@ onUnmounted(() => {
            MENSAJE
            ================================================= -->
 
-      <div
-        v-if="mensaje"
-        class="admin-configuracion__alert admin-configuracion__alert--success"
-      >
+      <div v-if="mensaje" class="admin-configuracion__alert admin-configuracion__alert--success">
         {{ mensaje }}
       </div>
 
@@ -1666,91 +1693,55 @@ onUnmounted(() => {
            CONTENIDO
            ================================================= -->
 
-      <main
-        v-if="existeConfiguracion"
-        class="admin-configuracion__workspace"
-      >
+      <main v-if="existeConfiguracion" class="admin-configuracion__workspace">
 
         <!-- ===============================================
              IDENTIDAD
              =============================================== -->
 
-        <ConfiguracionIdentidad
-          v-if="
-            panelActivo ===
-            'identidad'
-          "
-          :configuracion="
-            configuracion
-          "
-          :guardando="
-            guardando
-          "
-          @actualizar-logo="
+        <ConfiguracionIdentidad v-if="
+          panelActivo ===
+          'identidad'
+        " :configuracion="configuracion
+            " :guardando="guardando
+            " @actualizar-logo="
             actualizarLogo
-          "
-          @actualizar="
+          " @actualizar="
             actualizarConfiguracionLocal
-          "
-        />
+          " />
 
         <!-- ===============================================
              APARIENCIA
              =============================================== -->
 
-        <ConfiguracionApariencia
-          v-else-if="
-            panelActivo ===
-            'apariencia'
-          "
-          :configuracion="
-            configuracion
-          "
-          :colores-predeterminados="
-            coloresPredeterminados
-          "
-          :obtener-texto-contraste="
-            obtenerTextoContraste
-          "
-          :contraste-entre="
-            contrasteEntre
-          "
-          :obtener-nivel-contraste="
-            obtenerNivelContraste
-          "
-          :obtener-degradado="
-            obtenerDegradado
-          "
-          :obtener-familia-color="
-            obtenerFamiliaColor
-          "
-          @actualizar-color="
+        <ConfiguracionApariencia v-else-if="
+          panelActivo ===
+          'apariencia'
+        " :configuracion="configuracion
+            " :colores-predeterminados="coloresPredeterminados
+            " :obtener-texto-contraste="obtenerTextoContraste
+            " :contraste-entre="contrasteEntre
+            " :obtener-nivel-contraste="obtenerNivelContraste
+            " :obtener-degradado="obtenerDegradado
+            " :obtener-familia-color="obtenerFamiliaColor
+            " @actualizar-color="
             actualizarColor
-          "
-          @actualizar-paleta="
+          " @actualizar-paleta="
             actualizarPaleta
-          "
-        />
+          " />
 
         <!-- ===============================================
              DATOS GENERALES
              =============================================== -->
 
-        <ConfiguracionDatos
-          v-else-if="
-            panelActivo ===
-            'datos'
-          "
-          :configuracion="
-            configuracion
-          "
-          :campos-color="
-            camposColor
-          "
-          @actualizar="
+        <ConfiguracionDatos v-else-if="
+          panelActivo ===
+          'datos'
+        " :configuracion="configuracion
+            " :campos-color="camposColor
+            " @actualizar="
             actualizarConfiguracionLocal
-          "
-        />
+          " />
 
       </main>
 
@@ -1758,45 +1749,27 @@ onUnmounted(() => {
            ACCIONES
            ================================================= -->
 
-      <footer
-        class="admin-configuracion__actions"
-      >
+      <footer class="admin-configuracion__actions">
 
-        <button
-          type="button"
-          class="admin-configuracion__button admin-configuracion__button--secondary"
-          :disabled="
-            guardando
-          "
-          @click="
+        <button type="button" class="admin-configuracion__button admin-configuracion__button--secondary" :disabled="guardando
+          " @click="
             restaurarCambios
-          "
-        >
+          ">
           Descartar cambios
         </button>
 
-        <button
-          type="button"
-          class="admin-configuracion__button admin-configuracion__button--primary"
-          :disabled="
-            guardando
-          "
-          @click="
+        <button type="button" class="admin-configuracion__button admin-configuracion__button--primary" :disabled="guardando
+          " @click="
             guardarConfiguracion
-          "
-        >
+          ">
 
-          <span
-            v-if="
-              guardando
-            "
-          >
+          <span v-if="
+            guardando
+          ">
             Guardando...
           </span>
 
-          <span
-            v-else
-          >
+          <span v-else>
             Guardar configuración
           </span>
 

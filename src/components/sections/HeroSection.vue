@@ -1,5 +1,6 @@
 <script setup>
 import { computed } from 'vue'
+import SectionBackground from './SectionBackground.vue'
 
 const props = defineProps({
   contenido: {
@@ -90,8 +91,12 @@ const mostrarImagen = computed(() => {
     v-if="activo"
     id="inicio"
     class="hero"
+    style="position: relative;"
     aria-labelledby="hero-title"
   >
+    <!-- FONDO / MEDIO DINÁMICO -->
+    <SectionBackground :medio="contenido?.medio" />
+
     <!-- DECORACIÓN DE FONDO -->
     <div
       class="hero__background"

@@ -1,4 +1,5 @@
 import {
+  computed,
   onMounted,
   onUnmounted,
   ref,
@@ -13,6 +14,7 @@ const SECCIONES = [
   'hero',
   'soluciones',
   'caracteristicas',
+  'beneficios',
   'planes',
   'nosotros',
   'faq',
@@ -24,6 +26,7 @@ const COLECCIONES = [
   'planes',
   'soluciones',
   'caracteristicas',
+  'beneficios',
   'faq',
 ]
 
@@ -42,6 +45,7 @@ export function useLandingContent() {
   const hero = ref(null)
   const soluciones = ref(null)
   const caracteristicas = ref(null)
+  const beneficios = ref(null)
   const planesContenido = ref(null)
   const nosotros = ref(null)
   const faq = ref(null)
@@ -55,12 +59,116 @@ export function useLandingContent() {
   const configuracion = ref(null)
 
   /* -------------------------------------------------------
+     LOGO BLOB URL
+     -------------------------------------------------------
+     URL temporal generada a partir de
+     configuracion.logoBlob (Firestore Bytes).
+
+     Se expone a través de configuracion.logoBlobUrl
+     para que AppHeader y AppFooter la puedan usar
+     sin conocer Firestore.
+     ------------------------------------------------------- */
+
+  const logoBlobUrl = ref('')
+
+  function convertirLogoBytes(valor) {
+    if (!valor) {
+      return null
+    }
+
+    if (valor instanceof Uint8Array) {
+      return valor
+    }
+
+    if (valor instanceof ArrayBuffer) {
+      return new Uint8Array(valor)
+    }
+
+    if (typeof valor.toUint8Array === 'function') {
+      try {
+        return valor.toUint8Array()
+      } catch {
+        return null
+      }
+    }
+
+    if (Array.isArray(valor)) {
+      try {
+        return new Uint8Array(valor)
+      } catch {
+        return null
+      }
+    }
+
+    if (Array.isArray(valor._values)) {
+      try {
+        return new Uint8Array(valor._values)
+      } catch {
+        return null
+      }
+    }
+
+    return null
+  }
+
+  function actualizarLogoBlobUrl(data) {
+    if (logoBlobUrl.value) {
+      try {
+        URL.revokeObjectURL(logoBlobUrl.value)
+      } catch {
+        // noop
+      }
+
+      logoBlobUrl.value = ''
+    }
+
+    const bytes = convertirLogoBytes(data?.logoBlob)
+
+    if (!bytes || bytes.byteLength <= 0) {
+      return
+    }
+
+    const mime =
+      typeof data?.logoMimeType === 'string' &&
+      data.logoMimeType.trim()
+        ? data.logoMimeType.trim()
+        : 'image/jpeg'
+
+    try {
+      logoBlobUrl.value = URL.createObjectURL(
+        new Blob([bytes], { type: mime }),
+      )
+    } catch (error) {
+      console.error(
+        'No fue posible generar la vista previa del logo desde Firestore:',
+        error,
+      )
+    }
+  }
+
+  /*
+   * configuracionConLogo:
+   *
+   * Combina la configuración de Firestore con
+   * logoBlobUrl listo para usar en <img src>.
+   */
+  const configuracionConLogo = computed(() => {
+    const base = configuracion.value || {}
+
+    return {
+      ...base,
+      logoBlobUrl: logoBlobUrl.value,
+    }
+  })
+
+  /* -------------------------------------------------------
      COLECCIONES
      ------------------------------------------------------- */
 
   const planes = ref([])
   const solucionesItems = ref([])
   const caracteristicasItems = ref([])
+  const beneficiosItems = ref([])
   const faqItems = ref([])
 
   /* -------------------------------------------------------
@@ -69,6 +177,7 @@ export function useLandingContent() {
 
   const cargando = ref(true)
   const error = ref('')
+  const errorPlanes = ref('')  // error específico de la colección planes
 
   /* -------------------------------------------------------
      CONTROL DE CARGAS
@@ -91,6 +200,7 @@ export function useLandingContent() {
     hero,
     soluciones,
     caracteristicas,
+    beneficios,
     planes:
       planesContenido,
     nosotros,
@@ -112,9 +222,6 @@ export function useLandingContent() {
      UTILIDADES
      ======================================================= */
 
-  /**
-   * Convierte un valor a número seguro.
-   */
   function numeroSeguro(
     valor,
     valorDefecto =
@@ -130,12 +237,6 @@ export function useLandingContent() {
       : valorDefecto
   }
 
-  /**
-   * Ordena cualquier colección
-   * por el campo "orden".
-   *
-   * Nunca modifica el array original.
-   */
   function ordenarItems(
     items,
   ) {
@@ -156,10 +257,6 @@ export function useLandingContent() {
     )
   }
 
-  /**
-   * Registra que una fuente inicial
-   * ya respondió.
-   */
   function registrarCarga(
     id,
   ) {
@@ -184,11 +281,6 @@ export function useLandingContent() {
     }
   }
 
-  /**
-   * Si una suscripción falla no debemos
-   * dejar indefinidamente la pantalla
-   * en estado de carga.
-   */
   function registrarCargaConError(
     id,
   ) {
@@ -210,14 +302,6 @@ export function useLandingContent() {
     error.value =
       'No fue posible cargar correctamente el contenido de la página.'
 
-    /*
-     * Una suscripción que falla ya no debe
-     * bloquear el estado de carga.
-     *
-     * No sabemos exactamente qué fuente
-     * produjo el error, por lo que además
-     * liberamos la pantalla de carga.
-     */
     cargando.value =
       false
   }
@@ -226,10 +310,6 @@ export function useLandingContent() {
      SECCIONES + COLECCIONES
      ======================================================= */
 
-  /**
-   * Inserta los elementos dinámicos
-   * dentro de una sección.
-   */
   function actualizarItemsEnSeccion(
     seccionRef,
     items,
@@ -241,6 +321,10 @@ export function useLandingContent() {
       return
     }
 
+    /*
+     * Preservar TODOS los campos del doc de sección (especialmente `medio`)
+     * y solo sobreescribir `items` con los de la colección.
+     */
     seccionRef.value = {
       ...seccionRef.value,
       items:
@@ -250,10 +334,6 @@ export function useLandingContent() {
     }
   }
 
-  /**
-   * Obtiene la referencia de items
-   * correspondiente a una colección.
-   */
   function obtenerRefColeccion(
     nombre,
   ) {
@@ -267,6 +347,9 @@ export function useLandingContent() {
       case 'caracteristicas':
         return caracteristicasItems
 
+      case 'beneficios':
+        return beneficiosItems
+
       case 'faq':
         return faqItems
 
@@ -275,11 +358,6 @@ export function useLandingContent() {
     }
   }
 
-  /**
-   * Actualiza los elementos de una
-   * colección y sincroniza su sección
-   * correspondiente.
-   */
   function procesarColeccion(
     nombre,
     data,
@@ -310,6 +388,13 @@ export function useLandingContent() {
       case 'caracteristicas':
         actualizarItemsEnSeccion(
           caracteristicas,
+          items,
+        )
+        break
+
+      case 'beneficios':
+        actualizarItemsEnSeccion(
+          beneficios,
           items,
         )
         break
@@ -399,40 +484,57 @@ export function useLandingContent() {
                 seccionRef.value =
                   data
 
-                /*
-                 * Las secciones que tienen
-                 * colecciones dinámicas deben
-                 * combinar ambos streams.
-                 */
                 switch (
                   nombre
                 ) {
                   case 'soluciones':
-                    actualizarItemsEnSeccion(
-                      soluciones,
-                      solucionesItems.value,
-                    )
+                    /*
+                     * Solo sobreescribir items si la colección
+                     * tiene datos. Si está vacía, conservar los
+                     * items embebidos en el doc de la sección.
+                     */
+                    if (solucionesItems.value.length > 0) {
+                      actualizarItemsEnSeccion(
+                        soluciones,
+                        solucionesItems.value,
+                      )
+                    }
                     break
 
                   case 'caracteristicas':
-                    actualizarItemsEnSeccion(
-                      caracteristicas,
-                      caracteristicasItems.value,
-                    )
+                    if (caracteristicasItems.value.length > 0) {
+                      actualizarItemsEnSeccion(
+                        caracteristicas,
+                        caracteristicasItems.value,
+                      )
+                    }
+                    break
+
+                  case 'beneficios':
+                    if (beneficiosItems.value.length > 0) {
+                      actualizarItemsEnSeccion(
+                        beneficios,
+                        beneficiosItems.value,
+                      )
+                    }
                     break
 
                   case 'planes':
-                    actualizarItemsEnSeccion(
-                      planesContenido,
-                      planes.value,
-                    )
+                    if (planes.value.length > 0) {
+                      actualizarItemsEnSeccion(
+                        planesContenido,
+                        planes.value,
+                      )
+                    }
                     break
 
                   case 'faq':
-                    actualizarItemsEnSeccion(
-                      faq,
-                      faqItems.value,
-                    )
+                    if (faqItems.value.length > 0) {
+                      actualizarItemsEnSeccion(
+                        faq,
+                        faqItems.value,
+                      )
+                    }
                     break
                 }
 
@@ -537,9 +639,19 @@ export function useLandingContent() {
                   `coleccion:${nombre}`,
                 )
 
-                manejarErrorFirebase(
-                  errorFirebase,
-                )
+                // Error de planes no debe bloquear el resto de la landing
+                if (nombre === 'planes') {
+                  console.error(
+                    'Error sincronizando planes:',
+                    errorFirebase,
+                  )
+                  errorPlanes.value =
+                    'No fue posible cargar los planes.'
+                } else {
+                  manejarErrorFirebase(
+                    errorFirebase,
+                  )
+                }
               },
             )
 
@@ -613,6 +725,15 @@ export function useLandingContent() {
 
             configuracion.value =
               data
+
+            /*
+             * Genera la blob URL a partir de logoBlob.
+             * El header y el footer la consumen a través
+             * de configuracion.logoBlobUrl.
+             */
+            actualizarLogoBlobUrl(
+              data,
+            )
 
             registrarCarga(
               'configuracion:general',
@@ -715,6 +836,18 @@ export function useLandingContent() {
 
       unsubscribers.length = 0
       cargasIniciales.clear()
+
+      if (logoBlobUrl.value) {
+        try {
+          URL.revokeObjectURL(
+            logoBlobUrl.value,
+          )
+        } catch {
+          // noop
+        }
+
+        logoBlobUrl.value = ''
+      }
     },
   )
 
@@ -727,6 +860,7 @@ export function useLandingContent() {
     hero,
     soluciones,
     caracteristicas,
+    beneficios,
     planesContenido,
     nosotros,
     faq,
@@ -735,9 +869,10 @@ export function useLandingContent() {
 
     planes,
 
-    configuracion,
+    configuracion: configuracionConLogo,
 
     cargando,
     error,
+    errorPlanes,
   }
 }

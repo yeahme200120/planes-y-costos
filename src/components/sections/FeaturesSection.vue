@@ -1,6 +1,7 @@
 <script setup>
 import { computed } from 'vue'
-
+import SectionBackground from './SectionBackground.vue'
+import { medioTieneContenido, medioEsFondo } from '../../services/mediaService.js'
 import FeatureCard from './FeatureCard.vue'
 
 const props = defineProps({
@@ -72,9 +73,27 @@ const tieneEncabezado = computed(() => {
     v-if="activo"
     id="caracteristicas"
     class="section features"
+    style="position: relative;"
     aria-labelledby="features-title"
   >
-    <div class="container">
+    <!-- Fondo absoluto -->
+    <SectionBackground
+      v-if="medioEsFondo(contenido?.medio)"
+      :medio="contenido?.medio"
+    />
+    <div
+      class="container"
+      :class="{
+        'section-with-media': medioTieneContenido(contenido?.medio) && !medioEsFondo(contenido?.medio),
+        'section-with-media--right': contenido?.medio?.posicion === 'derecha',
+        'section-with-media--left': contenido?.medio?.posicion === 'izquierda',
+      }"
+    >
+      <!-- Media lateral dentro del container -->
+      <SectionBackground
+        v-if="medioTieneContenido(contenido?.medio) && !medioEsFondo(contenido?.medio)"
+        :medio="contenido?.medio"
+      />
 
       <!-- ENCABEZADO -->
       <header

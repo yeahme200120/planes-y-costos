@@ -7,22 +7,20 @@ import {
 
 import {
   suscribirTemaGlobal,
-  aplicarTema,
 } from './services/themeService'
-
-import {
-  suscribirConfiguracionAdmin,
-} from './services/adminService'
 
 /* =========================================================
    ESTADO GLOBAL
+   =========================================================
+   Una sola suscripción a Firestore.
+   suscribirTemaGlobal aplica el tema Y permite que
+   otros listeners reaccionen al mismo snapshot.
    ========================================================= */
 
 const configuracionGlobal =
   ref({})
 
 let unsubscribeTema = null
-let unsubscribeConfiguracion = null
 
 /* =========================================================
    UTILIDADES
@@ -51,81 +49,160 @@ function agregarVersion(
    FAVICON
    ========================================================= */
 
+/*
+ * Convierte logoBlob (Firestore Bytes) a Uint8Array.
+ *
+ * Firestore entrega el blob como un objeto Bytes con
+ * el método toUint8Array(), pero también soportamos
+ * Uint8Array nativo, ArrayBuffer y arrays de bytes.
+ */
+function convertirLogoBlobABytes(valor) {
+  if (!valor) {
+    return null
+  }
+
+  if (valor instanceof Uint8Array) {
+    return valor
+  }
+
+  if (valor instanceof ArrayBuffer) {
+    return new Uint8Array(valor)
+  }
+
+  if (typeof valor.toUint8Array === 'function') {
+    try {
+      return valor.toUint8Array()
+    } catch {
+      return null
+    }
+  }
+
+  if (Array.isArray(valor)) {
+    try {
+      return new Uint8Array(valor)
+    } catch {
+      return null
+    }
+  }
+
+  if (Array.isArray(valor._values)) {
+    try {
+      return new Uint8Array(valor._values)
+    } catch {
+      return null
+    }
+  }
+
+  return null
+}
+
 function actualizarFavicon(
   configuracion = {},
 ) {
-  const version =
-    configuracion.logoVersion ||
-    Date.now()
-
-  const favicon =
-    configuracion.faviconUrl ||
-    configuracion.logoIcoUrl ||
-    configuracion.logoPngUrl ||
-    configuracion.logoUrl ||
-    ''
-
-  if (!favicon) {
+  if (typeof document === 'undefined') {
     return
   }
 
-  const url =
-    agregarVersion(
-      favicon,
-      version,
+  /* -------------------------------------------------------
+     PRIORIDAD 1: logoBlob (Firestore Bytes)
+     ------------------------------------------------------- */
+
+  const bytes =
+    convertirLogoBlobABytes(
+      configuracion.logoBlob,
     )
 
-  /*
-   * Actualizar todos los favicons existentes.
-   */
-  const enlaces =
-    document.querySelectorAll(
-      'link[rel="icon"], link[rel="shortcut icon"]',
-    )
+  let urlFavicon = ''
 
-  if (enlaces.length) {
-    enlaces.forEach(
-      (enlace) => {
-        enlace.href = url
-      },
-    )
-  } else {
-    /*
-     * Si index.html no tiene favicon,
-     * crear uno dinámicamente.
-     */
-    const enlace =
-      document.createElement('link')
+  if (bytes && bytes.byteLength > 0) {
+    const mime =
+      typeof configuracion.logoMimeType === 'string' &&
+      configuracion.logoMimeType.trim()
+        ? configuracion.logoMimeType.trim()
+        : 'image/jpeg'
 
-    enlace.rel = 'icon'
-    enlace.href = url
-
-    document.head.appendChild(
-      enlace,
-    )
+    try {
+      urlFavicon = URL.createObjectURL(
+        new Blob([bytes], { type: mime }),
+      )
+    } catch (error) {
+      console.error(
+        'Error generando favicon desde logoBlob:',
+        error,
+      )
+    }
   }
 
-  /*
-   * También mantenemos shortcut icon.
-   */
-  let shortcut =
-    document.querySelector(
-      'link[rel="shortcut icon"]',
-    )
+  /* -------------------------------------------------------
+     PRIORIDAD 2: URLs antiguas con versión
+     ------------------------------------------------------- */
 
-  if (!shortcut) {
-    shortcut =
-      document.createElement('link')
+  if (!urlFavicon) {
+    const version =
+      configuracion.logoVersion ||
+      Date.now()
 
-    shortcut.rel =
-      'shortcut icon'
+    const faviconUrl =
+      configuracion.faviconUrl ||
+      configuracion.logoIcoUrl ||
+      configuracion.logoPngUrl ||
+      configuracion.logoUrl ||
+      ''
 
-    document.head.appendChild(
-      shortcut,
-    )
+    if (faviconUrl) {
+      urlFavicon = agregarVersion(
+        faviconUrl,
+        version,
+      )
+    }
   }
 
-  shortcut.href = url
+  if (!urlFavicon) {
+    return
+  }
+
+  /* -------------------------------------------------------
+     ELIMINAR TODOS los shortcut icon viejos
+     -------------------------------------------------------
+     Esto es CRÍTICO: Windows/Chrome priorizan
+     shortcut icon sobre icon. Si dejamos uno viejo,
+     gana el viejo.
+     ------------------------------------------------------- */
+
+  document
+    .querySelectorAll('link[rel="shortcut icon"]')
+    .forEach((el) => el.remove())
+
+  /* -------------------------------------------------------
+     ACTUALIZAR (o crear) el link rel="icon"
+     ------------------------------------------------------- */
+
+  let icon =
+    document.querySelector('link[rel="icon"]')
+
+  if (!icon) {
+    icon = document.createElement('link')
+    icon.rel = 'icon'
+    document.head.appendChild(icon)
+  }
+
+  icon.type =
+    typeof configuracion.logoMimeType === 'string' &&
+    configuracion.logoMimeType.trim()
+      ? configuracion.logoMimeType.trim()
+      : ''
+
+  icon.href = urlFavicon
+
+  /* -------------------------------------------------------
+     FORZAR RELECTURA DEL FAVICON
+     -------------------------------------------------------
+     Clonar y reemplazar el <link> hace que el navegador
+     relea el favicon sin recargar la página.
+     ------------------------------------------------------- */
+
+  const clon = icon.cloneNode(true)
+  icon.parentNode?.replaceChild(clon, icon)
 }
 
 /* =========================================================
@@ -165,70 +242,15 @@ function emitirConfiguracionGlobal(
 
 /* =========================================================
    CONFIGURACIÓN GLOBAL FIREBASE
+   =========================================================
+   Integrado dentro de suscribirTemaGlobal:
+   el tema se aplica y se emite el evento global
+   en cada snapshot.
    ========================================================= */
 
 function iniciarConfiguracionGlobal() {
-  if (
-    typeof unsubscribeConfiguracion ===
-    'function'
-  ) {
-    unsubscribeConfiguracion()
-
-    unsubscribeConfiguracion =
-      null
-  }
-
-  try {
-    unsubscribeConfiguracion =
-      suscribirConfiguracionAdmin(
-        'general',
-
-        (datos) => {
-          const configuracion =
-            datos || {}
-
-          /*
-           * Actualizar el estado reactivo global.
-           */
-          configuracionGlobal.value =
-            configuracion
-
-          /*
-           * Aplicar favicon inmediatamente.
-           */
-          actualizarFavicon(
-            configuracion,
-          )
-
-          /*
-           * Actualizar título inmediatamente.
-           */
-          actualizarTitulo(
-            configuracion,
-          )
-
-          /*
-           * Permitir que otros componentes
-           * reaccionen al mismo cambio.
-           */
-          emitirConfiguracionGlobal(
-            configuracion,
-          )
-        },
-
-        (error) => {
-          console.error(
-            'No fue posible sincronizar la configuración global:',
-            error,
-          )
-        },
-      )
-  } catch (error) {
-    console.error(
-      'Error iniciando configuración global:',
-      error,
-    )
-  }
+  // La configuración llega via suscribirTemaGlobal.
+  // Este método queda como hook por compatibilidad.
 }
 
 /* =========================================================
@@ -256,15 +278,6 @@ function iniciarTemaGlobal() {
           )
         },
       )
-
-    /*
-     * Aplicar inmediatamente el tema disponible.
-     * La suscripción continúa encargándose
-     * de los cambios realtime.
-     */
-    aplicarTema?.(
-      configuracionGlobal.value,
-    )
   } catch (error) {
     console.error(
       'Error iniciando tema global:',
@@ -278,15 +291,7 @@ function iniciarTemaGlobal() {
    ========================================================= */
 
 onMounted(() => {
-  /*
-   * Primero iniciar configuración para que
-   * favicon/título tengan datos cuanto antes.
-   */
   iniciarConfiguracionGlobal()
-
-  /*
-   * Mantener el sistema de colores existente.
-   */
   iniciarTemaGlobal()
 })
 
@@ -298,16 +303,6 @@ onUnmounted(() => {
     unsubscribeTema()
 
     unsubscribeTema =
-      null
-  }
-
-  if (
-    typeof unsubscribeConfiguracion ===
-    'function'
-  ) {
-    unsubscribeConfiguracion()
-
-    unsubscribeConfiguracion =
       null
   }
 })

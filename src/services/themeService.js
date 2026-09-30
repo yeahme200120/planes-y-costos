@@ -1,8 +1,82 @@
-import { suscribirConfiguracionAdmin } from './adminService'
+import {
+  generarTextosDegradados,
+  obtenerOverridesDegradados,
+  aplicarOverridesDegradados,
+  hexToRgb,
+} from './colorPalette'
 
+import { suscribirConfiguracionAdmin } from './adminService'
 /* =========================================================
-   MAPA DE VARIABLES DE COLOR
+   APLICAR TEXTO DE DEGRADADOS
    ========================================================= */
+
+function aplicarTextosDegradados(configuracion) {
+  if (typeof document === 'undefined') return
+
+  const degradados = configuracion?.degradados
+  if (!degradados || typeof degradados !== 'object') return
+
+  /*
+   * 1. Calcular automáticamente según el degradado
+   */
+  let variables = generarTextosDegradados(degradados)
+
+  /*
+   * 2. Sincronizar con los textos de marca que ya existen.
+   *
+   * Si Firestore tiene primaryText, secondaryText o accentText,
+   * esos valores son los que el usuario guardó y deben ser la
+   * fuente de verdad para el texto de los degradados relacionados.
+   *
+   * Esto garantiza que --gradient-primary-text === --color-primary-text
+   * cuando NO hay override manual.
+   */
+  const textosDeMarca = [
+    { clave: 'primary', campo: 'primaryText' },
+    { clave: 'secondary', campo: 'secondaryText' },
+    { clave: 'accent', campo: 'accentText' },
+  ]
+
+  textosDeMarca.forEach(({ clave, campo }) => {
+    const valorGuardado = configuracion?.[campo]
+
+    if (
+      typeof valorGuardado === 'string' &&
+      /^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/.test(valorGuardado.trim())
+    ) {
+      const color = valorGuardado.trim().toUpperCase()
+      const rgb = hexToRgb(color)
+
+      if (!rgb) return
+
+      variables[`--gradient-${clave}-text`] = color
+
+      const opacidades = [76, 68, 58, 56, 50, 46, 38, 12, 10, 9, 6, 5, 4]
+
+      opacidades.forEach((op) => {
+        const alpha = (op / 100).toFixed(2)
+        variables[`--gradient-${clave}-text-${op}`] = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${alpha})`
+      })
+    }
+  })
+
+  /*
+   * 3. Aplicar overrides manuales si existen.
+   *
+   * Los overrides SIEMPRE ganan (son decisión explícita del usuario).
+   */
+  const overrides = obtenerOverridesDegradados(configuracion)
+
+  variables = aplicarOverridesDegradados(variables, overrides, degradados)
+
+  /*
+   * 4. Inyectar en el DOM
+   */
+  Object.entries(variables).forEach(([nombre, valor]) => {
+    if (!valor) return
+    document.documentElement.style.setProperty(nombre, valor)
+  })
+}
 
 const MAPA_VARIABLES = {
   primary: '--color-primary',
@@ -103,22 +177,15 @@ const COLORES_POR_DEFECTO = {
 function esColorHex(valor) {
   return (
     typeof valor === 'string' &&
-    /^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$/.test(
-      valor.trim(),
-    )
+    /^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$/.test(valor.trim())
   )
 }
 
 /**
  * Devuelve un color hexadecimal normalizado.
  */
-function normalizarColor(
-  valor,
-  valorDefecto = null,
-) {
-  if (
-    esColorHex(valor)
-  ) {
+function normalizarColor(valor, valorDefecto = null) {
+  if (esColorHex(valor)) {
     return valor.trim()
   }
 
@@ -133,34 +200,21 @@ function normalizarColor(
  * Busca primero directamente en configuracion
  * y después dentro de configuracion.paleta.
  */
-function obtenerValor(
-  configuracion,
-  clave,
-) {
+function obtenerValor(configuracion, clave) {
   if (!configuracion) {
     return null
   }
 
-  const valorPrincipal =
-    normalizarColor(
-      configuracion[clave],
-    )
+  const valorPrincipal = normalizarColor(configuracion[clave])
 
   if (valorPrincipal) {
     return valorPrincipal
   }
 
-  const paleta =
-    configuracion.paleta
+  const paleta = configuracion.paleta
 
-  if (
-    paleta &&
-    typeof paleta === 'object'
-  ) {
-    const valorPaleta =
-      normalizarColor(
-        paleta[clave],
-      )
+  if (paleta && typeof paleta === 'object') {
+    const valorPaleta = normalizarColor(paleta[clave])
 
     if (valorPaleta) {
       return valorPaleta
@@ -175,106 +229,56 @@ function obtenerValor(
  * Si no existe, utiliza el valor
  * centralizado por defecto.
  */
-function obtenerColor(
-  configuracion,
-  clave,
-) {
-  return (
-    obtenerValor(
-      configuracion,
-      clave,
-    ) ||
-    COLORES_POR_DEFECTO[
-      clave
-    ] ||
-    null
-  )
+function obtenerColor(configuracion, clave) {
+  return obtenerValor(configuracion, clave) || COLORES_POR_DEFECTO[clave] || null
 }
 
 /* =========================================================
    APLICAR VARIABLE CSS
    ========================================================= */
 
-function aplicarVariable(
-  variable,
-  valor,
-) {
-  if (
-    !variable ||
-    !esColorHex(valor)
-  ) {
+function aplicarVariable(variable, valor) {
+  if (!variable || !esColorHex(valor)) {
     return
   }
 
-  document.documentElement.style.setProperty(
-    variable,
-    valor.trim(),
-  )
+  document.documentElement.style.setProperty(variable, valor.trim())
 }
 
 /* =========================================================
    APLICAR VARIABLES DE COLOR
    ========================================================= */
 
-function aplicarVariablesPrincipales(
-  configuracion,
-) {
-  Object.entries(
-    MAPA_VARIABLES,
-  ).forEach(
-    ([clave, variable]) => {
-      const valor =
-        obtenerColor(
-          configuracion,
-          clave,
-        )
+function aplicarVariablesPrincipales(configuracion) {
+  Object.entries(MAPA_VARIABLES).forEach(([clave, variable]) => {
+    const valor = obtenerColor(configuracion, clave)
 
-      if (valor) {
-        aplicarVariable(
-          variable,
-          valor,
-        )
-      }
-    },
-  )
+    if (valor) {
+      aplicarVariable(variable, valor)
+    }
+  })
 }
 
-function aplicarVariablesDerivadas(
-  configuracion,
-) {
-  Object.entries(
-    MAPA_DERIVADAS,
-  ).forEach(
-    ([clave, variable]) => {
-      const valor =
-        obtenerColor(
-          configuracion,
-          clave,
-        )
+function aplicarVariablesDerivadas(configuracion) {
+  Object.entries(MAPA_DERIVADAS).forEach(([clave, variable]) => {
+    const valor = obtenerColor(configuracion, clave)
 
-      if (valor) {
-        aplicarVariable(
-          variable,
-          valor,
-        )
-      }
-    },
-  )
+    if (valor) {
+      aplicarVariable(variable, valor)
+    }
+  })
 }
 
 /* =========================================================
    FAVICON
    ========================================================= */
 
-function obtenerFaviconUrl(
-  configuracion,
-) {
+function obtenerFaviconUrl(configuracion) {
   if (!configuracion) {
     return ''
   }
 
-  const logo =
-    configuracion.logo || {}
+  const logo = configuracion.logo || {}
 
   return (
     logo.faviconUrl ||
@@ -286,51 +290,33 @@ function obtenerFaviconUrl(
   )
 }
 
-function aplicarFavicon(
-  configuracion,
-) {
-  const faviconUrl =
-    obtenerFaviconUrl(
-      configuracion,
-    )
+function aplicarFavicon(configuracion) {
+  const faviconUrl = obtenerFaviconUrl(configuracion)
 
   if (!faviconUrl) {
     return
   }
 
-  let favicon =
-    document.querySelector(
-      'link[rel="icon"]',
-    )
+  let favicon = document.querySelector('link[rel="icon"]')
 
   if (!favicon) {
-    favicon =
-      document.createElement(
-        'link',
-      )
+    favicon = document.createElement('link')
 
     favicon.rel = 'icon'
 
-    document.head.appendChild(
-      favicon,
-    )
+    document.head.appendChild(favicon)
   }
 
-  favicon.href =
-    faviconUrl
+  favicon.href = faviconUrl
 
   /*
    * PNG es válido para favicon.
    * No asumimos que la URL sea un ICO.
    */
-  const esPng =
-    /\.png(?:\?|$)/i.test(
-      faviconUrl,
-    )
+  const esPng = /\.png(?:\?|$)/i.test(faviconUrl)
 
   if (esPng) {
-    favicon.type =
-      'image/png'
+    favicon.type = 'image/png'
   }
 }
 
@@ -342,9 +328,7 @@ function aplicarFavicon(
  * Aplica toda la identidad visual
  * almacenada en configuracion/general.
  */
-export function aplicarTema(
-  configuracion,
-) {
+export function aplicarTema(configuracion) {
   if (!configuracion) {
     return
   }
@@ -353,41 +337,27 @@ export function aplicarTema(
      COLORES PRINCIPALES
      ------------------------------------------------------- */
 
-  aplicarVariablesPrincipales(
-    configuracion,
-  )
+  aplicarVariablesPrincipales(configuracion)
 
   /* -------------------------------------------------------
      COLORES DERIVADOS
      ------------------------------------------------------- */
 
-  aplicarVariablesDerivadas(
-    configuracion,
-  )
-
+  aplicarVariablesDerivadas(configuracion)
+  aplicarTextosDegradados(configuracion)
   /* -------------------------------------------------------
      COLOR BLANCO
      ------------------------------------------------------- */
 
-  const primaryText =
-    obtenerColor(
-      configuracion,
-      'primaryText',
-    )
+  const primaryText = obtenerColor(configuracion, 'primaryText')
 
-  aplicarVariable(
-    '--color-white',
-    primaryText ||
-      '#FFFFFF',
-  )
+  aplicarVariable('--color-white', primaryText || '#FFFFFF')
 
   /* -------------------------------------------------------
      FAVICON
      ------------------------------------------------------- */
 
-  aplicarFavicon(
-    configuracion,
-  )
+  aplicarFavicon(configuracion)
 }
 
 /* =========================================================
@@ -406,135 +376,79 @@ export function aplicarTema(
  *
  * configuracion.logoUrl
  */
-export function obtenerLogoConfiguracion(
-  configuracion,
-) {
-  const logo =
-    configuracion?.logo || {}
+export function obtenerLogoConfiguracion(configuracion) {
+  const logo = configuracion?.logo || {}
 
   const logoUrl =
-    configuracion?.logoUrl ||
-    logo?.pngUrl ||
-    logo?.iconUrl ||
-    logo?.faviconUrl ||
-    '/img/logo.jpg'
+    configuracion?.logoUrl || logo?.pngUrl || logo?.iconUrl || logo?.faviconUrl || '/img/logo.jpg'
 
-  const pngUrl =
-    logo?.pngUrl ||
-    logoUrl
+  const pngUrl = logo?.pngUrl || logoUrl
 
   return {
-    activo:
-      logo?.activo ??
-      true,
+    activo: logo?.activo ?? true,
 
-    originalUrl:
-      logo?.originalUrl ||
-      logoUrl,
+    originalUrl: logo?.originalUrl || logoUrl,
 
     pngUrl,
 
-    svgUrl:
-      logo?.svgUrl ||
-      '',
+    svgUrl: logo?.svgUrl || '',
 
-    png2xUrl:
-      logo?.png2xUrl ||
-      '',
+    png2xUrl: logo?.png2xUrl || '',
 
-    png3xUrl:
-      logo?.png3xUrl ||
-      '',
+    png3xUrl: logo?.png3xUrl || '',
 
-    lightUrl:
-      logo?.lightUrl ||
-      pngUrl,
+    lightUrl: logo?.lightUrl || pngUrl,
 
-    darkUrl:
-      logo?.darkUrl ||
-      pngUrl,
+    darkUrl: logo?.darkUrl || pngUrl,
 
-    iconUrl:
-      logo?.iconUrl ||
-      pngUrl,
+    iconUrl: logo?.iconUrl || pngUrl,
 
-    faviconUrl:
-      logo?.faviconUrl ||
-      configuracion?.faviconUrl ||
-      logo?.iconUrl ||
-      pngUrl,
+    faviconUrl: logo?.faviconUrl || configuracion?.faviconUrl || logo?.iconUrl || pngUrl,
 
-    appleTouchIconUrl:
-      logo?.appleTouchIconUrl ||
-      '',
+    appleTouchIconUrl: logo?.appleTouchIconUrl || '',
 
-    icon192Url:
-      logo?.icon192Url ||
-      '',
+    icon192Url: logo?.icon192Url || '',
 
-    icon512Url:
-      logo?.icon512Url ||
-      '',
+    icon512Url: logo?.icon512Url || '',
 
-    manifestIconUrl:
-      logo?.manifestIconUrl ||
-      '',
+    manifestIconUrl: logo?.manifestIconUrl || '',
 
-    ancho:
-      Number(
-        logo?.ancho || 0,
-      ),
+    ancho: Number(logo?.ancho || 0),
 
-    alto:
-      Number(
-        logo?.alto || 0,
-      ),
+    alto: Number(logo?.alto || 0),
 
-    formatoOriginal:
-      logo?.formatoOriginal ||
-      '',
+    formatoOriginal: logo?.formatoOriginal || '',
 
-    vectorizado:
-      logo?.vectorizado ??
-      false,
+    vectorizado: logo?.vectorizado ?? false,
 
-    fondoTransparente:
-      logo?.fondoTransparente ??
-      false,
+    fondoTransparente: logo?.fondoTransparente ?? false,
 
-    actualizadoEn:
-      logo?.actualizadoEn ||
-      null,
+    actualizadoEn: logo?.actualizadoEn || null,
 
     /*
      * Información generada por
      * el editor nativo de logo.
      */
-    editor:
-      logo?.editor ||
-      configuracion?.logoEditor ||
-      null,
+    editor: logo?.editor || configuracion?.logoEditor || null,
 
-    storagePath:
-      logo?.storagePath ||
-      configuracion?.logoStoragePath ||
-      '',
+    storagePath: logo?.storagePath || configuracion?.logoStoragePath || '',
   }
 }
 
 /* =========================================================
    SUSCRIPCIÓN GLOBAL AL TEMA
+   =========================================================
+   Mantiene el tema sincronizado en tiempo real con
+   configuracion/general.
+
+   También aplica favicon, título y emite el evento
+   configuracion-global-actualizada para que AdminLayout
+   y otros componentes lo consuman.
+
+   Retorna la función unsubscribe de Firestore.
    ========================================================= */
 
-/**
- * Mantiene el tema sincronizado en tiempo real
- * con configuracion/general.
- *
- * Retorna la función unsubscribe de Firestore.
- */
-export function suscribirTemaGlobal(
-  onError,
-) {
+export function suscribirTemaGlobal(onError) {
   return suscribirConfiguracionAdmin(
     'general',
 
@@ -543,25 +457,82 @@ export function suscribirTemaGlobal(
         return
       }
 
-      aplicarTema(
-        configuracion,
-      )
+      // 1. Aplicar variables CSS en :root
+      aplicarTema(configuracion)
+
+      // 2. Favicon dinámico
+      _aplicarFaviconGlobal(configuracion)
+
+      // 3. Título del documento
+      _aplicarTituloGlobal(configuracion)
+
+      // 4. Notificar a componentes (AdminLayout, etc.)
+      _emitirConfiguracionGlobal(configuracion)
     },
 
     (error) => {
-      console.error(
-        'Error al sincronizar el tema global:',
-        error,
-      )
+      console.error('Error al sincronizar el tema global:', error)
 
-      if (
-        typeof onError ===
-        'function'
-      ) {
-        onError(
-          error,
-        )
+      if (typeof onError === 'function') {
+        onError(error)
       }
     },
   )
+}
+
+/* =========================================================
+   HELPERS INTERNOS DE suscribirTemaGlobal
+   ========================================================= */
+
+function _aplicarFaviconGlobal(configuracion) {
+  if (typeof document === 'undefined') return
+
+  const faviconUrl =
+    configuracion.faviconUrl ||
+    configuracion.logoIcoUrl ||
+    configuracion.logoPngUrl ||
+    configuracion.logoUrl ||
+    ''
+
+  if (!faviconUrl) return
+
+  const version = configuracion.logoVersion || Date.now()
+  const separador = faviconUrl.includes('?') ? '&' : '?'
+  const urlFinal = `${faviconUrl}${separador}v=${version}`
+
+  let favicon = document.querySelector('link[rel="icon"]')
+
+  if (!favicon) {
+    favicon = document.createElement('link')
+    favicon.rel = 'icon'
+    document.head.appendChild(favicon)
+  }
+
+  favicon.href = urlFinal
+}
+
+function _aplicarTituloGlobal(configuracion) {
+  if (typeof document === 'undefined') return
+
+  const nombre = String(
+    configuracion.nombreEmpresa || ''
+  ).trim()
+
+  if (nombre) {
+    document.title = nombre
+  }
+}
+
+function _emitirConfiguracionGlobal(configuracion) {
+  if (typeof window === 'undefined') return
+
+  try {
+    window.dispatchEvent(
+      new CustomEvent('configuracion-global-actualizada', {
+        detail: configuracion,
+      }),
+    )
+  } catch {
+    // noop
+  }
 }

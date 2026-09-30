@@ -2677,3 +2677,325 @@
     animation: none !important;
   }
 }
+
+
+/* =========================================================
+   PANTALLAS GRANDES — 1440px+
+   =========================================================
+   Expansión de contenedores para monitores anchos.
+   ========================================================= */
+
+@media (min-width: 1440px) {
+  .container {
+    width: min(1320px, calc(100% - 80px));
+  }
+
+  .hero__container {
+    width: min(1320px, calc(100% - 80px));
+    gap: 90px;
+  }
+
+  .hero__title {
+    font-size: clamp(62px, 5vw, 80px);
+  }
+
+  .hero__description {
+    font-size: 20px;
+  }
+
+  .solutions__grid,
+  .features__grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 28px;
+  }
+
+  .benefits__grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 28px;
+  }
+
+  .plans__grid {
+    gap: 28px;
+  }
+
+  .admin-layout__content {
+    padding: 36px 48px;
+  }
+
+  .asv {
+    max-width: 1100px;
+  }
+}
+
+@media (min-width: 1920px) {
+  .container {
+    width: min(1600px, calc(100% - 120px));
+  }
+
+  .hero__container {
+    width: min(1600px, calc(100% - 120px));
+  }
+
+  .admin-layout__content {
+    padding: 40px 64px;
+  }
+}
+
+
+/* =========================================================
+   ADMIN SECCION VIEW (AdminSeccionView.vue)
+   =========================================================
+   La vista individual de sección con campos, items y medio.
+   ========================================================= */
+
+@media (max-width: 900px) {
+  .asv {
+    padding: 1.25rem 1.5rem 2.5rem;
+    max-width: 100%;
+  }
+
+  .asv__header {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .asv__header-right {
+    flex-direction: row;
+    justify-content: space-between;
+    width: 100%;
+  }
+
+  .asv__fields {
+    grid-template-columns: 1fr;
+  }
+
+  .asv__field--full {
+    grid-column: auto;
+  }
+}
+
+@media (max-width: 700px) {
+  .asv {
+    padding: 1rem 1rem 2rem;
+  }
+
+  .asv__title {
+    font-size: 1.4rem;
+  }
+
+  .asv__header-right {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .asv__save-btn {
+    width: 100%;
+    text-align: center;
+  }
+
+  .asv__card {
+    padding: 1rem;
+  }
+
+  .asv__item-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .asv__footer-actions {
+    position: sticky;
+    bottom: 0;
+    background: var(--color-background);
+    padding: 0.75rem 0;
+    border-top: 1px solid var(--color-border);
+    margin-top: 0.5rem;
+  }
+
+  .asv__footer-actions .asv__save-btn {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .asv {
+    padding: 0.75rem 0.75rem 2rem;
+  }
+
+  .asv__back {
+    font-size: 0.75rem;
+  }
+
+  .asv__card {
+    border-radius: var(--radius-md);
+    padding: 0.85rem;
+  }
+
+  .asv__card-header {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .asv__add-btn {
+    align-self: flex-start;
+  }
+
+  .asv__item-header {
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+
+  .asv__item-actions button {
+    padding: 0.15rem 0.4rem;
+    font-size: 0.75rem;
+  }
+}
+
+
+/* =========================================================
+   ADMIN SECCIONES INDEX (AdminSeccionesView.vue)
+   ========================================================= */
+
+@media (max-width: 700px) {
+  .secciones-index {
+    padding: 1rem 1rem 2rem;
+  }
+
+  .secciones-index__title {
+    font-size: 1.5rem;
+  }
+
+  .secciones-index__card {
+    padding: 0.85rem 1rem;
+  }
+
+  .secciones-index__card-desc {
+    font-size: 0.72rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .secciones-index__card-icon {
+    display: none;
+  }
+
+  .secciones-index__card-name {
+    font-size: 0.85rem;
+  }
+}
+
+
+/* =========================================================
+   MEDIA FIELD — responsive ajustes
+   ========================================================= */
+
+@media (max-width: 480px) {
+  .mf__url-row {
+    flex-direction: column;
+  }
+
+  .mf__url-btn {
+    width: 100%;
+  }
+
+  .mf__checks {
+    gap: 0.5rem;
+  }
+}
+
+
+/* =========================================================
+   LANDING — SectionBackground con posición derecha/izquierda
+   =========================================================
+   En móvil se apilan encima/debajo del contenido.
+   ========================================================= */
+
+@media (max-width: 700px) {
+  .section-bg--derecha,
+  .section-bg--izquierda {
+    max-width: 100%;
+    border-radius: var(--radius-md);
+  }
+
+  .section-bg--flotante {
+    max-width: 100%;
+    margin: 0 auto;
+  }
+}
+
+
+/* =========================================================
+   CONTACT — responsive mejorado
+   ========================================================= */
+
+@media (max-width: 600px) {
+  .contact__card {
+    padding: 28px 18px;
+  }
+
+  .contact__fields {
+    grid-template-columns: 1fr;
+  }
+
+  .contact__field--full {
+    grid-column: auto;
+  }
+
+  .contact__alternatives {
+    text-align: center;
+  }
+
+  .contact__alternative-buttons {
+    justify-content: center;
+  }
+}
+
+@media (max-width: 420px) {
+  .contact__card {
+    padding: 22px 14px;
+  }
+
+  .contact__form {
+    padding: 0;
+  }
+
+  .contact__privacy {
+    font-size: 0.7rem;
+  }
+}
+
+
+/* =========================================================
+   FOOTER — responsive mejorado para 320px
+   ========================================================= */
+
+@media (max-width: 380px) {
+  .app-footer {
+    padding: 36px 0 16px;
+  }
+
+  .app-footer__container {
+    width: calc(100% - 24px);
+  }
+
+  .app-footer__bottom {
+    gap: 10px;
+  }
+
+  .app-footer__copyright {
+    font-size: 0.72rem;
+  }
+}
+
+
+/* =========================================================
+   UTILITIES GLOBALES — breakpoint extra pequeño
+   ========================================================= */
+
+@media (max-width: 360px) {
+  .container {
+    width: calc(100% - 20px);
+  }
+
+  .section {
+    padding: 48px 0;
+  }
+}

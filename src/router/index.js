@@ -61,6 +61,15 @@ const routes = [
       },
 
       {
+        path: 'secciones/:seccionId',
+        name: 'admin-seccion',
+        component: () =>
+          import(
+            '../views/admin/AdminSeccionView.vue'
+          ),
+      },
+
+      {
         path: 'contenido',
         name: 'admin-contenido',
         component: () =>

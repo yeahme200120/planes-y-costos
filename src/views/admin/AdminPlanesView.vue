@@ -399,7 +399,7 @@ function eliminarCaracteristica(
   if (
     index < 0 ||
     index >=
-      formulario.caracteristicas.length
+    formulario.caracteristicas.length
   ) {
     return
   }
@@ -744,52 +744,26 @@ onUnmounted(() => {
         <h2 class="admin-page__title">
           Planes
         </h2>
-
-        <p
-          class="admin-page__description"
-        >
-          Crea, modifica y administra
-          los planes que aparecen en
-          la landing.
-        </p>
       </div>
 
     </div>
 
-    <div
-      v-if="error"
-      class="admin-alert admin-alert--error"
-      role="alert"
-    >
+    <div v-if="error" class="admin-alert admin-alert--error" role="alert">
       <span>
         {{ error }}
       </span>
 
-      <button
-        type="button"
-        class="admin-alert__close"
-        aria-label="Cerrar mensaje"
-        @click="error = ''"
-      >
+      <button type="button" class="admin-alert__close" aria-label="Cerrar mensaje" @click="error = ''">
         ×
       </button>
     </div>
 
-    <div
-      v-if="mensaje"
-      class="admin-alert admin-alert--success"
-      role="status"
-    >
+    <div v-if="mensaje" class="admin-alert admin-alert--success" role="status">
       <span>
         {{ mensaje }}
       </span>
 
-      <button
-        type="button"
-        class="admin-alert__close"
-        aria-label="Cerrar mensaje"
-        @click="mensaje = ''"
-      >
+      <button type="button" class="admin-alert__close" aria-label="Cerrar mensaje" @click="mensaje = ''">
         ×
       </button>
     </div>
@@ -800,431 +774,31 @@ onUnmounted(() => {
 
         <div>
           <p class="admin-card__eyebrow">
-            {{
-              modoEdicion
-                ? 'EDICIÓN'
-                : 'NUEVO'
-            }}
+            Mis planes
           </p>
 
-          <h3
-            class="admin-card__title"
-          >
-            {{
-              modoEdicion
-                ? 'Editar plan'
-                : 'Crear nuevo plan'
-            }}
-          </h3>
-        </div>
-
-        <button
-          v-if="modoEdicion"
-          type="button"
-          class="admin-button admin-button--secondary"
-          :disabled="guardando"
-          @click="limpiarFormulario"
-        >
-          Cancelar edición
-        </button>
-
-      </div>
-
-      <form
-        class="admin-form"
-        @submit.prevent="guardarPlan"
-      >
-
-        <div
-          class="admin-form__grid admin-form__grid--2"
-        >
-
-          <div
-            class="admin-form__group"
-          >
-
-            <label
-              for="nombre"
-              class="admin-form__label"
-            >
-              Nombre
-            </label>
-
-            <input
-              id="nombre"
-              v-model="
-                formulario.nombre
-              "
-              class="admin-form__input"
-              type="text"
-              maxlength="100"
-              placeholder="Ej. Plan Profesional"
-              :disabled="guardando"
-              required
-            >
-
-          </div>
-
-          <div
-            class="admin-form__group"
-          >
-
-            <label
-              for="precio"
-              class="admin-form__label"
-            >
-              Precio
-            </label>
-
-            <input
-              id="precio"
-              v-model.number="
-                formulario.precio
-              "
-              class="admin-form__input"
-              type="number"
-              min="0"
-              step="0.01"
-              :disabled="guardando"
-              required
-            >
-
-          </div>
-
-        </div>
-
-        <div
-          class="admin-form__group"
-        >
-
-          <label
-            for="descripcion"
-            class="admin-form__label"
-          >
-            Descripción
-          </label>
-
-          <textarea
-            id="descripcion"
-            v-model="
-              formulario.descripcion
-            "
-            class="admin-form__textarea"
-            rows="4"
-            maxlength="500"
-            placeholder="Descripción del plan"
-            :disabled="guardando"
-          ></textarea>
-
-          <p
-            class="admin-form__hint"
-          >
-            Describe brevemente qué
-            incluye este plan.
-          </p>
-
-        </div>
-
-        <div
-          class="admin-form__grid admin-form__grid--3"
-        >
-
-          <div
-            class="admin-form__group"
-          >
-
-            <label
-              for="moneda"
-              class="admin-form__label"
-            >
-              Moneda
-            </label>
-
-            <input
-              id="moneda"
-              v-model="
-                formulario.moneda
-              "
-              class="admin-form__input"
-              type="text"
-              maxlength="10"
-              placeholder="MXN"
-              :disabled="guardando"
-            >
-
-          </div>
-
-          <div
-            class="admin-form__group"
-          >
-
-            <label
-              for="periodo"
-              class="admin-form__label"
-            >
-              Periodo
-            </label>
-
-            <select
-              id="periodo"
-              v-model="
-                formulario.periodo
-              "
-              class="admin-form__select"
-              :disabled="guardando"
-            >
-              <option
-                value="mensual"
-              >
-                Mensual
-              </option>
-
-              <option
-                value="anual"
-              >
-                Anual
-              </option>
-
-              <option
-                value="unico"
-              >
-                Pago único
-              </option>
-            </select>
-
-          </div>
-
-          <div
-            class="admin-form__group"
-          >
-
-            <label
-              for="orden"
-              class="admin-form__label"
-            >
-              Orden
-            </label>
-
-            <input
-              id="orden"
-              v-model.number="
-                formulario.orden
-              "
-              class="admin-form__input"
-              type="number"
-              min="1"
-              step="1"
-              :disabled="guardando"
-              required
-            >
-
-          </div>
-
-        </div>
-
-        <div
-          class="admin-form__options"
-        >
-
-          <label
-            class="admin-checkbox"
-          >
-            <input
-              v-model="
-                formulario.activo
-              "
-              type="checkbox"
-              :disabled="guardando"
-            >
-
-            <span>
-              Activo
-            </span>
-          </label>
-
-          <label
-            class="admin-checkbox"
-          >
-            <input
-              v-model="
-                formulario.destacado
-              "
-              type="checkbox"
-              :disabled="guardando"
-            >
-
-            <span>
-              Plan destacado
-            </span>
-          </label>
-
-        </div>
-
-        <div
-          class="admin-form__group"
-        >
-
-          <label
-            class="admin-form__label"
-            for="nueva-caracteristica"
-          >
-            Características
-          </label>
-
-          <div
-            class="admin-inline-form"
-          >
-
-            <input
-              id="nueva-caracteristica"
-              v-model="
-                nuevaCaracteristica
-              "
-              class="admin-form__input"
-              type="text"
-              maxlength="150"
-              placeholder="Escribe una característica"
-              :disabled="guardando"
-              @keydown="
-                manejarEnterCaracteristica
-              "
-            >
-
-            <button
-              type="button"
-              class="admin-button admin-button--secondary"
-              :disabled="guardando"
-              @click="
-                agregarCaracteristica
-              "
-            >
-              Agregar
-            </button>
-
-          </div>
-
-          <div
-            v-if="
-              formulario
-                .caracteristicas
-                .length
-            "
-            class="admin-tag-list"
-          >
-
-            <div
-              v-for="(
-                caracteristica,
-                index
-              ) in formulario.caracteristicas"
-              :key="`${index}-${caracteristica}`"
-              class="admin-tag"
-            >
-
-              <span>
-                {{ caracteristica }}
-              </span>
-
-              <button
-                type="button"
-                aria-label="Eliminar característica"
-                :disabled="guardando"
-                @click="
-                  eliminarCaracteristica(
-                    index
-                  )
-                "
-              >
-                ×
-              </button>
-
-            </div>
-
-          </div>
-
-          <p
-            v-else
-            class="admin-form__hint"
-          >
-            No se han agregado
-            características.
-          </p>
-
-        </div>
-
-        <div
-          class="admin-form__actions"
-        >
-
-          <button
-            type="submit"
-            class="admin-button admin-button--primary"
-            :disabled="guardando"
-          >
-            {{
-              guardando
-                ? 'Guardando...'
-                : modoEdicion
-                  ? 'Actualizar plan'
-                  : 'Crear plan'
-            }}
-          </button>
-
-        </div>
-
-      </form>
-
-    </section>
-
-    <section class="admin-card">
-
-      <div
-        class="admin-card__header"
-      >
-
-        <div>
-          <p
-            class="admin-card__eyebrow"
-          >
-            FIRESTORE
-          </p>
-
-          <h3
-            class="admin-card__title"
-          >
+          <h3 class="admin-card__title">
             Planes registrados
           </h3>
         </div>
 
-        <span
-          class="admin-count"
-        >
+        <span class="admin-count">
           {{ planes.length }}
         </span>
 
       </div>
 
-      <div
-        v-if="cargando"
-        class="admin-loading"
-      >
-        <div
-          class="admin-spinner"
-        ></div>
+      <div v-if="cargando" class="admin-loading">
+        <div class="admin-spinner"></div>
 
         <span>
           Cargando planes...
         </span>
       </div>
 
-      <div
-        v-else-if="!planes.length"
-        class="admin-empty"
-      >
+      <div v-else-if="!planes.length" class="admin-empty">
 
-        <div
-          class="admin-empty__icon"
-        >
+        <div class="admin-empty__icon">
           $
         </div>
 
@@ -1241,35 +815,20 @@ onUnmounted(() => {
 
       </div>
 
-      <div
-        v-else
-        class="admin-plan-list"
-      >
+      <div v-else class="admin-plan-list">
 
-        <article
-          v-for="plan in planes"
-          :key="plan.id"
-          class="admin-plan-card"
-        >
+        <article v-for="plan in planes" :key="plan.id" class="admin-plan-card">
 
-          <div
-            class="admin-plan-card__header"
-          >
+          <div class="admin-plan-card__header">
 
             <div>
 
-              <div
-                class="admin-plan-card__badges"
-              >
+              <div class="admin-plan-card__badges">
 
-                <span
-                  class="admin-badge"
-                  :class="
-                    plan.activo
-                      ? 'admin-badge--success'
-                      : 'admin-badge--muted'
-                  "
-                >
+                <span class="admin-badge" :class="plan.activo
+                  ? 'admin-badge--success'
+                  : 'admin-badge--muted'
+                  ">
                   {{
                     plan.activo
                       ? 'Activo'
@@ -1277,10 +836,7 @@ onUnmounted(() => {
                   }}
                 </span>
 
-                <span
-                  v-if="plan.destacado"
-                  class="admin-badge admin-badge--accent"
-                >
+                <span v-if="plan.destacado" class="admin-badge admin-badge--accent">
                   Destacado
                 </span>
 
@@ -1296,9 +852,7 @@ onUnmounted(() => {
 
             </div>
 
-            <div
-              class="admin-plan-card__price"
-            >
+            <div class="admin-plan-card__price">
 
               <strong>
                 {{
@@ -1325,16 +879,11 @@ onUnmounted(() => {
 
           </div>
 
-          <p
-            v-if="plan.descripcion"
-            class="admin-plan-card__description"
-          >
+          <p v-if="plan.descripcion" class="admin-plan-card__description">
             {{ plan.descripcion }}
           </p>
 
-          <div
-            class="admin-plan-card__meta"
-          >
+          <div class="admin-plan-card__meta">
 
             <span>
               Orden:
@@ -1353,57 +902,37 @@ onUnmounted(() => {
 
           </div>
 
-          <ul
-            v-if="
-              Array.isArray(
-                plan.caracteristicas
-              ) &&
+          <ul v-if="
+            Array.isArray(
               plan.caracteristicas
-                .length
-            "
-            class="admin-plan-card__features"
-          >
+            ) &&
+            plan.caracteristicas
+              .length
+          " class="admin-plan-card__features">
 
-            <li
-              v-for="(
-                caracteristica,
-                index
-              ) in plan.caracteristicas"
-              :key="`${plan.id}-feature-${index}`"
-            >
+            <li v-for="(
+caracteristica,
+  index
+              ) in plan.caracteristicas" :key="`${plan.id}-feature-${index}`">
               {{ caracteristica }}
             </li>
 
           </ul>
 
-          <div
-            class="admin-card__actions"
-          >
+          <div class="admin-card__actions">
 
-            <button
-              type="button"
-              class="admin-button admin-button--secondary"
-              :disabled="guardando"
-              @click="
-                editarPlan(plan)
-              "
-            >
+            <button type="button" class="admin-button admin-button--secondary" :disabled="guardando" @click="
+              editarPlan(plan)
+              ">
               Editar
             </button>
 
-            <button
-              type="button"
-              class="admin-button"
-              :class="
-                plan.activo
-                  ? 'admin-button--warning'
-                  : 'admin-button--success'
-              "
-              :disabled="guardando"
-              @click="
+            <button type="button" class="admin-button" :class="plan.activo
+              ? 'admin-button--warning'
+              : 'admin-button--success'
+              " :disabled="guardando" @click="
                 cambiarEstado(plan)
-              "
-            >
+                ">
               {{
                 plan.activo
                   ? 'Desactivar'
@@ -1411,14 +940,9 @@ onUnmounted(() => {
               }}
             </button>
 
-            <button
-              type="button"
-              class="admin-button admin-button--danger"
-              :disabled="guardando"
-              @click="
-                eliminar(plan)
-              "
-            >
+            <button type="button" class="admin-button admin-button--danger" :disabled="guardando" @click="
+              eliminar(plan)
+              ">
               Eliminar
             </button>
 

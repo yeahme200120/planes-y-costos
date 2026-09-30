@@ -128,7 +128,7 @@
   border: 1px solid
     color-mix(
       in srgb,
-      var(--color-accent) 18%,
+      var(--color-accent) 28%,
       var(--color-border)
     );
 
@@ -137,11 +137,11 @@
   background:
     color-mix(
       in srgb,
-      var(--color-accent) 12%,
+      var(--color-accent) 14%,
       var(--color-surface)
     );
 
-  color: var(--color-accent);
+  color: var(--color-accent-dark);
 
   font-size: 25px;
   line-height: 1;
@@ -160,7 +160,7 @@
 
   border-color: var(--color-accent);
 
-  color: var(--color-accent-text);
+  color: var(--gradient-accent-text);
 }
 
 /* =========================================================
@@ -170,12 +170,7 @@
 .solution-card__number {
   flex: 0 0 auto;
 
-  color:
-    color-mix(
-      in srgb,
-      var(--color-text-muted) 72%,
-      var(--color-surface)
-    );
+  color: var(--color-text-muted);
 
   font-size: 12px;
   font-weight: 800;
@@ -232,12 +227,7 @@
 
   margin: 12px 0 0;
 
-  color:
-    color-mix(
-      in srgb,
-      var(--color-text) 68%,
-      var(--color-surface)
-    );
+  color: var(--color-text-secondary);
 
   font-size: 15px;
   line-height: 1.7;
@@ -263,11 +253,13 @@
   margin-top: auto;
   padding-top: 22px;
 
-  color: var(--color-accent);
+  color: var(--color-accent-dark);
 
   font-size: 13px;
   font-weight: 800;
   line-height: 1.4;
+
+  text-decoration: none;
 
   transition:
     color var(--transition-fast),
@@ -328,28 +320,13 @@
 
   padding: 40px;
 
-  border: 1px dashed
-    color-mix(
-      in srgb,
-      var(--color-text) 20%,
-      var(--color-border)
-    );
+  border: 1px dashed var(--color-border);
 
   border-radius: var(--radius-lg);
 
-  background:
-    color-mix(
-      in srgb,
-      var(--color-text) 5%,
-      var(--color-background)
-    );
+  background: var(--color-background-alt);
 
-  color:
-    color-mix(
-      in srgb,
-      var(--color-text) 62%,
-      var(--color-background)
-    );
+  color: var(--color-text-secondary);
 
   text-align: center;
 }
@@ -374,11 +351,11 @@
   background:
     color-mix(
       in srgb,
-      var(--color-accent) 12%,
+      var(--color-accent) 14%,
       var(--color-background)
     );
 
-  color: var(--color-accent);
+  color: var(--color-accent-dark);
 
   font-size: 20px;
 }

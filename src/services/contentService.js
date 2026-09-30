@@ -586,7 +586,42 @@ export function subscribeToActiveCollection(
       )
     )
 
-  return onSnapshot(
+  /*
+   * Intentar con query filtrada. Si falla por permisos o índice,
+   * hacer fallback a leer toda la colección y filtrar en cliente.
+   */
+  let unsubscribeFiltrada = null
+  let usandoFallback = false
+
+  function iniciarFallback() {
+    if (usandoFallback) return
+    usandoFallback = true
+
+    console.warn(
+      `[contentService] Fallback a colección completa para "${collectionName}"`
+    )
+
+    return onSnapshot(
+      collectionRef,
+      (snapshot) => {
+        const items =
+          snapshot.docs
+            .map(convertirDocumento)
+            .filter((item) => item.activo !== false)
+
+        callback(items)
+      },
+      (err) => {
+        console.error(
+          `Error en fallback de "${collectionName}":`,
+          err
+        )
+        ejecutarError(onError, err)
+      }
+    )
+  }
+
+  unsubscribeFiltrada = onSnapshot(
     consulta,
     (snapshot) => {
       const items =
@@ -599,17 +634,30 @@ export function subscribeToActiveCollection(
       )
     },
     (error) => {
-      console.error(
-        `Error escuchando la colección "${collectionName}":`,
-        error
-      )
-
-      ejecutarError(
-        onError,
-        error
-      )
+      // Si el error es de índice/permisos, intentar sin filtro
+      const codigo = error?.code || ''
+      if (
+        codigo === 'failed-precondition' ||
+        codigo === 'unimplemented' ||
+        codigo === 'permission-denied'
+      ) {
+        const unsubFallback = iniciarFallback()
+        if (typeof unsubFallback === 'function') {
+          unsubscribeFiltrada = unsubFallback
+        }
+      } else {
+        console.error(
+          `Error escuchando la colección "${collectionName}":`,
+          error
+        )
+        ejecutarError(onError, error)
+      }
     }
   )
+
+  return () => {
+    if (typeof unsubscribeFiltrada === 'function') unsubscribeFiltrada()
+  }
 }
 
 /*

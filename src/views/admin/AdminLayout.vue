@@ -102,6 +102,9 @@ let unsubscribeConfiguracion =
 let timeoutErrorSesion =
   null
 
+let timeoutLimpiarBlobs =
+  null
+
 let componenteActivo =
   false
 
@@ -698,10 +701,22 @@ function manejarConfiguracionGlobal(
 // =========================================================
 
 watch(
-  () =>
-    configuracion
-      .value
-      ?.logoBlob,
+  () => ({
+    logoBlob:
+      configuracion.value?.logoBlob,
+    logoVersion:
+      configuracion.value?.logoVersion,
+    logoMimeType:
+      configuracion.value?.logoMimeType,
+    faviconUrl:
+      configuracion.value?.faviconUrl,
+    logoUrl:
+      configuracion.value?.logoUrl,
+    logoPngUrl:
+      configuracion.value?.logoPngUrl,
+    logoIcoUrl:
+      configuracion.value?.logoIcoUrl,
+  }),
   () => {
     if (
       !componenteActivo
@@ -717,32 +732,8 @@ watch(
       configuracion.value,
     )
   },
-)
-
-// =========================================================
-// WATCHER DE VERSIÓN
-// =========================================================
-
-watch(
-  () =>
-    configuracion
-      .value
-      ?.logoVersion,
-  () => {
-    if (
-      !componenteActivo
-    ) {
-      return
-    }
-
-    /*
-     * La versión permite actualizar el
-     * favicon aunque el navegador tenga
-     * cacheado el recurso anterior.
-     */
-    actualizarFavicon(
-      configuracion.value,
-    )
+  {
+    deep: true,
   },
 )
 
@@ -753,6 +744,20 @@ watch(
 onMounted(() => {
   componenteActivo =
     true
+
+  /*
+   * Si el layout se remonta rápidamente,
+   * cancelamos la limpieza diferida
+   * de los blobs.
+   */
+  if (timeoutLimpiarBlobs) {
+    clearTimeout(
+      timeoutLimpiarBlobs,
+    )
+
+    timeoutLimpiarBlobs =
+      null
+  }
 
   /*
    * Mantener favicon existente
@@ -890,8 +895,28 @@ onUnmounted(() => {
       null
   }
 
-  limpiarLogoBlobUrl()
-  limpiarFaviconBlobUrl()
+  /*
+   * Retrasamos la revocación de los blobs.
+   *
+   * Si el layout se vuelve a montar rápidamente
+   * (navegación entre rutas admin), la suscripción
+   * de Firebase reutilizará la misma URL y no
+   * habrá parpadeo del logo ni del favicon.
+   */
+  if (timeoutLimpiarBlobs) {
+    clearTimeout(
+      timeoutLimpiarBlobs,
+    )
+  }
+
+  timeoutLimpiarBlobs =
+    window.setTimeout(() => {
+      limpiarLogoBlobUrl()
+      limpiarFaviconBlobUrl()
+
+      timeoutLimpiarBlobs =
+        null
+    }, 1500)
 })
 
 // =========================================================
@@ -1483,13 +1508,9 @@ const inicialUsuario =
           aria-label="Navegación administrativa"
         >
 
-          <p
-            class="admin-sidebar__label"
-          >
-            PRINCIPAL
-          </p>
-
           <!-- Dashboard -->
+
+          <p class="admin-sidebar__label">PRINCIPAL</p>
 
           <button
             type="button"
@@ -1505,30 +1526,15 @@ const inicialUsuario =
                 ? 'page'
                 : undefined
             "
-            @click="
-              navegar(
-                '/admin/dashboard',
-              )
-            "
+            @click="navegar('/admin/dashboard')"
           >
-            <span
-              class="admin-sidebar__icon"
-              aria-hidden="true"
-            >
-              ▦
-            </span>
-
-            <span>
-              Dashboard
-            </span>
-
+            <span class="admin-sidebar__icon" aria-hidden="true">▦</span>
+            <span>Dashboard</span>
           </button>
 
-          <p
-            class="admin-sidebar__label"
-          >
-            CONTENIDO
-          </p>
+          <!-- LANDING -->
+
+          <p class="admin-sidebar__label">LANDING</p>
 
           <!-- Planes -->
 
@@ -1537,114 +1543,69 @@ const inicialUsuario =
             class="admin-sidebar__link"
             :class="{
               'admin-sidebar__link--active':
-                route.path.startsWith(
-                  '/admin/planes',
-                ),
+                route.path.startsWith('/admin/planes'),
             }"
             :aria-current="
-              route.path.startsWith(
-                '/admin/planes',
-              )
-                ? 'page'
-                : undefined
+              route.path.startsWith('/admin/planes') ? 'page' : undefined
             "
-            @click="
-              navegar(
-                '/admin/planes',
-              )
-            "
+            @click="navegar('/admin/planes')"
           >
-
-            <span
-              class="admin-sidebar__icon"
-              aria-hidden="true"
-            >
-              $
-            </span>
-
-            <span>
-              Planes
-            </span>
-
+            <span class="admin-sidebar__icon" aria-hidden="true">$</span>
+            <span>Planes</span>
           </button>
 
-          <!-- Secciones -->
+          <!-- Secciones — submenú compacto con scroll interno -->
 
-          <button
-            type="button"
-            class="admin-sidebar__link"
-            :class="{
-              'admin-sidebar__link--active':
-                route.path.startsWith(
-                  '/admin/secciones',
-                ),
-            }"
-            :aria-current="
-              route.path.startsWith(
-                '/admin/secciones',
-              )
-                ? 'page'
-                : undefined
-            "
-            @click="
-              navegar(
-                '/admin/secciones',
-              )
-            "
-          >
-
-            <span
-              class="admin-sidebar__icon"
-              aria-hidden="true"
+          <div class="admin-sidebar__group">
+            <button
+              type="button"
+              class="admin-sidebar__link admin-sidebar__link--group"
+              :class="{
+                'admin-sidebar__link--active':
+                  route.path.startsWith('/admin/secciones'),
+              }"
+              @click="navegar('/admin/secciones')"
             >
-              ◫
-            </span>
+              <span class="admin-sidebar__icon" aria-hidden="true">◫</span>
+              <span>Secciones</span>
+              <span
+                class="admin-sidebar__chevron"
+                :class="{ 'is-open': route.path.startsWith('/admin/secciones') }"
+                aria-hidden="true"
+              >›</span>
+            </button>
 
-            <span>
-              Secciones
-            </span>
-
-          </button>
-
-          <!-- Contenido -->
-
-          <button
-            type="button"
-            class="admin-sidebar__link"
-            :class="{
-              'admin-sidebar__link--active':
-                route.path.startsWith(
-                  '/admin/contenido',
-                ),
-            }"
-            :aria-current="
-              route.path.startsWith(
-                '/admin/contenido',
-              )
-                ? 'page'
-                : undefined
-            "
-            @click="
-              navegar(
-                '/admin/contenido',
-              )
-            "
-          >
-
-            <span
-              class="admin-sidebar__icon"
-              aria-hidden="true"
+            <div
+              v-if="route.path.startsWith('/admin/secciones')"
+              class="admin-sidebar__subgroup"
             >
-              ◈
-            </span>
-
-            <span
-              class="admin-sidebar__link-text"
-            >
-              Contenido
-            </span>
-
-          </button>
+              <button
+                v-for="sec in [
+                  { id: 'header',          nombre: 'Header',          icono: '◉' },
+                  { id: 'hero',            nombre: 'Hero',            icono: '⬡' },
+                  { id: 'soluciones',      nombre: 'Soluciones',      icono: '◈' },
+                  { id: 'caracteristicas', nombre: 'Características', icono: '◇' },
+                  { id: 'beneficios',      nombre: 'Beneficios',      icono: '✦' },
+                  { id: 'planes',          nombre: 'Planes',          icono: '$' },
+                  { id: 'nosotros',        nombre: 'Nosotros',        icono: '⬤' },
+                  { id: 'faq',             nombre: 'FAQ',             icono: '?' },
+                  { id: 'contacto',        nombre: 'Contacto',        icono: '✉' },
+                  { id: 'footer',          nombre: 'Footer',          icono: '—' },
+                ]"
+                :key="sec.id"
+                type="button"
+                class="admin-sidebar__sublink"
+                :class="{
+                  'admin-sidebar__sublink--active':
+                    route.path === `/admin/secciones/${sec.id}`,
+                }"
+                @click="navegar(`/admin/secciones/${sec.id}`)"
+              >
+                <span class="admin-sidebar__sublink-icon" aria-hidden="true">{{ sec.icono }}</span>
+                {{ sec.nombre }}
+              </button>
+            </div>
+          </div>
 
           <!-- Contactos -->
 
@@ -1653,100 +1614,27 @@ const inicialUsuario =
             class="admin-sidebar__link admin-sidebar__link--contacts"
             :class="{
               'admin-sidebar__link--active':
-                route.path.startsWith(
-                  '/admin/contactos',
-                ),
+                route.path.startsWith('/admin/contactos'),
             }"
             :aria-current="
-              route.path.startsWith(
-                '/admin/contactos',
-              )
-                ? 'page'
-                : undefined
+              route.path.startsWith('/admin/contactos') ? 'page' : undefined
             "
-            @click="
-              navegar(
-                '/admin/contactos',
-              )
-            "
+            @click="navegar('/admin/contactos')"
           >
-
+            <span class="admin-sidebar__icon" aria-hidden="true">✉</span>
+            <span class="admin-sidebar__link-text">Contactos</span>
             <span
-              class="admin-sidebar__icon"
-              aria-hidden="true"
-            >
-              ✉
-            </span>
-
-            <span
-              class="admin-sidebar__link-text"
-            >
-              Contactos
-            </span>
-
-            <span
-              v-if="
-                contactosNuevos > 0
-              "
+              v-if="contactosNuevos > 0"
               class="admin-sidebar__badge"
-              :aria-label="
-                `${contactosNuevos} contactos nuevos`
-              "
+              :aria-label="`${contactosNuevos} contactos nuevos`"
             >
-              {{
-                contactosNuevos > 99
-                  ? '99+'
-                  : contactosNuevos
-              }}
+              {{ contactosNuevos > 99 ? '99+' : contactosNuevos }}
             </span>
-
           </button>
 
-          <p
-            class="admin-sidebar__label"
-          >
-            SISTEMA
-          </p>
+          <!-- SISTEMA -->
 
-          <!-- Usuarios -->
-
-          <button
-            type="button"
-            class="admin-sidebar__link"
-            :class="{
-              'admin-sidebar__link--active':
-                route.path.startsWith(
-                  '/admin/usuarios',
-                ),
-            }"
-            :aria-current="
-              route.path.startsWith(
-                '/admin/usuarios',
-              )
-                ? 'page'
-                : undefined
-            "
-            @click="
-              navegar(
-                '/admin/usuarios',
-              )
-            "
-          >
-
-            <span
-              class="admin-sidebar__icon"
-              aria-hidden="true"
-            >
-              👥
-            </span>
-
-            <span
-              class="admin-sidebar__link-text"
-            >
-              Usuarios
-            </span>
-
-          </button>
+          <p class="admin-sidebar__label">SISTEMA</p>
 
           <!-- Configuración -->
 
@@ -1755,35 +1643,15 @@ const inicialUsuario =
             class="admin-sidebar__link"
             :class="{
               'admin-sidebar__link--active':
-                route.path.startsWith(
-                  '/admin/configuracion',
-                ),
+                route.path.startsWith('/admin/configuracion'),
             }"
             :aria-current="
-              route.path.startsWith(
-                '/admin/configuracion',
-              )
-                ? 'page'
-                : undefined
+              route.path.startsWith('/admin/configuracion') ? 'page' : undefined
             "
-            @click="
-              navegar(
-                '/admin/configuracion',
-              )
-            "
+            @click="navegar('/admin/configuracion')"
           >
-
-            <span
-              class="admin-sidebar__icon"
-              aria-hidden="true"
-            >
-              ⚙
-            </span>
-
-            <span>
-              Configuración
-            </span>
-
+            <span class="admin-sidebar__icon" aria-hidden="true">⚙</span>
+            <span>Configuración</span>
           </button>
 
         </nav>

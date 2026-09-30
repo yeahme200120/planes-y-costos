@@ -27,6 +27,11 @@ const empresa = computed(() => {
 
 /* =========================================================
    LOGO
+   =========================================================
+   Prioridad:
+   1. logoBlobUrl (blob URL generada por useLandingContent
+      a partir de logoBlob de Firestore).
+   2. URLs antiguas (compatibilidad).
    ========================================================= */
 
 const logo = computed(() => {
@@ -43,6 +48,18 @@ const logoUrl = computed(() => {
   if (logoConfiguracion.activo === false) {
     return ''
   }
+
+  /* -------------------------------------------------------
+     PRIORIDAD 1: logoBlobUrl
+     ------------------------------------------------------- */
+
+  if (props.configuracion?.logoBlobUrl) {
+    return props.configuracion.logoBlobUrl
+  }
+
+  /* -------------------------------------------------------
+     PRIORIDAD 2: URLs antiguas
+     ------------------------------------------------------- */
 
   return (
     logoConfiguracion.pngUrl ||

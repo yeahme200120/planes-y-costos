@@ -20,6 +20,17 @@
 .section {
   width: 100%;
   padding: 100px 0;
+  position: relative; /* necesario para SectionBackground position:absolute */
+}
+
+/*
+ * Garantiza que el contenido de cualquier sección quede
+ * por encima del fondo dinámico (SectionBackground).
+ * Solo aplica cuando la sección tiene position:relative.
+ */
+.section > .container {
+  position: relative;
+  z-index: 1;
 }
 
 

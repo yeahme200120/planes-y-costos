@@ -7,6 +7,7 @@ import {
 import AppFooter from '../components/sections/AppFooter.vue'
 import AppHeader from '../components/sections/AppHeader.vue'
 import AboutSection from '../components/sections/AboutSection.vue'
+import BenefitsSection from '../components/benefits/BenefitsSection.vue'
 import ContactSection from '../components/sections/ContactSection.vue'
 import FaqSection from '../components/sections/FaqSection.vue'
 import FeaturesSection from '../components/sections/FeaturesSection.vue'
@@ -21,6 +22,7 @@ const {
   hero,
   soluciones,
   caracteristicas,
+  beneficios,
   planesContenido,
   nosotros,
   faq,
@@ -30,6 +32,7 @@ const {
   configuracion,
   cargando,
   error,
+  errorPlanes,
 } = useLandingContent()
 
 /*
@@ -418,36 +421,122 @@ const estilosConfiguracion = computed(() => {
 |--------------------------------------------------------------------------
 | Favicon
 |--------------------------------------------------------------------------
+|
+| Prioriza logoBlob si está disponible.
+| Si no, utiliza faviconUrl o cualquier URL de logo con cache-buster.
+|
 */
 
-function actualizarFavicon(url) {
-  const valor = String(
-    url || ''
-  ).trim()
-
+function convertirAUint8Array(valor) {
   if (!valor) {
+    return null
+  }
+
+  if (valor instanceof Uint8Array) {
+    return valor
+  }
+
+  if (valor instanceof ArrayBuffer) {
+    return new Uint8Array(valor)
+  }
+
+  if (typeof valor.toUint8Array === 'function') {
+    try {
+      return valor.toUint8Array()
+    } catch {
+      return null
+    }
+  }
+
+  if (Array.isArray(valor)) {
+    try {
+      return new Uint8Array(valor)
+    } catch {
+      return null
+    }
+  }
+
+  if (Array.isArray(valor._values)) {
+    try {
+      return new Uint8Array(valor._values)
+    } catch {
+      return null
+    }
+  }
+
+  return null
+}
+
+function actualizarFavicon(config) {
+  if (!config || typeof document === 'undefined') {
     return
   }
 
-  let favicon =
-    document.querySelector(
-      'link[rel="icon"]'
-    )
+  let favicon = document.querySelector('link[rel="icon"]')
 
   if (!favicon) {
-    favicon =
-      document.createElement(
-        'link'
-      )
-
+    favicon = document.createElement('link')
     favicon.rel = 'icon'
-
-    document.head.appendChild(
-      favicon
-    )
+    document.head.appendChild(favicon)
   }
 
-  favicon.href = valor
+  /*
+   * PRIORIDAD 1: logoBlob (bytes en Firestore)
+   */
+  const bytes = convertirAUint8Array(config.logoBlob)
+
+  if (bytes && bytes.byteLength > 0) {
+    try {
+      const mimeType =
+        typeof config.logoMimeType === 'string' &&
+        config.logoMimeType.trim()
+          ? config.logoMimeType.trim()
+          : 'image/jpeg'
+
+      const blob = new Blob([bytes], { type: mimeType })
+      const url = URL.createObjectURL(blob)
+
+      favicon.type = mimeType
+      favicon.href = url
+
+      // Reinsertar para forzar refresco en navegadores tercos
+      const clon = favicon.cloneNode(true)
+      favicon.parentNode?.replaceChild(clon, favicon)
+
+      return
+    } catch (err) {
+      console.error(
+        'Error generando favicon desde logoBlob:',
+        err,
+      )
+    }
+  }
+
+  /*
+   * PRIORIDAD 2: URL con cache-buster
+   */
+  const url =
+    config.faviconUrl ||
+    config.logoIcoUrl ||
+    config.logoPngUrl ||
+    config.logoUrl ||
+    '/img/logo.jpg'
+
+  const version = config.logoVersion
+
+  let urlFinal = url
+
+  if (version) {
+    const separador = url.includes('?') ? '&' : '?'
+    urlFinal = `${url}${separador}v=${version}`
+  }
+
+  favicon.type =
+    config.faviconMimeType ||
+    config.logoMimeType ||
+    ''
+
+  favicon.href = urlFinal
 }
 
 /*
@@ -533,7 +622,7 @@ watch(
     }
 
     actualizarFavicon(
-      config.faviconUrl
+      config
     )
 
     actualizarTitulo(
@@ -602,7 +691,14 @@ watch(
         :contenido="planesContenido"
         :planes="planes"
         :cargando="cargando"
-        :error="error"
+        :error="errorPlanes"
+      />
+
+      <!-- Beneficios -->
+
+      <BenefitsSection
+        v-if="beneficios"
+        :contenido="beneficios"
       />
 
       <!-- Nosotros -->

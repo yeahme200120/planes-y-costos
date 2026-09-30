@@ -1808,3 +1808,12 @@ animation-duration: 0.01ms !important;
 animation-iteration-count: 1 !important;
 }
 }
+
+/* Indicador de campo binario — no editable en Datos generales */
+.admin-configuracion__field-binary {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+  font-style: italic;
+  padding: 0.4rem 0;
+}

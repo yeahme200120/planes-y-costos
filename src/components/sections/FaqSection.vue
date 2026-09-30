@@ -1,6 +1,7 @@
 <script setup>
 import { computed } from 'vue'
-
+import SectionBackground from './SectionBackground.vue'
+import { medioTieneContenido, medioEsFondo } from '../../services/mediaService.js'
 import FaqItem from './FaqItem.vue'
 
 const props = defineProps({
@@ -79,9 +80,25 @@ const mensajeVacio = computed(() => {
     v-if="activo"
     id="faq"
     class="section faq"
+    style="position: relative;"
     aria-labelledby="faq-title"
   >
-    <div class="container">
+    <SectionBackground
+      v-if="medioEsFondo(contenido?.medio)"
+      :medio="contenido?.medio"
+    />
+    <div
+      class="container"
+      :class="{
+        'section-with-media': medioTieneContenido(contenido?.medio) && !medioEsFondo(contenido?.medio),
+        'section-with-media--right': contenido?.medio?.posicion === 'derecha',
+        'section-with-media--left': contenido?.medio?.posicion === 'izquierda',
+      }"
+    >
+      <SectionBackground
+        v-if="medioTieneContenido(contenido?.medio) && !medioEsFondo(contenido?.medio)"
+        :medio="contenido?.medio"
+      />
 
       <header
         v-if="tieneEncabezado"

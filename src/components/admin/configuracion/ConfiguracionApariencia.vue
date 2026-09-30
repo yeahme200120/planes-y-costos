@@ -1,13 +1,22 @@
 <script setup>
 import {
   computed,
+  nextTick,
+  onBeforeUnmount,
+  onMounted,
   ref,
   watch,
 } from 'vue'
 
 import {
-  generarPaleta,
+  generarPaletaCompleta,
+  generarDegradadosDesdePaleta,
   normalizarHex,
+  normalizarDegradado,
+  estiloDegradado,
+  obtenerAngulosArmonia,
+  puntoARuedaHex,
+  hexARuedaCoordenadas,
 } from '../../../services/colorPalette'
 
 /* =========================================================
@@ -30,10 +39,6 @@ const props = defineProps({
     default: () => [],
   },
 
-  /*
-   * Este prop se conserva para mantener
-   * compatibilidad con el componente padre.
-   */
   colorBase: {
     type: String,
     default: '',
@@ -53,48 +58,8 @@ const emit = defineEmits([
    CONSTANTES
    ========================================================= */
 
-/*
- * Ya no utilizamos un color visual fijo como respaldo
- * principal de la interfaz.
- *
- * Este valor solamente sirve como último recurso técnico
- * para el generador de paletas cuando no existe ningún
- * color configurado.
- */
 const COLOR_RESPALDO = '#4678EC'
-
-const camposPaleta = [
-  'primary',
-  'primaryLight',
-  'primaryDark',
-  'primaryText',
-
-  'secondary',
-  'secondaryLight',
-  'secondaryDark',
-  'secondaryText',
-
-  'accent',
-  'accentLight',
-  'accentDark',
-  'accentText',
-
-  'background',
-  'backgroundAlt',
-
-  'surface',
-  'surfaceAlt',
-
-  'text',
-  'textSecondary',
-  'textMuted',
-
-  'border',
-
-  'success',
-  'danger',
-  'warning',
-]
+const TAMANO_RUEDA = 260
 
 const armoniasPermitidas = [
   'complementaria',
@@ -103,86 +68,29 @@ const armoniasPermitidas = [
   'monocromatica',
 ]
 
-/*
- * Respaldo interno para los grupos de colores.
- *
- * Si el componente padre envía camposColores,
- * se utilizarán esos valores.
- *
- * Si no los envía, el componente seguirá mostrando
- * correctamente todos los campos conocidos.
- */
-const camposColoresPredeterminados = [
-  {
-    grupo: 'Principal',
-    campos: [
-      ['primary', 'Principal'],
-      ['primaryLight', 'Principal claro'],
-      ['primaryDark', 'Principal oscuro'],
-      ['primaryText', 'Texto principal'],
-    ],
-  },
+const etiquetasArmonia = {
+  complementaria: 'Complementaria',
+  analogica: 'Análoga',
+  triadica: 'Triádica',
+  monocromatica: 'Monocromática',
+}
 
-  {
-    grupo: 'Secundario',
-    campos: [
-      ['secondary', 'Secundario'],
-      ['secondaryLight', 'Secundario claro'],
-      ['secondaryDark', 'Secundario oscuro'],
-      ['secondaryText', 'Texto secundario'],
-    ],
-  },
-
-  {
-    grupo: 'Acento',
-    campos: [
-      ['accent', 'Acento'],
-      ['accentLight', 'Acento claro'],
-      ['accentDark', 'Acento oscuro'],
-      ['accentText', 'Texto de acento'],
-    ],
-  },
-
-  {
-    grupo: 'Superficies',
-    campos: [
-      ['background', 'Fondo'],
-      ['backgroundAlt', 'Fondo alternativo'],
-      ['surface', 'Superficie'],
-      ['surfaceAlt', 'Superficie alternativa'],
-    ],
-  },
-
-  {
-    grupo: 'Texto',
-    campos: [
-      ['text', 'Texto'],
-      ['textSecondary', 'Texto secundario'],
-      ['textMuted', 'Texto atenuado'],
-    ],
-  },
-
-  {
-    grupo: 'Estados',
-    campos: [
-      ['border', 'Borde'],
-      ['success', 'Éxito'],
-      ['danger', 'Peligro'],
-      ['warning', 'Advertencia'],
-    ],
-  },
-]
-
-/*
- * Nombres amigables para los degradados almacenados
- * dentro de configuracion.degradados.
- */
 const nombresDegradados = {
   primary: 'Principal',
   accent: 'Acento',
   dark: 'Oscuro',
   soft: 'Suave',
 }
+
+const clavesDegradados = ['primary', 'accent', 'dark', 'soft']
+
+const camposOverrides = [
+  'primaryGradientText',
+  'secondaryGradientText',
+  'accentGradientText',
+  'darkGradientText',
+  'softGradientText',
+]
 
 /* =========================================================
    UTILIDADES
@@ -195,175 +103,36 @@ function esHexValido(valor) {
 }
 
 function normalizarColor(valor) {
-  if (!esHexValido(valor)) {
-    return null
-  }
-
+  if (!esHexValido(valor)) return null
   try {
-    const color = normalizarHex(
-      String(valor).trim(),
-    )
-
-    return esHexValido(color)
-      ? color
-      : null
-  } catch (error) {
-    console.error(
-      'Error normalizando color:',
-      error,
-    )
-
+    return normalizarHex(String(valor).trim())
+  } catch {
     return null
   }
 }
 
 function obtenerColorValido(...valores) {
   for (const valor of valores) {
-    const color =
-      normalizarColor(valor)
-
-    if (color) {
-      return color
-    }
+    const color = normalizarColor(valor)
+    if (color) return color
   }
-
   return null
 }
 
 function obtenerNumero(valor, respaldo) {
   const numero = Number(valor)
-
-  if (!Number.isFinite(numero)) {
-    return respaldo
-  }
-
-  return Math.min(
-    100,
-    Math.max(0, numero),
-  )
+  if (!Number.isFinite(numero)) return respaldo
+  return Math.min(100, Math.max(0, numero))
 }
 
 function obtenerArmonia(valor) {
-  if (
-    armoniasPermitidas.includes(valor)
-  ) {
-    return valor
-  }
-
+  if (armoniasPermitidas.includes(valor)) return valor
   return 'triadica'
 }
 
-/*
- * Normaliza el ángulo del degradado.
- *
- * Firebase puede almacenar angulo135,
- * o eventualmente angulo / angle / direccion.
- */
-function obtenerAnguloDegradado(datos) {
-  if (
-    !datos ||
-    typeof datos !== 'object'
-  ) {
-    return 135
-  }
-
-  const candidatos = [
-    datos.angulo135,
-    datos.angulo,
-    datos.angle,
-    datos.direccion,
-  ]
-
-  for (const valor of candidatos) {
-    const numero = Number(valor)
-
-    if (Number.isFinite(numero)) {
-      return numero
-    }
-  }
-
-  return 135
-}
-
 /* =========================================================
-   OBTENER CAMPOS DE COLORES
+   ESTADO DEL COLOR BASE
    ========================================================= */
-
-const camposColoresVisibles = computed(() => {
-  if (
-    Array.isArray(props.camposColores) &&
-    props.camposColores.length > 0
-  ) {
-    return props.camposColores
-  }
-
-  return camposColoresPredeterminados
-})
-
-/* =========================================================
-   OBTENER VALOR PREDETERMINADO
-   ========================================================= */
-
-function obtenerValorPredeterminado(campo) {
-  return obtenerColorValido(
-    props.coloresPredeterminados?.[campo],
-  )
-}
-
-/* =========================================================
-   OBTENER VALOR DE COLOR
-   ========================================================= */
-
-/*
- * Prioridad:
- *
- * 1. configuración directa
- * 2. configuración.paleta
- * 3. color predeterminado
- *
- * IMPORTANTE:
- *
- * Ya no utilizamos un color azul de respaldo para todos
- * los campos. Eso provocaba que background, text, border,
- * surface, etc. pudieran terminar mostrando el mismo color.
- */
-
-function obtenerValorCampo(campo) {
-  const valorConfiguracion =
-    props.configuracion?.[campo]
-
-  const valorPaleta =
-    props.configuracion?.paleta?.[campo]
-
-  const valorPredeterminado =
-    obtenerValorPredeterminado(campo)
-
-  return (
-    obtenerColorValido(
-      valorConfiguracion,
-      valorPaleta,
-      valorPredeterminado,
-    ) ||
-    ''
-  )
-}
-
-/* =========================================================
-   COLOR BASE
-   ========================================================= */
-
-/*
- * Prioridad:
- *
- * 1. primary guardado en configuración
- * 2. paleta.base guardado en Firebase
- * 3. colorBase recibido por prop
- * 4. primary predeterminado
- * 5. respaldo técnico
- *
- * La configuración guardada debe tener prioridad sobre
- * un prop que solamente se utiliza como compatibilidad.
- */
 
 const colorBase = ref(
   obtenerColorValido(
@@ -376,1264 +145,983 @@ const colorBase = ref(
 )
 
 /* =========================================================
-   CONFIGURACIÓN DE PALETA
+   CONFIGURACIÓN DE ARMONÍA
    ========================================================= */
 
 const armoniaSeleccionada = ref(
-  obtenerArmonia(
-    props.configuracion?.paleta?.armonia,
-  ),
+  obtenerArmonia(props.configuracion?.paleta?.armonia),
 )
 
 const suavidad = ref(
-  obtenerNumero(
-    props.configuracion?.paleta?.suavidad,
-    45,
-  ),
+  obtenerNumero(props.configuracion?.paleta?.suavidad, 45),
 )
 
 const contraste = ref(
-  obtenerNumero(
-    props.configuracion?.paleta?.contraste,
-    55,
-  ),
+  obtenerNumero(props.configuracion?.paleta?.contraste, 55),
 )
 
 /* =========================================================
-   ESTADO DE LA VISTA
+   ESTADO DE LA RUEDA
    ========================================================= */
 
-const coloresGenerados = ref({})
-
-const mostrarColoresManuales =
-  ref(false)
+const ruedaRef = ref(null)
+const arrastrando = ref(false)
 
 /* =========================================================
    PALETA GENERADA
    ========================================================= */
 
 const paletaGenerada = computed(() => {
-  const base =
-    obtenerColorValido(
-      colorBase.value,
-      props.configuracion?.primary,
-      props.coloresPredeterminados?.primary,
-      COLOR_RESPALDO,
-    ) || COLOR_RESPALDO
-
   try {
-    const resultado =
-      generarPaleta(
-        base,
-        {
-          armonia:
-            armoniaSeleccionada.value,
+    const base =
+      obtenerColorValido(
+        colorBase.value,
+        props.configuracion?.primary,
+        props.coloresPredeterminados?.primary,
+        COLOR_RESPALDO,
+      ) || COLOR_RESPALDO
 
-          suavidad:
-            obtenerNumero(
-              suavidad.value,
-              45,
-            ),
-
-          contraste:
-            obtenerNumero(
-              contraste.value,
-              55,
-            ),
-        },
-      )
-
-    if (
-      !resultado ||
-      typeof resultado !== 'object'
-    ) {
-      return {}
-    }
-
-    const paletaValida = {}
-
-    Object.entries(resultado).forEach(
-      ([campo, valor]) => {
-        /*
-         * Solo aceptamos campos reconocidos.
-         * Así evitamos introducir propiedades
-         * desconocidas en la configuración.
-         */
-
-        if (
-          !camposPaleta.includes(campo)
-        ) {
-          return
-        }
-
-        const color =
-          normalizarColor(valor)
-
-        if (color) {
-          paletaValida[campo] =
-            color
-        }
-      },
-    )
-
-    return paletaValida
+    return generarPaletaCompleta(base, {
+      armonia: armoniaSeleccionada.value,
+      suavidad: obtenerNumero(suavidad.value, 45),
+      contraste: obtenerNumero(contraste.value, 55),
+    })
   } catch (error) {
-    console.error(
-      'Error al generar paleta:',
-      error,
-    )
-
+    console.error('Error generando paleta:', error)
     return {}
   }
 })
 
 /* =========================================================
-   DEGRADADOS CONFIGURADOS EN FIREBASE
+   COLORES DE LA ARMONÍA
    ========================================================= */
 
-/*
- * Firebase mantiene la estructura original:
- *
- * degradados: {
- *   primary: {
- *     inicio: '#DAFBFB',
- *     fin: '#7AF5F5',
- *     angulo135: 135
- *   },
- *   ...
- * }
- *
- * Aquí solamente transformamos esos datos para
- * mostrarlos visualmente.
- *
- * NO modificamos el objeto original.
- * NO convertimos el objeto a JSON.
- */
+const coloresArmonia = computed(() => {
+  const paleta = paletaGenerada.value
+  const angulos = obtenerAngulosArmonia(armoniaSeleccionada.value)
+  const base = normalizarHex(colorBase.value)
 
-const degradadosConfigurados = computed(() => {
-  const degradados =
-    props.configuracion?.degradados
+  const colores = [
+    paleta.primary || base,
+    paleta.secondary,
+    paleta.accent,
+  ].filter(Boolean)
 
-  if (
-    !degradados ||
-    typeof degradados !== 'object' ||
-    Array.isArray(degradados)
-  ) {
-    return []
-  }
+  return angulos.map((angulo, index) => {
+    const color = colores[index] || base
+    const coords = hexARuedaCoordenadas(color)
 
-  return Object.entries(degradados)
-    .map(([clave, datos]) => {
-      if (
-        !datos ||
-        typeof datos !== 'object' ||
-        Array.isArray(datos)
-      ) {
-        return null
-      }
-
-      const inicio =
-        obtenerColorValido(
-          datos.inicio,
-          datos.start,
-          datos.desde,
-          datos.colorInicio,
-        )
-
-      const fin =
-        obtenerColorValido(
-          datos.fin,
-          datos.end,
-          datos.hasta,
-          datos.colorFin,
-        )
-
-      /*
-       * Si alguno de los dos colores no existe,
-       * intentamos mantener el degradado visualmente
-       * sin inventar valores a partir de JSON.
-       */
-      if (!inicio && !fin) {
-        return null
-      }
-
-      const colorInicio =
-        inicio ||
-        fin ||
-        obtenerValorCampo('primary') ||
-        COLOR_RESPALDO
-
-      const colorFin =
-        fin ||
-        inicio ||
-        obtenerValorCampo('primaryLight') ||
-        COLOR_RESPALDO
-
-      const angulo =
-        obtenerAnguloDegradado(datos)
-
-      return {
-        clave,
-
-        nombre:
-          nombresDegradados[clave] ||
-          clave,
-
-        inicio:
-          colorInicio,
-
-        fin:
-          colorFin,
-
-        angulo,
-
-        estilo:
-          `linear-gradient(${angulo}deg, ${colorInicio} 0%, ${colorFin} 100%)`,
-      }
-    })
-    .filter(Boolean)
+    return { angulo, color, coords }
+  })
 })
 
 /* =========================================================
-   GENERAR / REGENERAR PALETA
+   DEGRADADOS EDITABLES
    ========================================================= */
 
-function regenerarPaleta() {
-  coloresGenerados.value = {
-    ...paletaGenerada.value,
-  }
+const degradadosLocales = ref({})
+
+function inicializarDegradados() {
+  const originales = props.configuracion?.degradados || {}
+  const resultado = {}
+
+  clavesDegradados.forEach((clave) => {
+    resultado[clave] = normalizarDegradado(originales[clave])
+  })
+
+  degradadosLocales.value = resultado
 }
 
-/* =========================================================
-   CAMBIAR COLOR BASE
-   ========================================================= */
+function actualizarDegradado(clave, campo, valor) {
+  if (!degradadosLocales.value[clave]) {
+    degradadosLocales.value[clave] = normalizarDegradado(null)
+  }
 
-function cambiarColorBase(valor) {
-  const nuevoColor =
-    normalizarColor(valor)
-
-  if (!nuevoColor) {
+  if (campo === 'angulo') {
+    const numero = Number(valor)
+    degradadosLocales.value[clave].angulo = Number.isFinite(numero)
+      ? ((numero % 360) + 360) % 360
+      : 135
     return
   }
 
-  colorBase.value =
-    nuevoColor
-
-  emit(
-    'actualizar-color',
-    {
-      campo: 'primary',
-      valor: nuevoColor,
-    },
-  )
-
-  regenerarPaleta()
+  const color = normalizarColor(valor)
+  if (color) {
+    degradadosLocales.value[clave][campo] = color
+  }
 }
 
 /* =========================================================
-   APLICAR PALETA GENERADA
+   RUEDA CROMÁTICA — INTERACCIÓN
    ========================================================= */
 
-function aplicarPaletaGenerada() {
-  const paleta = {
-    ...paletaGenerada.value,
+function obtenerCoordenadasRelativas(event) {
+  const rect = ruedaRef.value?.getBoundingClientRect()
+  if (!rect) return { x: 0, y: 0 }
+
+  const centroX = rect.left + rect.width / 2
+  const centroY = rect.top + rect.height / 2
+
+  const x = (event.clientX - centroX) / (rect.width / 2)
+  const y = (event.clientY - centroY) / (rect.height / 2)
+
+  return {
+    x: Math.max(-1, Math.min(1, x)),
+    y: Math.max(-1, Math.min(1, y)),
   }
+}
 
-  const cambios = {}
+function actualizarColorDesdeRueda(event) {
+  if (!ruedaRef.value) return
 
-  camposPaleta.forEach(
-    (campo) => {
-      const color =
-        normalizarColor(
-          paleta[campo],
-        )
+  const { x, y } = obtenerCoordenadasRelativas(event)
+  const nuevoColor = puntoARuedaHex(x, y, 75, 50)
+  const colorNormalizado = normalizarColor(nuevoColor)
 
-      if (!color) {
-        return
-      }
+  if (colorNormalizado) {
+    colorBase.value = colorNormalizado
+  }
+}
 
-      cambios[campo] =
-        color
-    },
+function iniciarArrastre(event) {
+  event.preventDefault()
+  arrastrando.value = true
+  actualizarColorDesdeRueda(event)
+
+  window.addEventListener('mousemove', manejarArrastre)
+  window.addEventListener('mouseup', detenerArrastre)
+  window.addEventListener('touchmove', manejarArrastre, { passive: false })
+  window.addEventListener('touchend', detenerArrastre)
+}
+
+function manejarArrastre(event) {
+  if (!arrastrando.value) return
+  if (event.cancelable) event.preventDefault()
+  actualizarColorDesdeRueda(event)
+}
+
+function detenerArrastre() {
+  arrastrando.value = false
+  window.removeEventListener('mousemove', manejarArrastre)
+  window.removeEventListener('mouseup', detenerArrastre)
+  window.removeEventListener('touchmove', manejarArrastre)
+  window.removeEventListener('touchend', detenerArrastre)
+}
+
+onBeforeUnmount(() => {
+  detenerArrastre()
+})
+
+/* =========================================================
+   MARCADORES
+   ========================================================= */
+
+const marcadorPrincipal = computed(() => {
+  const coords = hexARuedaCoordenadas(colorBase.value)
+  return {
+    left: `${50 + coords.x * 50}%`,
+    top: `${50 + coords.y * 50}%`,
+  }
+})
+
+function posicionMarcador(color) {
+  const coords = hexARuedaCoordenadas(color)
+  return {
+    left: `${50 + coords.x * 50}%`,
+    top: `${50 + coords.y * 50}%`,
+  }
+}
+
+/* =========================================================
+   APLICAR PALETA COMPLETA
+   ========================================================= */
+
+function aplicarPaletaCompleta() {
+  const paleta = paletaGenerada.value
+
+  if (!paleta || Object.keys(paleta).length === 0) return
+
+  const cambios = { ...paleta }
+
+  cambios.degradados = JSON.parse(
+    JSON.stringify(degradadosLocales.value),
   )
-
-  const base =
-    normalizarColor(
-      colorBase.value,
-    ) ||
-    obtenerColorValido(
-      props.configuracion?.primary,
-      props.coloresPredeterminados?.primary,
-      COLOR_RESPALDO,
-    ) ||
-    COLOR_RESPALDO
-
-  /*
-   * PRIMARY siempre representa
-   * el color base de la marca.
-   */
-
-  cambios.primary =
-    base
-
-  /*
-   * Si el generador no devuelve textos
-   * de contraste, conservamos los existentes
-   * o los predeterminados.
-   *
-   * No forzamos #FFFFFF porque el texto debe
-   * poder configurarse globalmente.
-   */
-
-  const textosContraste = [
-    'primaryText',
-    'secondaryText',
-    'accentText',
-  ]
-
-  textosContraste.forEach(
-    (campo) => {
-      if (
-        normalizarColor(
-          cambios[campo],
-        )
-      ) {
-        return
-      }
-
-      const existente =
-        obtenerColorValido(
-          props.configuracion?.[campo],
-          props.configuracion?.paleta?.[campo],
-          props.coloresPredeterminados?.[campo],
-        )
-
-      if (existente) {
-        cambios[campo] =
-          existente
-      }
-    },
-  )
-
-  /*
-   * Guardar también los parámetros
-   * utilizados para generar la paleta.
-   */
 
   cambios.paleta = {
-    ...(
-      props.configuracion?.paleta &&
-      typeof props.configuracion.paleta === 'object'
-        ? props.configuracion.paleta
-        : {}
-    ),
-
-    base,
-
-    armonia:
-      obtenerArmonia(
-        armoniaSeleccionada.value,
-      ),
-
-    suavidad:
-      obtenerNumero(
-        suavidad.value,
-        45,
-      ),
-
-    contraste:
-      obtenerNumero(
-        contraste.value,
-        55,
-      ),
+    ...(props.configuracion?.paleta || {}),
+    base: normalizarHex(colorBase.value),
+    armonia: armoniaSeleccionada.value,
+    suavidad: obtenerNumero(suavidad.value, 45),
+    contraste: obtenerNumero(contraste.value, 55),
   }
-
-  emit(
-    'actualizar-paleta',
-    cambios,
-  )
-}
-
-/* =========================================================
-   ACTUALIZAR COLOR MANUAL
-   ========================================================= */
-
-function actualizarCampoColor(
-  campo,
-  valor,
-) {
-  if (
-    !camposPaleta.includes(campo)
-  ) {
-    return
-  }
-
-  const nuevoColor =
-    normalizarColor(valor)
-
-  if (!nuevoColor) {
-    return
-  }
-
-  emit(
-    'actualizar-color',
-    {
-      campo,
-      valor: nuevoColor,
-    },
-  )
 
   /*
-   * Si se modifica PRIMARY,
-   * también se modifica el color base
-   * utilizado para generar la paleta.
+   * Incluir overrides manuales si el modo está activo.
    */
+  if (modoManualActivo.value) {
+    camposOverrides.forEach((campo) => {
+      const valor = props.configuracion?.[campo]
+      if (valor) cambios[campo] = valor
+    })
+  }
+
+  emit('actualizar-paleta', cambios)
+}
+
+/* =========================================================
+   REGENERAR DEGRADADOS DESDE LA PALETA
+   ========================================================= */
+
+function regenerarDegradadosDesdePaleta() {
+  const paleta = paletaGenerada.value
+
+  if (!paleta || Object.keys(paleta).length === 0) return
+
+  const nuevos = generarDegradadosDesdePaleta(paleta)
+
+  Object.entries(nuevos).forEach(([clave, degradado]) => {
+    degradadosLocales.value[clave] = normalizarDegradado(degradado)
+  })
+}
+
+/* =========================================================
+   COLORES MANUALES
+   ========================================================= */
+
+const camposColoresVisibles = computed(() => {
+  if (
+    Array.isArray(props.camposColores) &&
+    props.camposColores.length > 0
+  ) {
+    return props.camposColores
+  }
+
+  return [
+    {
+      grupo: 'Principal',
+      campos: [
+        ['primary', 'Principal'],
+        ['primaryLight', 'Principal claro'],
+        ['primaryDark', 'Principal oscuro'],
+        ['primaryText', 'Texto principal'],
+      ],
+    },
+    {
+      grupo: 'Secundario',
+      campos: [
+        ['secondary', 'Secundario'],
+        ['secondaryLight', 'Secundario claro'],
+        ['secondaryDark', 'Secundario oscuro'],
+        ['secondaryText', 'Texto secundario'],
+      ],
+    },
+    {
+      grupo: 'Acento',
+      campos: [
+        ['accent', 'Acento'],
+        ['accentLight', 'Acento claro'],
+        ['accentDark', 'Acento oscuro'],
+        ['accentText', 'Texto de acento'],
+      ],
+    },
+    {
+      grupo: 'Superficies',
+      campos: [
+        ['background', 'Fondo'],
+        ['backgroundAlt', 'Fondo alternativo'],
+        ['surface', 'Superficie'],
+        ['surfaceAlt', 'Superficie alternativa'],
+      ],
+    },
+    {
+      grupo: 'Texto',
+      campos: [
+        ['text', 'Texto'],
+        ['textSecondary', 'Texto secundario'],
+        ['textMuted', 'Texto atenuado'],
+      ],
+    },
+    {
+      grupo: 'Estados',
+      campos: [
+        ['border', 'Borde'],
+        ['success', 'Éxito'],
+        ['danger', 'Peligro'],
+        ['warning', 'Advertencia'],
+      ],
+    },
+    {
+      grupo: 'Texto sobre degradados',
+      campos: [
+        ['primaryGradientText', 'Texto sobre primary'],
+        ['secondaryGradientText', 'Texto sobre secondary'],
+        ['accentGradientText', 'Texto sobre accent'],
+        ['darkGradientText', 'Texto sobre dark'],
+        ['softGradientText', 'Texto sobre soft'],
+      ],
+    },
+  ]
+})
+
+const mostrarColoresManuales = ref(false)
+const modoManualActivo = ref(false)
+
+function toggleModoManual() {
+  modoManualActivo.value = !modoManualActivo.value
+  mostrarColoresManuales.value = modoManualActivo.value
+}
+
+function restablecerAutomatico() {
+  camposOverrides.forEach((campo) => {
+    emit('actualizar-paleta', { [campo]: '' })
+  })
+
+  regenerarDegradadosDesdePaleta()
+
+  modoManualActivo.value = false
+  mostrarColoresManuales.value = false
+}
+
+function obtenerValorCampo(campo) {
+  const directo = props.configuracion?.[campo]
+  const paleta = props.configuracion?.paleta?.[campo]
+  const generado = paletaGenerada.value?.[campo]
+
+  return (
+    obtenerColorValido(directo, paleta, generado) || '#FFFFFF'
+  )
+}
+
+function actualizarCampoColor(campo, valor) {
+  const color = normalizarColor(valor)
+  if (!color) return
+
+  emit('actualizar-color', { campo, valor: color })
 
   if (campo === 'primary') {
-    colorBase.value =
-      nuevoColor
-
-    regenerarPaleta()
+    colorBase.value = color
   }
 }
 
 /* =========================================================
-   RESTABLECER COLORES
+   SINCRONIZACIÓN CON FIREBASE
    ========================================================= */
 
-function restablecerColores() {
-  const defaults = {
-    ...props.coloresPredeterminados,
-  }
-
-  const coloresRestaurados = {}
-
-  camposPaleta.forEach(
-    (campo) => {
-      const color =
-        normalizarColor(
-          defaults[campo],
-        )
-
-      if (!color) {
-        return
-      }
-
-      coloresRestaurados[campo] =
-        color
-    },
-  )
-
-  const primary =
-    obtenerColorValido(
-      defaults.primary,
-      COLOR_RESPALDO,
-    ) || COLOR_RESPALDO
-
-  colorBase.value =
-    primary
-
-  armoniaSeleccionada.value =
-    'triadica'
-
-  suavidad.value = 45
-  contraste.value = 55
-
-  const cambios = {
-    ...coloresRestaurados,
-
-    primary,
-
-    paleta: {
-      ...(
-        props.configuracion?.paleta &&
-        typeof props.configuracion.paleta === 'object'
-          ? props.configuracion.paleta
-          : {}
-      ),
-
-      base: primary,
-      armonia: 'triadica',
-      suavidad: 45,
-      contraste: 55,
-    },
-  }
-
-  emit(
-    'actualizar-paleta',
-    cambios,
-  )
-
-  regenerarPaleta()
-}
-
-/* =========================================================
-   SINCRONIZACIÓN DEL COLOR BASE DESDE EL PADRE
-   ========================================================= */
-
-watch(
-  () => props.colorBase,
-  (nuevoValor) => {
-    const nuevoColor =
-      normalizarColor(nuevoValor)
-
-    if (!nuevoColor) {
-      return
-    }
-
-    /*
-     * Si existe una configuración real en Firebase,
-     * ésta tiene prioridad.
-     */
-
-    const primaryConfigurado =
-      normalizarColor(
-        props.configuracion?.primary,
-      )
-
-    const baseConfigurada =
-      normalizarColor(
-        props.configuracion?.paleta?.base,
-      )
-
-    if (
-      primaryConfigurado ||
-      baseConfigurada
-    ) {
-      return
-    }
-
-    if (
-      nuevoColor !== colorBase.value
-    ) {
-      colorBase.value =
-        nuevoColor
-
-      regenerarPaleta()
-    }
-  },
-)
-
-/* =========================================================
-   SINCRONIZACIÓN DE CONFIGURACIÓN DE PALETA
-   ========================================================= */
-
-watch(
-  () => props.configuracion?.paleta,
-  (nuevaPaleta) => {
-    if (
-      !nuevaPaleta ||
-      typeof nuevaPaleta !== 'object'
-    ) {
-      return
-    }
-
-    armoniaSeleccionada.value =
-      obtenerArmonia(
-        nuevaPaleta.armonia,
-      )
-
-    suavidad.value =
-      obtenerNumero(
-        nuevaPaleta.suavidad,
-        45,
-      )
-
-    contraste.value =
-      obtenerNumero(
-        nuevaPaleta.contraste,
-        55,
-      )
-
-    const nuevaBase =
-      obtenerColorValido(
-        nuevaPaleta.base,
-        props.configuracion?.primary,
-        props.colorBase,
-        props.coloresPredeterminados?.primary,
-        COLOR_RESPALDO,
-      )
-
-    if (
-      nuevaBase &&
-      nuevaBase !== colorBase.value
-    ) {
-      colorBase.value =
-        nuevaBase
-    }
-
-    regenerarPaleta()
-  },
-  {
-    deep: true,
-  },
-)
-
-/* =========================================================
-   SINCRONIZACIÓN DE PRIMARY DESDE FIREBASE
-   ========================================================= */
+let actualizandoDesdePadre = false
 
 watch(
   () => props.configuracion?.primary,
   (nuevoValor) => {
-    const nuevoColor =
-      normalizarColor(nuevoValor)
+    if (actualizandoDesdePadre) return
 
-    if (!nuevoColor) {
-      return
-    }
+    const nuevoColor = normalizarColor(nuevoValor)
+    if (!nuevoColor) return
 
-    /*
-     * Si existe una base explícita dentro de paleta,
-     * esa base mantiene la configuración del generador.
-     */
-
-    const baseConfigurada =
-      normalizarColor(
-        props.configuracion?.paleta?.base,
-      )
-
-    if (
-      baseConfigurada &&
-      baseConfigurada === nuevoColor
-    ) {
-      if (
-        colorBase.value !== nuevoColor
-      ) {
-        colorBase.value =
-          nuevoColor
-
-        regenerarPaleta()
-      }
-
-      return
-    }
-
-    /*
-     * Si no existe base explícita,
-     * primary se convierte en el color base.
-     */
-
-    if (!baseConfigurada) {
-      if (
-        nuevoColor !== colorBase.value
-      ) {
-        colorBase.value =
-          nuevoColor
-
-        regenerarPaleta()
-      }
+    if (nuevoColor !== colorBase.value) {
+      colorBase.value = nuevoColor
     }
   },
+  { immediate: true },
 )
 
-/* =========================================================
-   SINCRONIZACIÓN DE COLORES PREDETERMINADOS
-   ========================================================= */
-
 watch(
-  () => props.coloresPredeterminados?.primary,
-  (nuevoValor) => {
-    const existeColorConfigurado =
-      normalizarColor(
-        props.configuracion?.primary,
-      ) ||
-      normalizarColor(
-        props.configuracion?.paleta?.base,
-      )
+  () => props.configuracion?.paleta,
+  (nuevaPaleta) => {
+    if (actualizandoDesdePadre) return
+    if (!nuevaPaleta || typeof nuevaPaleta !== 'object') return
 
-    if (existeColorConfigurado) {
-      return
+    actualizandoDesdePadre = true
+
+    armoniaSeleccionada.value = obtenerArmonia(nuevaPaleta.armonia)
+    suavidad.value = obtenerNumero(nuevaPaleta.suavidad, 45)
+    contraste.value = obtenerNumero(nuevaPaleta.contraste, 55)
+
+    const nuevaBase = obtenerColorValido(
+      nuevaPaleta.base,
+      props.configuracion?.primary,
+      props.coloresPredeterminados?.primary,
+      COLOR_RESPALDO,
+    )
+
+    if (nuevaBase && nuevaBase !== colorBase.value) {
+      colorBase.value = nuevaBase
     }
 
-    const nuevoColor =
-      normalizarColor(nuevoValor)
-
-    if (!nuevoColor) {
-      return
-    }
-
-    if (
-      nuevoColor !== colorBase.value
-    ) {
-      colorBase.value =
-        nuevoColor
-
-      regenerarPaleta()
-    }
+    nextTick(() => {
+      actualizandoDesdePadre = false
+    })
   },
+  { deep: true, immediate: true },
 )
 
-/* =========================================================
-   REGENERACIÓN AUTOMÁTICA
-   ========================================================= */
-
 watch(
-  [
-    armoniaSeleccionada,
-    suavidad,
-    contraste,
-  ],
-  () => {
-    regenerarPaleta()
-  },
-)
+  () => props.configuracion?.degradados,
+  (nuevosDegradados) => {
+    if (actualizandoDesdePadre) return
+    if (!nuevosDegradados || typeof nuevosDegradados !== 'object') return
 
-/* =========================================================
-   SINCRONIZACIÓN GENERAL
-   ========================================================= */
-
-/*
- * La configuración puede actualizarse desde Firebase
- * mientras el administrador está viendo esta pantalla.
- *
- * Este watcher garantiza que cualquier cambio externo
- * de la configuración actualice la vista de la paleta.
- */
-
-watch(
-  () => [
-    props.configuracion?.primary,
-    props.configuracion?.paleta?.base,
-    props.configuracion?.paleta?.armonia,
-    props.configuracion?.paleta?.suavidad,
-    props.configuracion?.paleta?.contraste,
-    props.configuracion?.degradados,
-  ],
-  () => {
-    const nuevoBase =
-      obtenerColorValido(
-        props.configuracion?.primary,
-        props.configuracion?.paleta?.base,
-        props.colorBase,
-        props.coloresPredeterminados?.primary,
-        COLOR_RESPALDO,
+    clavesDegradados.forEach((clave) => {
+      degradadosLocales.value[clave] = normalizarDegradado(
+        nuevosDegradados[clave],
       )
-
-    if (
-      nuevoBase &&
-      nuevoBase !== colorBase.value
-    ) {
-      colorBase.value =
-        nuevoBase
-    }
-
-    regenerarPaleta()
+    })
   },
-  {
-    immediate: true,
-    deep: true,
-  },
+  { deep: true },
 )
 
 /* =========================================================
    INICIALIZACIÓN
    ========================================================= */
 
-regenerarPaleta()
+onMounted(() => {
+  inicializarDegradados()
+})
+
+const previewPaleta = computed(() => paletaGenerada.value || {})
 </script>
 
 <template>
-  <div
-    class="admin-configuracion__palette-layout"
-  >
-    <!-- ===================================================
-         COLOR BASE + ARMONÍA
-         =================================================== -->
+  <div class="admin-configuracion__palette-layout">
 
+    <!-- =====================================================
+         RUEDA CROMÁTICA
+         ===================================================== -->
 
-<article
-  class="admin-configuracion__card"
->
-  <div
-    class="admin-configuracion__card-heading"
-  >
-    <div>
-      <h3>
-        Color principal de la marca
-      </h3>
-
-      <p>
-        Define el color base. A partir de él
-        se generan automáticamente las
-        armonías de la identidad visual.
-      </p>
-    </div>
-
-    <div
-      class="admin-configuracion__color-swatch"
-      :style="{
-        backgroundColor: colorBase,
-      }"
-      aria-hidden="true"
-    ></div>
-  </div>
-
-  <!-- COLOR BASE -->
-
-  <div
-    class="admin-configuracion__primary-color"
-  >
-    <input
-      :value="colorBase"
-      type="color"
-      aria-label="Seleccionar color base"
-      @input="
-        cambiarColorBase(
-          $event.target.value,
-        )
-      "
-    />
-
-    <div>
-      <strong>
-        {{ colorBase }}
-      </strong>
-
-      <span>
-        Color base
-      </span>
-    </div>
-
-    <input
-      :value="colorBase"
-      type="text"
-      maxlength="7"
-      placeholder="#4678EC"
-      aria-label="Código hexadecimal del color base"
-      @change="
-        cambiarColorBase(
-          $event.target.value,
-        )
-      "
-    />
-  </div>
-
-  <!-- EXPLICACIÓN -->
-
-  <div
-    class="admin-configuracion__primary-explanation"
-  >
-    <div>
-      <strong>
-        Color maestro de la interfaz
-      </strong>
-
-      <p>
-        Este color controla la identidad
-        principal del sistema y sirve como
-        punto de partida para generar la
-        paleta.
-      </p>
-    </div>
-  </div>
-
-  <!-- CONTROLES DE ARMONÍA -->
-
-  <div
-    class="admin-configuracion__palette-options"
-  >
-    <label>
-      <span>
-        Armonía
-      </span>
-
-      <select
-        v-model="armoniaSeleccionada"
-      >
-        <option value="complementaria">
-          Complementaria
-        </option>
-
-        <option value="analogica">
-          Análoga
-        </option>
-
-        <option value="triadica">
-          Triádica
-        </option>
-
-        <option value="monocromatica">
-          Monocromática
-        </option>
-      </select>
-    </label>
-
-    <label>
-      <span>
-        Suavidad
-
-        <strong>
-          {{ suavidad }}%
-        </strong>
-      </span>
-
-      <input
-        v-model.number="suavidad"
-        type="range"
-        min="0"
-        max="100"
-      />
-    </label>
-
-    <label>
-      <span>
-        Contraste
-
-        <strong>
-          {{ contraste }}%
-        </strong>
-      </span>
-
-      <input
-        v-model.number="contraste"
-        type="range"
-        min="0"
-        max="100"
-      />
-    </label>
-  </div>
-
-  <!-- ACCIONES -->
-
-  <div
-    class="admin-configuracion__palette-actions"
-  >
-    <button
-      type="button"
-      class="admin-configuracion__button admin-configuracion__button--secondary"
-      @click="regenerarPaleta"
-    >
-      Generar paleta
-    </button>
-
-    <button
-      type="button"
-      class="admin-configuracion__button admin-configuracion__button--primary"
-      @click="aplicarPaletaGenerada"
-    >
-      Aplicar paleta
-    </button>
-  </div>
-</article>
-
-<!-- ===================================================
-     PALETA GENERADA
-     =================================================== -->
-
-<article
-  class="admin-configuracion__card"
->
-  <div
-    class="admin-configuracion__card-heading"
-  >
-    <div>
-      <h3>
-        Armonía generada
-      </h3>
-
-      <p>
-        Colores calculados a partir del
-        color base y los parámetros
-        seleccionados.
-      </p>
-    </div>
-
-    <span
-      class="admin-configuracion__palette-badge"
-    >
-      {{ armoniaSeleccionada }}
-    </span>
-  </div>
-
-  <div
-    v-if="
-      Object.keys(coloresGenerados).length > 0
-    "
-    class="admin-configuracion__generated-palette"
-  >
-    <div
-      v-for="(
-        color,
-        nombre
-      ) in coloresGenerados"
-      :key="nombre"
-      class="admin-configuracion__generated-color"
-    >
-      <div
-        class="admin-configuracion__generated-color-swatch"
-        :style="{
-          backgroundColor: color,
-        }"
-        :title="color"
-        aria-hidden="true"
-      ></div>
-
-      <div>
-        <strong>
-          {{ nombre }}
-        </strong>
-
-        <span>
-          {{ color }}
-        </span>
-      </div>
-    </div>
-  </div>
-
-  <div
-    v-else
-    class="admin-configuracion__empty-palette"
-  >
-    No se pudo generar una paleta válida.
-    Revisa el color principal.
-  </div>
-</article>
-
-<!-- ===================================================
-     DEGRADADOS DE FIREBASE
-     =================================================== -->
-
-<article
-  class="admin-configuracion__card admin-configuracion__gradients-card"
->
-  <div
-    class="admin-configuracion__card-heading"
-  >
-    <div>
-      <h3>
-        Degradados
-      </h3>
-
-      <p>
-        Degradados configurados en Firebase.
-        Se muestran visualmente sin convertir
-        la configuración almacenada en JSON.
-      </p>
-    </div>
-  </div>
-
-  <div
-    v-if="
-      degradadosConfigurados.length > 0
-    "
-    class="admin-configuracion__gradients-grid"
-  >
-    <div
-      v-for="degradado in degradadosConfigurados"
-      :key="degradado.clave"
-      class="admin-configuracion__gradient-item"
-    >
-      <!-- PREVISUALIZACIÓN -->
-
-      <div
-        class="admin-configuracion__gradient-preview"
-        :style="{
-          background: degradado.estilo,
-        }"
-        :title="
-          `${degradado.inicio} → ${degradado.fin}`
-        "
-        aria-hidden="true"
-      ></div>
-
-      <!-- INFORMACIÓN -->
-
-      <div
-        class="admin-configuracion__gradient-info"
-      >
-        <strong>
-          {{ degradado.nombre }}
-        </strong>
-
-        <span>
-          {{ degradado.clave }}
-        </span>
-
-        <div
-          class="admin-configuracion__gradient-colors"
-        >
-          <i
-            :style="{
-              backgroundColor:
-                degradado.inicio,
-            }"
-            :title="
-              `Inicio: ${degradado.inicio}`
-            "
-            aria-hidden="true"
-          ></i>
-
-          <i
-            :style="{
-              backgroundColor:
-                degradado.fin,
-            }"
-            :title="
-              `Fin: ${degradado.fin}`
-            "
-            aria-hidden="true"
-          ></i>
-
-          <small>
-            {{ degradado.angulo }}°
-          </small>
+    <article class="admin-configuracion__card">
+      <div class="admin-configuracion__card-heading">
+        <div>
+          <h3>Rueda cromática</h3>
+          <p>
+            Arrastra el punto para elegir el color base.
+            El triángulo muestra las armonías de la paleta.
+          </p>
         </div>
 
         <div
-          class="admin-configuracion__gradient-values"
-        >
-          <span>
-            {{ degradado.inicio }}
-          </span>
+          class="admin-configuracion__color-swatch"
+          :style="{ backgroundColor: colorBase }"
+          aria-hidden="true"
+        ></div>
+      </div>
 
-          <span>
-            {{ degradado.fin }}
-          </span>
+      <div class="admin-configuracion__wheel-wrapper">
+        <div
+          ref="ruedaRef"
+          class="admin-configuracion__wheel"
+          :style="{
+            width: `${TAMANO_RUEDA}px`,
+            height: `${TAMANO_RUEDA}px`,
+          }"
+          @mousedown="iniciarArrastre"
+          @touchstart.prevent="iniciarArrastre"
+        >
+          <svg
+            class="admin-configuracion__wheel-svg"
+            :viewBox="`0 0 ${TAMANO_RUEDA} ${TAMANO_RUEDA}`"
+            aria-hidden="true"
+          >
+            <defs>
+              <radialGradient id="rueda-saturacion">
+                <stop offset="0%" stop-color="#FFFFFF" stop-opacity="1" />
+                <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0" />
+              </radialGradient>
+            </defs>
+
+            <foreignObject
+              x="0"
+              y="0"
+              :width="TAMANO_RUEDA"
+              :height="TAMANO_RUEDA"
+            >
+              <div
+                xmlns="http://www.w3.org/1999/xhtml"
+                class="admin-configuracion__wheel-conic"
+              ></div>
+            </foreignObject>
+
+            <circle
+              :cx="TAMANO_RUEDA / 2"
+              :cy="TAMANO_RUEDA / 2"
+              :r="TAMANO_RUEDA / 2 - 2"
+              fill="url(#rueda-saturacion)"
+            />
+
+            <circle
+              :cx="TAMANO_RUEDA / 2"
+              :cy="TAMANO_RUEDA / 2"
+              :r="TAMANO_RUEDA / 2 - 2"
+              fill="none"
+              stroke="rgba(0,0,0,0.1)"
+              stroke-width="2"
+            />
+
+            <polygon
+              v-if="coloresArmonia.length >= 3"
+              :points="
+                coloresArmonia
+                  .map((c) => {
+                    const cx = TAMANO_RUEDA / 2 + c.coords.x * (TAMANO_RUEDA / 2 - 30)
+                    const cy = TAMANO_RUEDA / 2 + c.coords.y * (TAMANO_RUEDA / 2 - 30)
+                    return `${cx},${cy}`
+                  })
+                  .join(' ')
+              "
+              fill="rgba(0,0,0,0.15)"
+              stroke="rgba(0,0,0,0.4)"
+              stroke-width="1.5"
+            />
+
+            <line
+              v-else-if="coloresArmonia.length === 2"
+              :x1="TAMANO_RUEDA / 2 + coloresArmonia[0].coords.x * (TAMANO_RUEDA / 2 - 30)"
+              :y1="TAMANO_RUEDA / 2 + coloresArmonia[0].coords.y * (TAMANO_RUEDA / 2 - 30)"
+              :x2="TAMANO_RUEDA / 2 + coloresArmonia[1].coords.x * (TAMANO_RUEDA / 2 - 30)"
+              :y2="TAMANO_RUEDA / 2 + coloresArmonia[1].coords.y * (TAMANO_RUEDA / 2 - 30)"
+              stroke="rgba(0,0,0,0.4)"
+              stroke-width="1.5"
+            />
+          </svg>
+
+          <span
+            v-for="(c, i) in coloresArmonia"
+            :key="`armonia-${i}`"
+            class="admin-configuracion__wheel-marker admin-configuracion__wheel-marker--armonia"
+            :style="{
+              ...posicionMarcador(c.color),
+              backgroundColor: c.color,
+            }"
+            aria-hidden="true"
+          ></span>
+
+          <span
+            class="admin-configuracion__wheel-marker admin-configuracion__wheel-marker--principal"
+            :class="{ 'is-dragging': arrastrando }"
+            :style="{
+              ...marcadorPrincipal,
+              backgroundColor: colorBase,
+            }"
+            aria-hidden="true"
+          ></span>
         </div>
       </div>
-    </div>
-  </div>
 
-  <div
-    v-else
-    class="admin-configuracion__gradient-empty"
-  >
-    <strong>
-      No hay degradados configurados
-    </strong>
+      <div class="admin-configuracion__primary-color">
+        <input
+          :value="colorBase"
+          type="color"
+          aria-label="Seleccionar color base"
+          @input="colorBase = $event.target.value"
+        />
 
-    <span>
-      Cuando Firebase contenga degradados
-      con inicio, fin y ángulo,
-      aparecerán aquí automáticamente.
-    </span>
-  </div>
-</article>
+        <div>
+          <strong>{{ colorBase }}</strong>
+          <span>Color base</span>
+        </div>
 
-<!-- ===================================================
-     COLORES MANUALES
-     =================================================== -->
-
-<article
-  class="admin-configuracion__card admin-configuracion__manual-colors"
->
-  <div
-    class="admin-configuracion__card-heading"
-  >
-    <div>
-      <h3>
-        Colores del sistema
-      </h3>
-
-      <p>
-        Personalización avanzada de cada
-        variable de color.
-      </p>
-    </div>
-
-    <div
-      class="admin-configuracion__manual-actions"
-    >
-      <button
-        type="button"
-        class="admin-configuracion__text-button"
-        @click="
-          mostrarColoresManuales =
-            !mostrarColoresManuales
-        "
-      >
-        {{
-          mostrarColoresManuales
-            ? 'Ocultar colores'
-            : 'Personalizar colores'
-        }}
-      </button>
-
-      <button
-        type="button"
-        class="admin-configuracion__text-button admin-configuracion__text-button--danger"
-        @click="restablecerColores"
-      >
-        Restaurar identidad
-      </button>
-    </div>
-  </div>
-
-  <div
-    v-if="mostrarColoresManuales"
-    class="admin-configuracion__manual-colors-content"
-  >
-    <div
-      v-for="grupo in camposColoresVisibles"
-      :key="grupo.grupo"
-      class="admin-configuracion__color-group"
-    >
-      <div
-        class="admin-configuracion__color-group-title"
-      >
-        {{ grupo.grupo }}
+        <input
+          :value="colorBase"
+          type="text"
+          maxlength="7"
+          placeholder="#4678EC"
+          aria-label="Código hexadecimal"
+          @change="
+            ($event) => {
+              const c = normalizarColor($event.target.value)
+              if (c) colorBase = c
+            }
+          "
+        />
       </div>
 
-      <div
-        class="admin-configuracion__color-grid"
-      >
-        <label
-          v-for="[
-            campo,
-            etiqueta,
-          ] in grupo.campos"
-          :key="campo"
-          class="admin-configuracion__color-field"
-        >
+      <div class="admin-configuracion__palette-options">
+        <label>
+          <span>Armonía</span>
+          <select v-model="armoniaSeleccionada">
+            <option
+              v-for="(etiqueta, valor) in etiquetasArmonia"
+              :key="valor"
+              :value="valor"
+            >
+              {{ etiqueta }}
+            </option>
+          </select>
+        </label>
+
+        <label>
           <span>
-            {{ etiqueta }}
+            Suavidad
+            <strong>{{ suavidad }}%</strong>
           </span>
+          <input
+            v-model.number="suavidad"
+            type="range"
+            min="0"
+            max="100"
+          />
+        </label>
 
-          <div>
-            <input
-              :value="
-                obtenerValorCampo(
-                  campo,
-                )
-              "
-              type="color"
-              :aria-label="
-                `Seleccionar ${etiqueta}`
-              "
-              @input="
-                actualizarCampoColor(
-                  campo,
-                  $event.target.value,
-                )
-              "
-            />
-
-            <input
-              :value="
-                obtenerValorCampo(
-                  campo,
-                )
-              "
-              type="text"
-              maxlength="7"
-              :aria-label="
-                `Código hexadecimal de ${etiqueta}`
-              "
-              @change="
-                actualizarCampoColor(
-                  campo,
-                  $event.target.value,
-                )
-              "
-            />
-          </div>
+        <label>
+          <span>
+            Contraste
+            <strong>{{ contraste }}%</strong>
+          </span>
+          <input
+            v-model.number="contraste"
+            type="range"
+            min="0"
+            max="100"
+          />
         </label>
       </div>
-    </div>
-  </div>
-</article>
 
+      <div class="admin-configuracion__palette-actions">
+        <button
+          type="button"
+          class="admin-configuracion__button admin-configuracion__button--secondary"
+          @click="regenerarDegradadosDesdePaleta"
+        >
+          Regenerar degradados
+        </button>
 
+        <button
+          type="button"
+          class="admin-configuracion__button admin-configuracion__button--primary"
+          @click="aplicarPaletaCompleta"
+        >
+          Aplicar paleta completa
+        </button>
+      </div>
+    </article>
+
+    <!-- =====================================================
+         PALETA GENERADA
+         ===================================================== -->
+
+    <article class="admin-configuracion__card">
+      <div class="admin-configuracion__card-heading">
+        <div>
+          <h3>Paleta generada</h3>
+          <p>Previsualización de todos los colores calculados.</p>
+        </div>
+
+        <span class="admin-configuracion__palette-badge">
+          {{ armoniaSeleccionada }}
+        </span>
+      </div>
+
+      <div
+        v-if="Object.keys(previewPaleta).length > 0"
+        class="admin-configuracion__generated-palette"
+      >
+        <div
+          v-for="(color, nombre) in previewPaleta"
+          :key="nombre"
+          class="admin-configuracion__generated-color"
+        >
+          <div
+            class="admin-configuracion__generated-color-swatch"
+            :style="{ backgroundColor: color }"
+            :title="color"
+            aria-hidden="true"
+          ></div>
+
+          <div>
+            <strong>{{ nombre }}</strong>
+            <span>{{ color }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div v-else class="admin-configuracion__empty-palette">
+        No se pudo generar una paleta válida. Revisa el color base.
+      </div>
+    </article>
+
+    <!-- =====================================================
+         DEGRADADOS EDITABLES
+         ===================================================== -->
+
+    <article class="admin-configuracion__card admin-configuracion__gradients-card">
+      <div class="admin-configuracion__card-heading">
+        <div>
+          <h3>Degradados editables</h3>
+          <p>
+            Ajusta el inicio, fin y ángulo de cada degradado.
+            La previsualización se actualiza en vivo.
+          </p>
+        </div>
+      </div>
+
+      <div class="admin-configuracion__gradients-grid">
+        <div
+          v-for="(degradado, clave) in degradadosLocales"
+          :key="clave"
+          class="admin-configuracion__gradient-item"
+        >
+          <div
+            class="admin-configuracion__gradient-preview"
+            :style="{ background: estiloDegradado(degradado) }"
+            :title="`${degradado.inicio} → ${degradado.fin} (${degradado.angulo}°)`"
+            aria-hidden="true"
+          ></div>
+
+          <div class="admin-configuracion__gradient-info">
+            <strong>{{ nombresDegradados[clave] || clave }}</strong>
+            <span>{{ clave }}</span>
+
+            <div class="admin-configuracion__gradient-editor">
+              <label>
+                <span>Inicio</span>
+                <input
+                  :value="degradado.inicio"
+                  type="color"
+                  @input="actualizarDegradado(clave, 'inicio', $event.target.value)"
+                />
+                <input
+                  :value="degradado.inicio"
+                  type="text"
+                  maxlength="7"
+                  @change="actualizarDegradado(clave, 'inicio', $event.target.value)"
+                />
+              </label>
+
+              <label>
+                <span>Fin</span>
+                <input
+                  :value="degradado.fin"
+                  type="color"
+                  @input="actualizarDegradado(clave, 'fin', $event.target.value)"
+                />
+                <input
+                  :value="degradado.fin"
+                  type="text"
+                  maxlength="7"
+                  @change="actualizarDegradado(clave, 'fin', $event.target.value)"
+                />
+              </label>
+
+              <label>
+                <span>Ángulo: {{ degradado.angulo }}°</span>
+                <input
+                  :value="degradado.angulo"
+                  type="range"
+                  min="0"
+                  max="360"
+                  @input="actualizarDegradado(clave, 'angulo', $event.target.value)"
+                />
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <!-- =====================================================
+         COLORES MANUALES
+         ===================================================== -->
+
+    <article class="admin-configuracion__card admin-configuracion__manual-colors">
+      <div class="admin-configuracion__card-heading">
+        <div>
+          <h3>Colores del sistema</h3>
+          <p>
+            Personalización avanzada de cada variable.
+            Activa el modo manual para editar cada color individualmente.
+          </p>
+        </div>
+
+        <div class="admin-configuracion__manual-actions">
+          <button
+            type="button"
+            class="admin-configuracion__text-button"
+            @click="toggleModoManual"
+          >
+            {{
+              modoManualActivo
+                ? '✓ Modo manual activo (clic para desactivar)'
+                : 'Editar paleta manualmente'
+            }}
+          </button>
+
+          <button
+            v-if="modoManualActivo"
+            type="button"
+            class="admin-configuracion__text-button admin-configuracion__text-button--danger"
+            @click="restablecerAutomatico"
+          >
+            Restablecer automático
+          </button>
+        </div>
+      </div>
+
+      <div
+        v-if="mostrarColoresManuales"
+        class="admin-configuracion__manual-colors-content"
+      >
+        <div
+          v-for="grupo in camposColoresVisibles"
+          :key="grupo.grupo"
+          class="admin-configuracion__color-group"
+        >
+          <div class="admin-configuracion__color-group-title">
+            {{ grupo.grupo }}
+          </div>
+
+          <div class="admin-configuracion__color-grid">
+            <label
+              v-for="[campo, etiqueta] in grupo.campos"
+              :key="campo"
+              class="admin-configuracion__color-field"
+            >
+              <span>{{ etiqueta }}</span>
+
+              <div>
+                <input
+                  :value="obtenerValorCampo(campo)"
+                  type="color"
+                  :aria-label="`Seleccionar ${etiqueta}`"
+                  @input="actualizarCampoColor(campo, $event.target.value)"
+                />
+
+                <input
+                  :value="obtenerValorCampo(campo)"
+                  type="text"
+                  maxlength="7"
+                  :aria-label="`Código hexadecimal de ${etiqueta}`"
+                  @change="actualizarCampoColor(campo, $event.target.value)"
+                />
+              </div>
+            </label>
+          </div>
+        </div>
+      </div>
+    </article>
   </div>
 </template>
+
+<style scoped>
+.admin-configuracion__wheel-wrapper {
+  display: flex;
+  justify-content: center;
+  margin: 24px 0;
+}
+
+.admin-configuracion__wheel {
+  position: relative;
+  border-radius: 50%;
+  cursor: crosshair;
+  user-select: none;
+  touch-action: none;
+}
+
+.admin-configuracion__wheel-svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.admin-configuracion__wheel-conic {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 90deg,
+    #FF0000,
+    #FFFF00,
+    #00FF00,
+    #00FFFF,
+    #0000FF,
+    #FF00FF,
+    #FF0000
+  );
+}
+
+.admin-configuracion__wheel-marker {
+  position: absolute;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  border: 2px solid #FFFFFF;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+  z-index: 2;
+}
+
+.admin-configuracion__wheel-marker--principal {
+  width: 22px;
+  height: 22px;
+  z-index: 3;
+  cursor: grab;
+  pointer-events: auto;
+}
+
+.admin-configuracion__wheel-marker--principal.is-dragging {
+  cursor: grabbing;
+  transform: translate(-50%, -50%) scale(1.15);
+}
+
+.admin-configuracion__wheel-marker--armonia {
+  width: 14px;
+  height: 14px;
+  border-width: 1.5px;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.admin-configuracion__gradient-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.admin-configuracion__gradient-editor label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.admin-configuracion__gradient-editor label > span {
+  font-size: 0.75rem;
+  min-width: 82px;
+  color: #64748B;
+}
+
+.admin-configuracion__gradient-editor input[type='color'] {
+  width: 36px;
+  height: 32px;
+  padding: 2px;
+  border: 1px solid #E2E8F0;
+  border-radius: 6px;
+  cursor: pointer;
+  background: white;
+}
+
+.admin-configuracion__gradient-editor input[type='text'] {
+  width: 90px;
+  padding: 6px 8px;
+  font-family: monospace;
+  font-size: 0.8rem;
+  border: 1px solid #E2E8F0;
+  border-radius: 6px;
+}
+
+.admin-configuracion__gradient-editor input[type='range'] {
+  flex: 1;
+}
+
+/* =========================================================
+   MODO MANUAL — ACCIONES
+   ========================================================= */
+
+.admin-configuracion__manual-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+</style>

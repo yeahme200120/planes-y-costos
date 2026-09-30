@@ -12,6 +12,8 @@ import {
 } from 'firebase/firestore'
 
 import { db } from '../../config/firebase'
+import SectionBackground from './SectionBackground.vue'
+import { medioTieneContenido, medioEsFondo } from '../../services/mediaService.js'
 
 const props = defineProps({
   contenido: {
@@ -678,8 +680,19 @@ function reiniciarEstado() {
     "
     id="contacto"
     class="section contact"
+    style="position: relative;"
     aria-labelledby="contact-title"
   >
+    <SectionBackground
+      v-if="medioEsFondo(contenido?.medio)"
+      :medio="contenido?.medio"
+    />
+    <div class="container">
+      <SectionBackground
+        v-if="medioTieneContenido(contenido?.medio) && !medioEsFondo(contenido?.medio)"
+        :medio="contenido?.medio"
+        style="margin-bottom: 2rem;"
+      />
     <div class="container">
       <div class="contact__card">
 
