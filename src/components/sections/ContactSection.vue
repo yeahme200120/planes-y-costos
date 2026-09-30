@@ -12,7 +12,7 @@ import {
 } from 'firebase/firestore'
 
 import { db } from '../../config/firebase'
-import SectionBackground from './SectionBackground.vue'
+import SectionMediaWrapper from './SectionMediaWrapper.vue'
 
 const props = defineProps({
   contenido: {
@@ -189,24 +189,6 @@ const enviarBloqueado = computed(() => {
 |--------------------------------------------------------------------------
 */
 
-/**
- * Nombre
- *
- * Permitidos:
- * - Letras
- * - Vocales acentuadas
- * - Ñ
- * - Ü
- * - Espacios
- *
- * No permite:
- * - Números
- * - @
- * - # 
- * - $
- * - %
- * - Otros caracteres especiales
- */
 function limpiarNombre(valor) {
   return String(valor ?? '')
     .replace(
@@ -216,14 +198,6 @@ function limpiarNombre(valor) {
     .replace(/\s{2,}/g, ' ')
 }
 
-/**
- * Correo
- *
- * Se permiten los caracteres habituales
- * de una dirección de correo electrónico.
- *
- * Los espacios siempre se eliminan.
- */
 function limpiarEmail(valor) {
   return String(valor ?? '')
     .replace(
@@ -233,32 +207,12 @@ function limpiarEmail(valor) {
     .replace(/\s/g, '')
 }
 
-/**
- * Teléfono
- *
- * SOLO:
- * 0-9
- *
- * Máximo:
- * 10 dígitos
- */
 function limpiarTelefono(valor) {
   return String(valor ?? '')
     .replace(/\D/g, '')
     .slice(0, 10)
 }
 
-/**
- * Asunto
- *
- * Permite:
- * - Letras
- * - Números
- * - Acentos
- * - Ñ
- * - Espacios
- * - Puntuación común
- */
 function limpiarAsunto(valor) {
   return String(valor ?? '')
     .replace(
@@ -268,14 +222,6 @@ function limpiarAsunto(valor) {
     .replace(/\s{2,}/g, ' ')
 }
 
-/**
- * Mensaje
- *
- * Conserva texto, acentos, números y
- * puntuación.
- *
- * Elimina caracteres de control.
- */
 function limpiarMensaje(valor) {
   return String(valor ?? '')
     .replace(
@@ -344,11 +290,6 @@ function validarEmail(valor) {
 function validarFormulario() {
   limpiarErrores()
 
-  /*
-   * Normalizar nuevamente antes de validar.
-   * Esto garantiza que nunca se envíen datos
-   * sin limpiar a Firestore.
-   */
   normalizarNombre()
   normalizarEmail()
   normalizarTelefono()
@@ -372,12 +313,6 @@ function validarFormulario() {
   const mensaje =
     formulario.mensaje.trim()
 
-  /*
-  |--------------------------------------------------------------------------
-  | Nombre
-  |--------------------------------------------------------------------------
-  */
-
   if (!nombre) {
     errores.nombre =
       'Ingresa tu nombre.'
@@ -394,12 +329,6 @@ function validarFormulario() {
 
     valido = false
   }
-
-  /*
-  |--------------------------------------------------------------------------
-  | Email
-  |--------------------------------------------------------------------------
-  */
 
   if (!emailValor) {
     errores.email =
@@ -418,18 +347,6 @@ function validarFormulario() {
     valido = false
   }
 
-  /*
-  |--------------------------------------------------------------------------
-  | Teléfono
-  |--------------------------------------------------------------------------
-  |
-  | Es opcional.
-  |
-  | Pero si el usuario escribe algo:
-  | DEBE contener exactamente 10 dígitos.
-  |
-  */
-
   if (telefonoValor) {
     if (!/^\d{10}$/.test(telefonoValor)) {
       errores.telefono =
@@ -439,24 +356,12 @@ function validarFormulario() {
     }
   }
 
-  /*
-  |--------------------------------------------------------------------------
-  | Asunto
-  |--------------------------------------------------------------------------
-  */
-
   if (asunto.length > 120) {
     errores.asunto =
       'El asunto no puede superar los 120 caracteres.'
 
     valido = false
   }
-
-  /*
-  |--------------------------------------------------------------------------
-  | Mensaje
-  |--------------------------------------------------------------------------
-  */
 
   if (!mensaje) {
     errores.mensaje =
@@ -682,11 +587,7 @@ function reiniciarEstado() {
     style="position: relative;"
     aria-labelledby="contact-title"
   >
-    <SectionBackground
-      v-if="contenido?.medio?.posicion === 'fondo' && (contenido?.medio?.url || contenido?.medio?.medioBlob || contenido?.medio?.embedUrl)"
-      :medio="contenido?.medio"
-    />
-    <div class="container">
+    <SectionMediaWrapper :medio="contenido?.medio">
       <div class="contact__card">
 
         <!-- Información -->
@@ -1241,6 +1142,6 @@ function reiniciarEstado() {
         </div>
 
       </div>
-    </div>
+    </SectionMediaWrapper>
   </section>
 </template>

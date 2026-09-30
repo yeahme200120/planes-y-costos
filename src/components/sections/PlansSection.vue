@@ -1,6 +1,7 @@
 <script setup>
 import { computed } from 'vue'
 
+import SectionMediaWrapper from './SectionMediaWrapper.vue'
 import PlanCard from './PlanCard.vue'
 
 const props = defineProps({
@@ -112,7 +113,7 @@ const mensajeError = computed(() => {
     class="section plans"
     aria-labelledby="plans-title"
   >
-    <div class="container">
+    <SectionMediaWrapper :medio="contenido?.medio">
 
       <header
         v-if="tieneEncabezado"
@@ -236,6 +237,6 @@ const mensajeError = computed(() => {
         />
       </div>
 
-    </div>
+    </SectionMediaWrapper>
   </section>
 </template>

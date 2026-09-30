@@ -14,18 +14,20 @@
    CONFIGURACIÓN
    ========================================================= */
 
-const MAX_DIMENSION  = 900
-const JPEG_QUALITY   = 0.82
+const MAX_DIMENSION = 900
+const JPEG_QUALITY = 0.82
 const MAX_SIZE_BYTES = 900_000
 
 const TIPOS_IMAGEN = new Set([
-  'image/jpeg', 'image/jpg', 'image/png',
-  'image/webp', 'image/gif', 'image/avif',
+  'image/jpeg',
+  'image/jpg',
+  'image/png',
+  'image/webp',
+  'image/gif',
+  'image/avif',
 ])
 
-const TIPOS_VIDEO = new Set([
-  'video/mp4', 'video/webm', 'video/ogg',
-])
+const TIPOS_VIDEO = new Set(['video/mp4', 'video/webm', 'video/ogg'])
 
 /* =========================================================
    ESTRUCTURA POR DEFECTO
@@ -33,24 +35,24 @@ const TIPOS_VIDEO = new Set([
 
 export function medioVacio() {
   return {
-    tipo:          '',        // 'imagen' | 'gif' | 'video' | 'embed' | ''
-    url:           '',        // URL original ingresada por el usuario
-    embedUrl:      '',        // URL de embed para iframe (calculada)
-    embedPlataforma: '',      // 'youtube' | 'tiktok' | 'vimeo' | 'facebook' | ''
-    medioBlob:     '',        // base64 de imagen local
-    mimeBlob:      '',
-    storagePath:   '',
-    alt:           '',
-    poster:        '',
-    animacion:     'fade-up',
-    duracion:      800,
-    retraso:       0,
-    loop:          false,
-    autoplay:      true,
-    controles:     false,
-    silencio:      true,
-    objectFit:     'cover',
-    posicion:      'derecha',
+    tipo: '', // 'imagen' | 'gif' | 'video' | 'embed' | ''
+    url: '', // URL original ingresada por el usuario
+    embedUrl: '', // URL de embed para iframe (calculada)
+    embedPlataforma: '', // 'youtube' | 'tiktok' | 'vimeo' | 'facebook' | ''
+    medioBlob: '', // base64 de imagen local
+    mimeBlob: '',
+    storagePath: '',
+    alt: '',
+    poster: '',
+    animacion: 'fade-up',
+    duracion: 800,
+    retraso: 0,
+    loop: false,
+    autoplay: true,
+    controles: false,
+    silencio: true,
+    objectFit: 'cover',
+    posicion: 'derecha',
     opacidadFondo: 0.4,
   }
 }
@@ -80,8 +82,9 @@ export function detectarMedioDesdeUrl(url) {
   //   https://youtube.com/shorts/ID
   //   https://www.youtube.com/embed/ID  (ya es embed)
   const ytMatch =
-    u.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/shorts\/|youtube\.com\/embed\/)([A-Za-z0-9_-]{11})/) ||
-    u.match(/youtube\.com\/.*[?&]v=([A-Za-z0-9_-]{11})/)
+    u.match(
+      /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/shorts\/|youtube\.com\/embed\/)([A-Za-z0-9_-]{11})/,
+    ) || u.match(/youtube\.com\/.*[?&]v=([A-Za-z0-9_-]{11})/)
 
   if (ytMatch) {
     return {
@@ -107,7 +110,7 @@ export function detectarMedioDesdeUrl(url) {
   if (/vm\.tiktok\.com|tiktok\.com\/t\//.test(u)) {
     return {
       tipo: 'embed',
-      embedUrl: u,   // el usuario tendrá que usar URL larga
+      embedUrl: u, // el usuario tendrá que usar URL larga
       embedPlataforma: 'tiktok',
     }
   }
@@ -165,8 +168,12 @@ export function clasificarTipo(tipoMime) {
   return ''
 }
 
-export function esArchivoImagen(tipoMime) { return TIPOS_IMAGEN.has(tipoMime) }
-export function esArchivoVideo(tipoMime)  { return TIPOS_VIDEO.has(tipoMime) }
+export function esArchivoImagen(tipoMime) {
+  return TIPOS_IMAGEN.has(tipoMime)
+}
+export function esArchivoVideo(tipoMime) {
+  return TIPOS_VIDEO.has(tipoMime)
+}
 
 export function normalizarMedio(datos) {
   const defaults = medioVacio()
@@ -175,13 +182,15 @@ export function normalizarMedio(datos) {
   return {
     ...defaults,
     ...datos,
-    duracion:      Number.isFinite(Number(datos.duracion))      ? Number(datos.duracion)      : defaults.duracion,
-    retraso:       Number.isFinite(Number(datos.retraso))       ? Number(datos.retraso)       : defaults.retraso,
-    opacidadFondo: Number.isFinite(Number(datos.opacidadFondo)) ? Number(datos.opacidadFondo) : defaults.opacidadFondo,
-    loop:          typeof datos.loop      === 'boolean' ? datos.loop      : defaults.loop,
-    autoplay:      typeof datos.autoplay  === 'boolean' ? datos.autoplay  : defaults.autoplay,
-    controles:     typeof datos.controles === 'boolean' ? datos.controles : defaults.controles,
-    silencio:      typeof datos.silencio  === 'boolean' ? datos.silencio  : defaults.silencio,
+    duracion: Number.isFinite(Number(datos.duracion)) ? Number(datos.duracion) : defaults.duracion,
+    retraso: Number.isFinite(Number(datos.retraso)) ? Number(datos.retraso) : defaults.retraso,
+    opacidadFondo: Number.isFinite(Number(datos.opacidadFondo))
+      ? Number(datos.opacidadFondo)
+      : defaults.opacidadFondo,
+    loop: typeof datos.loop === 'boolean' ? datos.loop : defaults.loop,
+    autoplay: typeof datos.autoplay === 'boolean' ? datos.autoplay : defaults.autoplay,
+    controles: typeof datos.controles === 'boolean' ? datos.controles : defaults.controles,
+    silencio: typeof datos.silencio === 'boolean' ? datos.silencio : defaults.silencio,
   }
 }
 
@@ -204,7 +213,8 @@ export function obtenerUrlMedio(medio) {
 export function comprimirImagen(archivo, opciones = {}) {
   return new Promise((resolve, reject) => {
     if (!archivo || !(archivo instanceof File)) {
-      reject(new Error('Archivo inválido.')); return
+      reject(new Error('Archivo inválido.'))
+      return
     }
 
     const mime = archivo.type
@@ -220,34 +230,42 @@ export function comprimirImagen(archivo, opciones = {}) {
       return
     }
 
-    const maxDim  = opciones.maxDimension || MAX_DIMENSION
-    const quality = opciones.quality      || JPEG_QUALITY
-    const img     = new Image()
-    const url     = URL.createObjectURL(archivo)
+    const maxDim = opciones.maxDimension || MAX_DIMENSION
+    const quality = opciones.quality || JPEG_QUALITY
+    const img = new Image()
+    const url = URL.createObjectURL(archivo)
 
     img.onload = () => {
       URL.revokeObjectURL(url)
       let { naturalWidth: w, naturalHeight: h } = img
 
       if (w > maxDim || h > maxDim) {
-        if (w >= h) { h = Math.round((h / w) * maxDim); w = maxDim }
-        else        { w = Math.round((w / h) * maxDim); h = maxDim }
+        if (w >= h) {
+          h = Math.round((h / w) * maxDim)
+          w = maxDim
+        } else {
+          w = Math.round((w / h) * maxDim)
+          h = maxDim
+        }
       }
 
-      const canvas  = document.createElement('canvas')
-      canvas.width  = w
+      const canvas = document.createElement('canvas')
+      canvas.width = w
       canvas.height = h
       canvas.getContext('2d').drawImage(img, 0, 0, w, h)
 
       const dataUrl = canvas.toDataURL('image/webp', quality)
       const realMime = dataUrl.startsWith('data:image/webp') ? 'image/webp' : 'image/jpeg'
-      const base64   = dataUrl.split(',')[1]
+      const base64 = dataUrl.split(',')[1]
       const tamanoFinal = Math.round(base64.length * 0.75)
 
       resolve({ base64, mime: realMime, tamanoOriginal: archivo.size, tamanoFinal })
     }
 
-    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('No se pudo cargar la imagen.')) }
+    img.onerror = () => {
+      URL.revokeObjectURL(url)
+      reject(new Error('No se pudo cargar la imagen.'))
+    }
     img.src = url
   })
 }
@@ -258,21 +276,24 @@ export function comprimirImagen(archivo, opciones = {}) {
 
 export async function procesarArchivoLocal(archivo) {
   if (!archivo || !(archivo instanceof File)) throw new Error('Archivo inválido.')
-  if (TIPOS_VIDEO.has(archivo.type)) throw new Error('Los videos son demasiado grandes para Firestore. Usa una URL directa.')
+  if (TIPOS_VIDEO.has(archivo.type))
+    throw new Error('Los videos son demasiado grandes para Firestore. Usa una URL directa.')
   if (!TIPOS_IMAGEN.has(archivo.type)) throw new Error(`Formato no soportado: ${archivo.type}.`)
 
   const resultado = await comprimirImagen(archivo)
 
   if (resultado.tamanoFinal > MAX_SIZE_BYTES) {
-    throw new Error(`La imagen comprimida (${Math.round(resultado.tamanoFinal / 1024)} KB) supera el límite de Firestore. Usa una imagen más pequeña.`)
+    throw new Error(
+      `La imagen comprimida (${Math.round(resultado.tamanoFinal / 1024)} KB) supera el límite de Firestore. Usa una imagen más pequeña.`,
+    )
   }
 
   return {
-    tipo:      clasificarTipo(archivo.type),
+    tipo: clasificarTipo(archivo.type),
     medioBlob: resultado.base64,
-    mimeBlob:  resultado.mime,
-    url:       '',
-    embedUrl:  '',
+    mimeBlob: resultado.mime,
+    url: '',
+    embedUrl: '',
     embedPlataforma: '',
   }
 }
@@ -282,6 +303,13 @@ export async function procesarArchivoLocal(archivo) {
  */
 export function medioTieneContenido(medio) {
   if (!medio) return false
+
+  /*
+   * Sin tipo declarado, no hay medio que renderizar.
+   * Los blobs residuales no cuentan.
+   */
+  if (!medio.tipo) return false
+
   return Boolean(medio.url || medio.medioBlob || medio.embedUrl)
 }
 
@@ -309,8 +337,9 @@ export async function subirMedio() {
   throw new Error('Firebase Storage requiere plan Blaze. Usa procesarArchivoLocal().')
 }
 
-export async function eliminarMedioStorage() { /* no-op */ }
-
+export async function eliminarMedioStorage() {
+  /* no-op */
+}
 
 /* =========================================================
    CONFIGURACIÓN

@@ -1,12 +1,37 @@
 <script setup>
 import { computed } from 'vue'
 
+import SectionBackground from './SectionBackground.vue'
+import { medioTieneContenido, medioEsFondo } from '../../services/mediaService.js'
+
 const props = defineProps({
   plan: {
     type: Object,
     default: () => ({}),
   },
 })
+
+/*
+|--------------------------------------------------------------------------
+| Medio dinámico del plan
+|--------------------------------------------------------------------------
+*/
+
+const medio = computed(() => props.plan?.medio)
+
+const medioTiene = computed(() =>
+  medioTieneContenido(medio.value),
+)
+
+const medioFondo = computed(() =>
+  medioEsFondo(medio.value),
+)
+
+/*
+|--------------------------------------------------------------------------
+| Contenido
+|--------------------------------------------------------------------------
+*/
 
 const nombre = computed(() => {
   return String(
@@ -205,7 +230,14 @@ const usarEnlace = computed(() => {
     :class="{
       'plan-card--featured': destacado,
     }"
+    style="position: relative;"
   >
+    <!-- Medio como fondo absoluto -->
+    <SectionBackground
+      v-if="medioTiene && medioFondo"
+      :medio="medio"
+    />
+
     <div
       v-if="destacado"
       class="plan-card__badge"
@@ -222,6 +254,13 @@ const usarEnlace = computed(() => {
         Más popular
       </span>
     </div>
+
+    <!-- Medio lateral dentro del contenido -->
+    <SectionBackground
+      v-if="medioTiene && !medioFondo"
+      :medio="medio"
+      class="plan-card__media"
+    />
 
     <div class="plan-card__content">
 
