@@ -1,183 +1,45 @@
 <script setup>
 import { computed } from 'vue'
-import SectionBackground from './SectionBackground.vue'
+import SectionMediaWrapper from './SectionMediaWrapper.vue'
 import SolutionCard from './SolutionCard.vue'
 
 const props = defineProps({
-  contenido: {
-    type: Object,
-    default: () => ({}),
-  },
+  contenido: { type: Object, default: () => ({}) },
 })
 
-/*
-|--------------------------------------------------------------------------
-| Estado de la sección
-|--------------------------------------------------------------------------
-*/
-
-const activo = computed(() => {
-  return props.contenido?.activo !== false
-})
-
-/*
-|--------------------------------------------------------------------------
-| Encabezado
-|--------------------------------------------------------------------------
-*/
-
-const eyebrow = computed(() => {
-  return String(
-    props.contenido?.eyebrow ?? ''
-  ).trim()
-})
-
-const titulo = computed(() => {
-  return String(
-    props.contenido?.titulo ?? ''
-  ).trim()
-})
-
-const descripcion = computed(() => {
-  return String(
-    props.contenido?.descripcion ?? ''
-  ).trim()
-})
-
-/*
-|--------------------------------------------------------------------------
-| Normalización de elementos
-|--------------------------------------------------------------------------
-|
-| Firebase puede devolver mapas/objetos completos.
-|
-| Nunca debemos convertir un item a String() directamente porque eso
-| puede provocar que el objeto termine apareciendo como JSON/texto
-| en la interfaz.
-|
-|--------------------------------------------------------------------------
-*/
+const activo      = computed(() => props.contenido?.activo !== false)
+const eyebrow     = computed(() => String(props.contenido?.eyebrow ?? '').trim())
+const titulo      = computed(() => String(props.contenido?.titulo ?? '').trim())
+const descripcion = computed(() => String(props.contenido?.descripcion ?? '').trim())
 
 const normalizarItem = (item, index) => {
-  if (!item || typeof item !== 'object') {
-    return null
-  }
-
+  if (!item || typeof item !== 'object') return null
   const orden = Number(item.orden)
-
   return {
     ...item,
-
-    activo: item.activo !== false,
-
-    orden:
-      Number.isFinite(orden)
-        ? orden
-        : index + 1,
-
-    titulo:
-      typeof item.titulo === 'string'
-        ? item.titulo.trim()
-        : '',
-
-    descripcion:
-      typeof item.descripcion === 'string'
-        ? item.descripcion.trim()
-        : '',
-
-    icono:
-      typeof item.icono === 'string'
-        ? item.icono.trim()
-        : '',
-
-    /*
-     * Conservamos cualquier otro campo que exista en Firebase.
-     *
-     * Esto es importante porque no queremos destruir campos
-     * adicionales que posteriormente puedan utilizarse.
-     */
+    activo:      item.activo !== false,
+    orden:       Number.isFinite(orden) ? orden : index + 1,
+    titulo:      typeof item.titulo      === 'string' ? item.titulo.trim()      : '',
+    descripcion: typeof item.descripcion === 'string' ? item.descripcion.trim() : '',
+    icono:       typeof item.icono       === 'string' ? item.icono.trim()       : '',
   }
 }
 
-/*
-|--------------------------------------------------------------------------
-| Elementos de soluciones
-|--------------------------------------------------------------------------
-*/
-
 const items = computed(() => {
-  const elementos =
-    props.contenido?.items
-
-  if (!Array.isArray(elementos)) {
-    return []
-  }
-
+  const elementos = props.contenido?.items
+  if (!Array.isArray(elementos)) return []
   return elementos
-    .map((item, index) => {
-      return normalizarItem(item, index)
-    })
-    .filter((item) => {
-      if (!item) {
-        return false
-      }
-
-      if (item.activo === false) {
-        return false
-      }
-
-      return Boolean(
-        item.titulo ||
-        item.descripcion ||
-        item.icono
-      )
-    })
-    .sort((a, b) => {
-      return (
-        Number(a.orden ?? 999) -
-        Number(b.orden ?? 999)
-      )
-    })
+    .map(normalizarItem)
+    .filter(item => item && item.activo !== false && Boolean(item.titulo || item.descripcion || item.icono))
+    .sort((a, b) => Number(a.orden ?? 999) - Number(b.orden ?? 999))
 })
 
-/*
-|--------------------------------------------------------------------------
-| Estados de renderizado
-|--------------------------------------------------------------------------
-*/
-
-const tieneEncabezado = computed(() => {
-  return Boolean(
-    eyebrow.value ||
-    titulo.value ||
-    descripcion.value
-  )
-})
-
-const tieneSoluciones = computed(() => {
-  return items.value.length > 0
-})
-
-/*
-|--------------------------------------------------------------------------
-| Clave estable
-|--------------------------------------------------------------------------
-|
-| Evitamos depender exclusivamente del título porque puede repetirse.
-|--------------------------------------------------------------------------
-*/
+const tieneEncabezado = computed(() => Boolean(eyebrow.value || titulo.value || descripcion.value))
+const tieneSoluciones = computed(() => items.value.length > 0)
 
 const obtenerClaveItem = (item, index) => {
-  if (item?.id) {
-    return String(item.id)
-  }
-
-  return [
-    'solution',
-    item?.orden ?? index,
-    item?.titulo || '',
-    index,
-  ].join('-')
+  if (item?.id) return String(item.id)
+  return ['solution', item?.orden ?? index, item?.titulo || '', index].join('-')
 }
 </script>
 
@@ -189,77 +51,15 @@ const obtenerClaveItem = (item, index) => {
     style="position: relative;"
     aria-labelledby="solutions-title"
   >
-    <!-- Fondo absoluto (detrás de todo) -->
-    <SectionBackground
-      v-if="contenido?.medio?.posicion === 'fondo'"
-      :medio="contenido?.medio"
-    />
+    <SectionMediaWrapper :medio="contenido?.medio" container-class="solutions__container">
 
-    <div
-      class="container solutions__container"
-      :class="{
-        'solutions__container--with-media':
-          contenido?.medio?.url ||
-          contenido?.medio?.medioBlob ||
-          contenido?.medio?.embedUrl,
-        'solutions__container--media-right':
-          contenido?.medio?.posicion === 'derecha',
-        'solutions__container--media-left':
-          contenido?.medio?.posicion === 'izquierda',
-      }"
-    >
-
-      <!-- Media lateral / flotante dentro del container -->
-      <SectionBackground
-        v-if="
-          contenido?.medio?.posicion !== 'fondo' &&
-          (contenido?.medio?.url ||
-           contenido?.medio?.medioBlob ||
-           contenido?.medio?.embedUrl)
-        "
-        :medio="contenido?.medio"
-        class="solutions__media"
-      />
-
-      <!-- =========================================================
-           ENCABEZADO
-           ========================================================= -->
-
-      <header
-        v-if="tieneEncabezado"
-        class="section-header solutions__header"
-      >
-        <span
-          v-if="eyebrow"
-          class="section-eyebrow solutions__eyebrow"
-        >
-          {{ eyebrow }}
-        </span>
-
-        <h2
-          v-if="titulo"
-          id="solutions-title"
-          class="section-title solutions__title"
-        >
-          {{ titulo }}
-        </h2>
-
-        <p
-          v-if="descripcion"
-          class="section-description solutions__description"
-        >
-          {{ descripcion }}
-        </p>
+      <header v-if="tieneEncabezado" class="section-header solutions__header">
+        <span v-if="eyebrow" class="section-eyebrow solutions__eyebrow">{{ eyebrow }}</span>
+        <h2 v-if="titulo" id="solutions-title" class="section-title solutions__title">{{ titulo }}</h2>
+        <p v-if="descripcion" class="section-description solutions__description">{{ descripcion }}</p>
       </header>
 
-      <!-- =========================================================
-           SOLUCIONES
-           ========================================================= -->
-
-      <div
-        v-if="tieneSoluciones"
-        class="solutions__grid"
-      >
+      <div v-if="tieneSoluciones" class="solutions__grid">
         <SolutionCard
           v-for="(item, index) in items"
           :key="obtenerClaveItem(item, index)"
@@ -267,28 +67,11 @@ const obtenerClaveItem = (item, index) => {
         />
       </div>
 
-      <!-- =========================================================
-           ESTADO VACÍO
-           ========================================================= -->
-
-      <div
-        v-else
-        class="solutions__empty"
-        aria-live="polite"
-      >
-        <span
-          class="solutions__empty-icon"
-          aria-hidden="true"
-        >
-          ✦
-        </span>
-
-        <p class="solutions__empty-text">
-          Actualmente estamos preparando
-          nuestras soluciones.
-        </p>
+      <div v-else class="solutions__empty" aria-live="polite">
+        <span class="solutions__empty-icon" aria-hidden="true">✦</span>
+        <p class="solutions__empty-text">Actualmente estamos preparando nuestras soluciones.</p>
       </div>
 
-    </div>
+    </SectionMediaWrapper>
   </section>
 </template>

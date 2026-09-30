@@ -106,3 +106,51 @@
   object-fit: contain;
   border-radius: inherit;
 }
+
+/* =========================================================
+   SECTION MEDIA WRAPPER
+   =========================================================
+   Cuando una sección tiene un medio lateral (imagen/video/embed
+   en posición derecha, izquierda o flotante), el container usa
+   display:flex con el media al lado del contenido principal.
+
+   Uso:
+   <div class="container sb-wrap sb-wrap--right"> ... </div>
+   <div class="container sb-wrap sb-wrap--left">  ... </div>
+   ========================================================= */
+
+.sb-wrap {
+  display: flex;
+  align-items: center;
+  gap: 3rem;
+}
+
+.sb-wrap--right  { flex-direction: row; }
+.sb-wrap--left   { flex-direction: row-reverse; }
+.sb-wrap--center { flex-direction: column; align-items: center; }
+
+/* El contenido principal ocupa el espacio restante */
+.sb-wrap__content {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+/* El medio ocupa un ancho fijo proporcional */
+.sb-wrap__media {
+  flex: 0 0 clamp(280px, 40%, 480px);
+  min-width: 0;
+}
+
+@media (max-width: 860px) {
+  .sb-wrap {
+    flex-direction: column !important;
+    gap: 2rem;
+  }
+
+  .sb-wrap__media {
+    flex: 0 0 auto;
+    width: 100%;
+    max-width: 560px;
+    margin: 0 auto;
+  }
+}
