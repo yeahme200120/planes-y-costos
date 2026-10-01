@@ -1,0 +1,103 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function autenticado() {
+      return request.auth != null;
+    }
+
+    match /planes/{planId} {
+      allow read: if
+        autenticado()
+        || resource == null
+        || !('activo' in resource.data)
+        || resource.data.activo == true;
+      allow create, update, delete: if autenticado();
+    }
+
+    match /soluciones/{solucionId} {
+      allow read: if
+        autenticado()
+        || resource == null
+        || !('activo' in resource.data)
+        || resource.data.activo == true;
+      allow create, update, delete: if autenticado();
+    }
+
+    match /caracteristicas/{caracteristicaId} {
+      allow read: if
+        autenticado()
+        || resource == null
+        || !('activo' in resource.data)
+        || resource.data.activo == true;
+      allow create, update, delete: if autenticado();
+    }
+
+    match /beneficios/{beneficioId} {
+      allow read: if
+        autenticado()
+        || resource == null
+        || !('activo' in resource.data)
+        || resource.data.activo == true;
+      allow create, update, delete: if autenticado();
+    }
+
+    match /faq/{faqId} {
+      allow read: if
+        autenticado()
+        || resource == null
+        || !('activo' in resource.data)
+        || resource.data.activo == true;
+      allow create, update, delete: if autenticado();
+    }
+
+    match /secciones/{seccionId} {
+      allow read: if true;
+      allow create, update, delete: if autenticado();
+    }
+
+    match /configuracion/{configuracionId} {
+      allow read: if true;
+      allow create, update, delete: if autenticado();
+    }
+
+    match /contactos/{contactoId} {
+      allow create: if
+        request.resource.data.keys().hasOnly([
+          'nombre',
+          'email',
+          'telefono',
+          'asunto',
+          'mensaje',
+          'estado',
+          'origen',
+          'fecha'
+        ])
+        &&
+        request.resource.data.nombre is string
+        &&
+        request.resource.data.email is string
+        &&
+        request.resource.data.telefono is string
+        &&
+        request.resource.data.asunto is string
+        &&
+        request.resource.data.mensaje is string
+        &&
+        request.resource.data.estado == 'nuevo'
+        &&
+        request.resource.data.origen == 'landing';
+
+      allow read, update, delete: if autenticado();
+    }
+
+    match /usuarios/{usuarioId} {
+      allow read, create, update, delete: if autenticado();
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
